@@ -24,6 +24,15 @@ class RemoveStorageStage extends AbstractDeleteStage
     public function execute(DeleteContext $ctx): DeleteStageResult
     {
         return $this->run($ctx, function (DeleteContext $ctx) {
+            // ADR-090 — nothing inside a web root the platform cannot prove
+            // is this installation's own is touched (REMOVE_FILES reports it
+            // as a manual action).
+            try {
+                RemoveFilesStage::guardedWebRoot($ctx);
+            } catch (\App\Services\CustomerDeletion\Guards\PurgeGuardViolation $e) {
+                return DeleteStageResult::skipped($this->name(), 'پوشهٔ سایت برای حذف خودکار تأیید نشده — ' . $e->getMessage());
+            }
+
             $webRoot      = $ctx->webRoot;
             $storageLink  = $webRoot . '/public/storage';
             $storagePath  = $webRoot . '/storage';

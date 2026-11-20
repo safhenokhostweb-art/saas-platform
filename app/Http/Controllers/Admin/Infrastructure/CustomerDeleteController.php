@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Jobs\CustomerDeletionPipelineJob;
 use App\Models\CustomerDeletion;
 use App\Models\CustomerInstallation;
+use App\Services\ActivityLogger;
 use App\Services\CustomerDeletion\Dto\DeletePolicy;
+use App\Services\CustomerDeletion\Purge\PurgePlanBuilder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redis;
@@ -25,7 +27,7 @@ class CustomerDeleteController extends Controller
 
         // Check if a deletion already exists
         $existing = CustomerDeletion::where('installation_id', $installation->id)
-            ->whereIn('status', ['pending', 'running', 'complete'])
+            ->whereIn('status', ['pending', 'running', 'failed', 'complete', 'complete_with_warnings'])
             ->first();
 
         if ($existing) {
@@ -63,12 +65,31 @@ class CustomerDeleteController extends Controller
                 ->with('error', 'دامنه وارد شده با دامنه نصب مطابقت ندارد.');
         }
 
+        // ADR-090 — freeze the destructive targets now, from the install
+        // record, so the run never re-resolves them from mutable server config.
+        $policy = DeletePolicy::from($request->policy);
+        $plan   = app(PurgePlanBuilder::class)->forInstallation($installation, $policy->shouldDeleteRemoteBackups(), false);
+        if ($plan['blockers'] !== []) {
+            return back()->withInput()->with('error', implode(' ', $plan['blockers']));
+        }
+
         $deletion = CustomerDeletion::create([
-            'installation_id' => $installation->id,
-            'site_id'         => $installation->site_id,
-            'initiated_by'    => Auth::id(),
-            'policy'          => $request->policy,
-            'status'          => 'pending',
+            'installation_id'      => $installation->id,
+            'site_id'              => $installation->site_id,
+            'initiated_by'         => Auth::id(),
+            'policy'               => $policy->value,
+            'status'               => 'pending',
+            'plan'                 => $plan,
+            'plan_sha256'          => PurgePlanBuilder::hash($plan),
+            'options'              => ['delete_backups' => $policy->shouldDeleteRemoteBackups(), 'delete_media' => false],
+            'requested_ip'         => $request->ip(),
+            'requested_user_agent' => mb_substr((string) $request->userAgent(), 0, 255),
+        ]);
+
+        ActivityLogger::log('customer.deletion_requested', "درخواست حذف نصب #{$installation->id} ({$installation->customer_domain})", $installation, [
+            'deletion_id' => $deletion->id,
+            'policy'      => $policy->value,
+            'plan_sha256' => $deletion->plan_sha256,
         ]);
 
         CustomerDeletionPipelineJob::dispatch($deletion->id)
@@ -104,6 +125,11 @@ class CustomerDeleteController extends Controller
             'status'         => 'pending',
             'failure_reason' => null,
             'failed_at'      => null,
+        ]);
+
+        ActivityLogger::log('customer.deletion_retried', "تلاش مجدد حذف #{$deletion->id}", $deletion->installation, [
+            'deletion_id' => $deletion->id,
+            'site_id'     => $deletion->site_id,
         ]);
 
         CustomerDeletionPipelineJob::dispatch($deletion->id)

@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\CustomerDeletion;
 use App\Models\CustomerInstallation;
 use App\Models\Infrastructure\InfraBackupRun;
 use App\Models\Site;
@@ -56,6 +57,11 @@ class BackupSitesPullCommand extends Command
             ->distinct()->pluck('site_id');
         $sites = Site::query()->whereIn('id', $siteIds)
             ->where(fn ($q) => $q->whereNull('lifecycle_status')->orWhere('lifecycle_status', '!=', 'deleted'))
+            // ADR-090 — never back up a site that is being purged.
+            ->whereNotIn('id', CustomerDeletion::query()
+                ->whereIn('status', ['pending', 'running', 'failed'])
+                ->whereNotNull('site_id')
+                ->pluck('site_id'))
             ->orderBy('id')->get();
 
         if ($this->option('dry-run')) {

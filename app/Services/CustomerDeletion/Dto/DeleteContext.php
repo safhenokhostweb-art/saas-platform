@@ -67,6 +67,13 @@ class DeleteContext
         public readonly ?string $arvanBaselineKey,
         public readonly array   $schedulerRemovalSnapshot,
         public readonly array   $queueRemovalSnapshot,
+        // ADR-090 — frozen purge plan (empty for pre-090 deletions)
+        public readonly array   $plan = [],
+        public readonly string  $webRootAction = 'delete',
+        public readonly ?string $webRootManualReason = null,
+        /** @var list<array{name: string, action: string, reason?: string}> */
+        public readonly array   $certificates = [],
+        public readonly bool    $purgeMedia = false,
     ) {}
 
     /**
@@ -86,6 +93,19 @@ class DeleteContext
 
         [$dbName, $dbUser] = self::resolveDbCredentials($installation);
 
+        // ADR-090 — when the deletion carries a frozen plan, its targets are
+        // authoritative: nothing destructive is re-resolved from live,
+        // mutable server configuration (customer_remote_servers.path).
+        $plan = (array) ($deletion->plan ?? []);
+        if ($plan !== []) {
+            if ((int) ($plan['installation']['id'] ?? 0) !== (int) $installation->id
+                || ($plan['installation']['slug'] ?? null) !== $slug) {
+                throw new \RuntimeException('پلن حذف با این نصب مطابقت ندارد؛ اجرای حذف متوقف شد.');
+            }
+            $dbName = $plan['database']['name'] ?? null;
+            $dbUser = $plan['database']['user'] ?? null;
+        }
+
         $siteId     = $installation->site_id;
         $licenseKey = $siteId ? Site::find($siteId)?->license_key : null;
         $arvanKey   = $installation->initial_baseline_arvan_key;
@@ -99,7 +119,9 @@ class DeleteContext
             connection:            $connection,
             policy:                $policy,
             slug:                  $slug,
-            webRoot:               (new WebRootResolver())->resolve($connection, $slug, $server),
+            webRoot:               isset($plan['web_root']['path'])
+                ? (string) $plan['web_root']['path']
+                : (new WebRootResolver())->resolve($connection, $slug, $server),
             domain:                $domain,
             dbName:                $dbName,
             dbUser:                $dbUser,
@@ -122,6 +144,11 @@ class DeleteContext
                 ['cron_line', 'config_path'],
                 ['config_path' => $supervisorConfigPath],
             ),
+            plan:                $plan,
+            webRootAction:       (string) ($plan['web_root']['action'] ?? 'delete'),
+            webRootManualReason: $plan['web_root']['reason'] ?? null,
+            certificates:        (array) ($plan['certificates'] ?? []),
+            purgeMedia:          (bool) ($plan['media']['delete'] ?? false),
         );
     }
 
@@ -161,7 +188,7 @@ class DeleteContext
      * InstallationContext::customerSlug() so the delete engine finds
      * the correct paths without any hardcoding.
      */
-    private static function resolveSlug(CustomerInstallation $installation): string
+    public static function resolveSlug(CustomerInstallation $installation): string
     {
         $ascii   = preg_replace('/[^\x20-\x7E]/', '', $installation->customer_company ?? '');
         $clean   = strtolower(preg_replace('/[^a-z0-9]+/', '_', $ascii));
@@ -176,7 +203,7 @@ class DeleteContext
      * 2. Rollback checkpoint snapshot (fallback)
      * Returns [dbName, dbUser].
      */
-    private static function resolveDbCredentials(CustomerInstallation $installation): array
+    public static function resolveDbCredentials(CustomerInstallation $installation): array
     {
         // Primary: stage output from immutable log
         $log = CustomerInstallationLog::where('installation_id', $installation->id)

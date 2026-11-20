@@ -4,7 +4,7 @@ namespace App\Services\CustomerDeletion\Stages;
 
 use App\Models\CustomerInstallation;
 use App\Models\Site;
-use App\Models\Customer;
+use App\Services\SiteDeletionService;
 use App\Services\CustomerDeletion\Dto\DeleteContext;
 use App\Services\CustomerDeletion\Dto\DeleteStageResult;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Log;
  *
  * Deletes all platform-side database records for the customer:
  * - Site record (and any cascading relations on it)
- * - Customer record (only if they have no other active sites)
+ * - Customer record: always kept (ADR-090, owner decision 2026-11-20)
  * - CustomerInstallation metadata (logs are kept as immutable audit trail)
  *   → installation record is marked 'deleted' rather than hard-deleted
  *
@@ -27,6 +27,9 @@ class RemovePlatformRecordsStage extends AbstractDeleteStage
     public function name(): string { return 'REMOVE_PLATFORM_RECORDS'; }
     public function label(): string { return 'حذف رکوردهای پلتفرم'; }
     public function isCritical(): bool { return false; }
+
+    /** ADR-090 — the site row stays in the panel until every earlier stage succeeded. */
+    public function requiresCleanRun(): bool { return true; }
     public function estimatedSeconds(): int { return 5; }
 
     public function buildPreSnapshot(DeleteContext $ctx): array
@@ -46,22 +49,17 @@ class RemovePlatformRecordsStage extends AbstractDeleteStage
                 $siteId = $ctx->siteId;
 
                 if ($siteId) {
-                    $site       = Site::find($siteId);
-                    $customerId = $site?->customer_id;
-
+                    $site = Site::find($siteId);
                     if ($site) {
-                        $site->delete();
+                        $customerId = $site->customer_id;
+                        // Same semantics as the panel-only delete: cascades,
+                        // licence/purchase history detached, installations marked.
+                        app(SiteDeletionService::class)->delete($site);
                         $removed[] = "Site #{$siteId} deleted";
-                    }
-
-                    // Remove Customer only if they have no remaining sites
-                    if ($customerId) {
-                        $remainingSites = Site::where('customer_id', $customerId)->count();
-                        if ($remainingSites === 0) {
-                            Customer::find($customerId)?->delete();
-                            $removed[] = "Customer #{$customerId} deleted (no remaining sites)";
-                        } else {
-                            $removed[] = "Customer #{$customerId} retained ({$remainingSites} other sites)";
+                        // ADR-090 (owner decision 2026-11-20): the Customer
+                        // record is always kept, even with no remaining sites.
+                        if ($customerId) {
+                            $removed[] = "Customer #{$customerId} retained";
                         }
                     }
                 }

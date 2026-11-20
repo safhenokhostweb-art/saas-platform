@@ -516,6 +516,9 @@ Route::prefix('admin')
         */
 
         Route::get('sites/wizard', [SiteController::class, 'wizard'])->name('sites.wizard');
+        // ADR-090 — full purge (super-admin only; enforced in SitePurgeRequest/controller)
+        Route::get('sites/{site}/purge', [\App\Http\Controllers\Admin\SitePurgeController::class, 'show'])->name('sites.purge.show');
+        Route::post('sites/{site}/purge', [\App\Http\Controllers\Admin\SitePurgeController::class, 'store'])->middleware('throttle:5,1')->name('sites.purge.store');
         Route::resource('sites', SiteController::class);
         // Platform Site Agent
         Route::get('sites/{site}/agent', [\App\Http\Controllers\Admin\PlatformSiteAgentController::class, 'show'])->name('sites.agents.show');

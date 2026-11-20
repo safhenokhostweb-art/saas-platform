@@ -43,4 +43,11 @@ interface DeleteStageInterface
      * is not feasible without the original installation context.
      */
     public function rollback(DeleteContext $ctx, array $snapshot): void;
+
+    /**
+     * ADR-090 — true for a stage that must not run once any earlier stage
+     * has failed (REMOVE_PLATFORM_RECORDS): the site row stays in the panel,
+     * the deletion is marked failed, and Retry resumes from the failure.
+     */
+    public function requiresCleanRun(): bool;
 }
