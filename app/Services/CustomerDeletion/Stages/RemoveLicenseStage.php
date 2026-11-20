@@ -6,17 +6,24 @@ use App\Models\PlatformLicense;
 use App\Models\Site;
 use App\Services\CustomerDeletion\Dto\DeleteContext;
 use App\Services\CustomerDeletion\Dto\DeleteStageResult;
-use Illuminate\Support\Facades\Log;
 
 /**
- * STAGE 11: REMOVE_LICENSE
+ * STAGE: REMOVE_LICENSE
  *
- * Revokes the customer's license:
- * - Deletes the PlatformLicense record (invalidates all future API license checks)
- * - Clears the license_key column on the Site record
+ * Revokes the customer's licences:
+ * - every PlatformLicense of the site gets revoked_at = now (all future
+ *   license checks fail immediately);
+ * - the Site's own license_key column is cleared.
  *
- * After this stage the customer's application can no longer pass the
- * EnsureLicenseValid middleware — it becomes effectively unusable.
+ * platform_licenses stores no plaintext key — only license_key_prefix and
+ * license_key_hash (see LicenseServerService::findByKey()) — and each row
+ * carries site_id, so the site's licences are selected by site_id. (Before
+ * this fix the stage queried a non-existent `license_key` column and failed
+ * with SQLSTATE 42S22 for every site that had a licence.)
+ *
+ * Revoke rather than delete: the rows are removed by the platform_licenses
+ * site_id cascade when REMOVE_PLATFORM_RECORDS deletes the site, and until
+ * then a failed/retried deletion leaves an auditable, already-dead licence.
  */
 class RemoveLicenseStage extends AbstractDeleteStage
 {
@@ -36,42 +43,45 @@ class RemoveLicenseStage extends AbstractDeleteStage
     public function execute(DeleteContext $ctx): DeleteStageResult
     {
         return $this->run($ctx, function (DeleteContext $ctx) {
-            $revoked = [];
-
-            if ($ctx->licenseKey) {
-                // Delete PlatformLicense record(s) for this key
-                $deleted = PlatformLicense::where('license_key', $ctx->licenseKey)->delete();
-                $revoked[] = "PlatformLicense: {$deleted} records deleted";
+            if (!$ctx->siteId) {
+                return DeleteStageResult::skipped($this->name(), 'شناسهٔ سایت معلوم نیست — لایسنسی برای ابطال وجود ندارد');
             }
 
-            if ($ctx->siteId) {
-                $site = Site::find($ctx->siteId);
-                if ($site) {
-                    $site->update(['license_key' => null]);
-                    $revoked[] = "Site #{$ctx->siteId} license_key cleared";
-                }
+            $revoked = PlatformLicense::where('site_id', $ctx->siteId)
+                ->whereNull('revoked_at')
+                ->update(['revoked_at' => now()]);
+
+            $cleared = false;
+            $site = Site::find($ctx->siteId);
+            if ($site && $site->license_key !== null) {
+                $site->update(['license_key' => null]);
+                $cleared = true;
             }
 
             return DeleteStageResult::success($this->name(), [
-                'revoked' => $revoked,
+                'licenses_revoked'         => $revoked,
+                'site_license_key_cleared' => $cleared,
             ]);
         });
     }
 
     public function verify(DeleteContext $ctx): array
     {
-        $checks = [];
-
-        if ($ctx->licenseKey) {
-            $exists = PlatformLicense::where('license_key', $ctx->licenseKey)->exists();
-            $checks[] = ['check' => 'PlatformLicense record deleted', 'passed' => !$exists, 'detail' => substr($ctx->licenseKey, 0, 8) . '...'];
+        if (!$ctx->siteId) {
+            return [['check' => 'License removal', 'passed' => true, 'detail' => 'no site_id']];
         }
 
-        if ($ctx->siteId) {
-            $site = Site::find($ctx->siteId);
-            $checks[] = ['check' => 'Site license_key cleared', 'passed' => $site === null || $site->license_key === null, 'detail' => "site_id={$ctx->siteId}"];
-        }
+        $active = self::activeLicenseCount($ctx->siteId);
+        $site   = Site::find($ctx->siteId);
 
-        return $checks ?: [['check' => 'License removal', 'passed' => true, 'detail' => 'no license key to revoke']];
+        return [
+            ['check' => 'No active PlatformLicense for the site', 'passed' => $active === 0, 'detail' => "{$active} active"],
+            ['check' => 'Site license_key cleared', 'passed' => $site === null || $site->license_key === null, 'detail' => "site_id={$ctx->siteId}"],
+        ];
+    }
+
+    public static function activeLicenseCount(int $siteId): int
+    {
+        return PlatformLicense::where('site_id', $siteId)->whereNull('revoked_at')->count();
     }
 }
