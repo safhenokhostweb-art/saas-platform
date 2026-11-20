@@ -95,6 +95,13 @@ class TenantResourceGovernor
             ];
         }
 
+        // Phase 4: the quota covers the site's files wherever they are — the
+        // web root's du plus its customer media on object storage. A remote
+        // figure that cannot be read counts as 0 rather than failing the audit.
+        $localBytes = $measured['used_bytes'];
+        $remoteBytes = (int) (app(\App\Services\ResourceGovernance\SiteResourceCalculatorService::class)->remoteMediaBytes($site) ?? 0);
+        $measured['used_bytes'] = $localBytes + $remoteBytes;
+
         $eval = $this->evaluate($measured['used_bytes'], $soft);
 
         if ($persist) {
@@ -121,6 +128,8 @@ class TenantResourceGovernor
             'ok'               => true,
             'error'            => null,
             'disk_usage_bytes' => $measured['used_bytes'],
+            'local_bytes'      => $localBytes,
+            'remote_media_bytes' => $remoteBytes,
             'soft_limit_bytes' => $soft,
             'percent'          => $eval['percent'],
             'level'            => $eval['level'],

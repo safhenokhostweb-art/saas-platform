@@ -58,6 +58,7 @@ class CustomerRemoteServerAdminController extends Controller
                 'host'   => 'required|string|max:255',
                 'domain' => 'nullable|string|max:255',
                 'path'   => 'nullable|string|max:500',
+                'is_platform_managed' => 'nullable|boolean',
             ],
             $this->credentialRules($type),
             $this->connectionRules($type),
@@ -72,6 +73,8 @@ class CustomerRemoteServerAdminController extends Controller
             'auth_method' => $validated['auth_method'] ?? $this->defaultAuth($type),
             'domain'      => $validated['domain'] ?? null,
             'path'        => $validated['path'] ?? null,
+            // Phase 4: only platform-owned servers receive the tenant media key.
+            'is_platform_managed' => $request->boolean('is_platform_managed'),
         ];
 
         // Store credentials through CredentialVault (AES-256-GCM)
@@ -110,6 +113,7 @@ class CustomerRemoteServerAdminController extends Controller
                 'host'   => 'required|string|max:255',
                 'domain' => 'nullable|string|max:255',
                 'path'   => 'nullable|string|max:500',
+                'is_platform_managed' => 'nullable|boolean',
             ],
             $this->credentialRules($type, optional: true),
             $this->connectionRules($type),
@@ -122,6 +126,7 @@ class CustomerRemoteServerAdminController extends Controller
             'username' => $validated['username'] ?? $server->username,
             'domain'   => $validated['domain'] ?? null,
             'path'     => $validated['path'] ?? null,
+            'is_platform_managed' => $request->boolean('is_platform_managed'),
         ];
 
         // Only overwrite credentials when new values provided

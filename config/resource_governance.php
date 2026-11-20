@@ -89,4 +89,38 @@ return [
             ],
         ],
     ],
+
+    /*
+    | Phase 4 — customer media on object storage (Arvan bucket
+    | safhenokhost-media). Injected into a customer site's .env only when its
+    | server is platform-managed (customer_remote_servers.is_platform_managed),
+    | never onto a customer's own server.
+    |
+    | The key must be a DIFFERENT access key from the platform's own
+    | ARVAN_ACCESS_KEY, restricted to the media bucket: TenantMediaEnvironment
+    | refuses to inject a key equal to the backup key, because a customer
+    | site's .env must never be able to reach safhenokhost-backups.
+    | Every tenant gets its own prefix: sites/{site_id}/media.
+    */
+    'tenant_media' => [
+        'enabled'    => (bool) env('TENANT_MEDIA_ENABLED', false),
+        'access_key' => env('TENANT_MEDIA_ACCESS_KEY'),
+        'secret_key' => env('TENANT_MEDIA_SECRET_KEY'),
+        'bucket'     => env('TENANT_MEDIA_BUCKET', 'safhenokhost-media'),
+        'region'     => env('TENANT_MEDIA_REGION', env('ARVAN_REGION', 'ir-central1')),
+        'endpoint'   => env('TENANT_MEDIA_ENDPOINT', env('ARVAN_ENDPOINT')),
+        // Public base URL of the bucket; defaults to {endpoint}/{bucket}.
+        'url'        => env('TENANT_MEDIA_URL'),
+    ],
+
+    /*
+    | Phase 2 — pull-model tenant database backups (db:backup-sites): the
+    | platform dumps each site's own database over SSH and uploads it to the
+    | private backup bucket (filesystems.disks.arvan_backup) under
+    | tenants/site-{id}/db/. The customer site holds no bucket key at all.
+    */
+    'tenant_backup' => [
+        'retention' => (int) env('TENANT_BACKUP_RETENTION', 14),
+        'remote_tmp_dir' => env('TENANT_BACKUP_REMOTE_TMP', '/tmp'),
+    ],
 ];

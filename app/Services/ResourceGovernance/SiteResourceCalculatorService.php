@@ -367,6 +367,43 @@ class SiteResourceCalculatorService
         }
     }
 
+    /**
+     * Phase 4 — bytes of the site's customer media stored on object storage
+     * (any customer_media.disk that is not a local disk). They never show
+     * up in the web root's `du`, so TenantResourceGovernor adds them to the
+     * site's disk usage. 0 without a site database or a customer_media
+     * table; null when the site database cannot be read.
+     */
+    public function remoteMediaBytes(Site $site): ?int
+    {
+        if (empty($site->db_name)) {
+            return 0;
+        }
+
+        try {
+            $conn = $this->openSiteConnection($site);
+            try {
+                $db = DB::connection($conn);
+                if (! $db->getSchemaBuilder()->hasTable('customer_media')) {
+                    return 0;
+                }
+
+                return (int) $db->table('customer_media')
+                    ->whereNotIn('disk', self::LOCAL_MEDIA_DISKS)
+                    ->sum('size_bytes');
+            } finally {
+                $this->closeSiteConnection($conn);
+            }
+        } catch (\Throwable $e) {
+            Log::info("ResourceCalculator: remote media bytes unavailable for site {$site->id}: " . $e->getMessage());
+
+            return null;
+        }
+    }
+
+    /** customer_media disks that live on the site server (counted by du). */
+    public const LOCAL_MEDIA_DISKS = ['uploads', 'public', 'local', 'private'];
+
     private function openSiteConnection(Site $site): string
     {
         $key = 'resource_calc_' . $site->id;

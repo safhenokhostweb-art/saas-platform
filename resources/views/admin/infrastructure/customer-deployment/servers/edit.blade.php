@@ -532,6 +532,8 @@
             @endif
         </div>
 
+        @include('admin.infrastructure.customer-deployment.servers.partials.platform-managed', ['checked' => (bool) old('is_platform_managed', $server->is_platform_managed)])
+
         <div class="mt-5 flex gap-3">
             <button type="submit" class="btn btn-primary">ذخیره تغییرات</button>
             <a href="{{ route('admin.infrastructure.customer-deployment.servers.index') }}" class="btn btn-outline-secondary">انصراف</a>

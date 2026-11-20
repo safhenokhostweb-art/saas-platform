@@ -384,7 +384,8 @@ class OnboardingPipelineTest extends TestCase
             ->assertSee('اعمال حوزهٔ کسب‌وکار و کیت‌های لایسنس')
             ->assertSee('پاک‌سازی کش برنامه و نماها')
             ->assertSee('بررسی DNS دامنه')
-            ->assertSee('/ 27 مرحله', false)
+            ->assertSee('اتصال فایل‌های سایت به فضای ابری') // CONFIGURE_MEDIA_STORAGE (Phase 4)
+            ->assertSee('/ 28 مرحله', false)
             ->assertSee('در انتظار پایان نصب و اعمال روی سایت');
     }
 

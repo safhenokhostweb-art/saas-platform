@@ -26,6 +26,7 @@ class CustomerRemoteServer extends Model
         'api_token_last_used_at',
         'last_tested_at',
         'last_test_result',
+        'is_platform_managed',
     ];
 
     protected $hidden = [
@@ -36,6 +37,7 @@ class CustomerRemoteServer extends Model
 
     protected $casts = [
         'last_tested_at'        => 'datetime',
+        'is_platform_managed'   => 'boolean',
         'key_installed_at'      => 'datetime',
         'api_token_created_at'  => 'datetime',
         'api_token_last_used_at'=> 'datetime',

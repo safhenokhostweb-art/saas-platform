@@ -709,6 +709,8 @@
                 <span>تمام اعتبارنامه‌ها با رمزگذاری AES-256-GCM ذخیره می‌شوند. رمزهای عبور و توکن‌ها پس از ذخیره هرگز به‌صورت متن ساده نمایش داده نمی‌شوند. فقط Fingerprint کلید SSH نمایش می‌یابد.</span>
             </div>
 
+            @include('admin.infrastructure.customer-deployment.servers.partials.platform-managed', ['checked' => (bool) old('is_platform_managed', false)])
+
             <div class="mt-5 flex gap-3">
                 <button type="submit" class="btn btn-primary">ذخیره مقصد استقرار</button>
                 <a href="{{ route('admin.infrastructure.customer-deployment.servers.index') }}" class="btn btn-outline-secondary">انصراف</a>
