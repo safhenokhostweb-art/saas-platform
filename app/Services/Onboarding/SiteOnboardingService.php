@@ -10,6 +10,7 @@ use App\Models\Module;
 use App\Models\Theme;
 use App\Models\User;
 use App\Services\ActivityLogger;
+use App\Services\CustomerInstallation\Dns\DomainDnsPreflight;
 use App\Services\CustomerInstallation\InstallationTargetGuard;
 use App\Services\Infrastructure\ServerCapacityService;
 use App\Support\IranianMobileNumber;
@@ -207,6 +208,9 @@ class SiteOnboardingService
                 'host'        => $s->host,
                 'type'        => $s->type,
                 'implemented' => $this->guard->driverError($s) === null,
+                // The address the customer's A records must point to (step 5
+                // DNS guide). Null when the host is private or unresolvable.
+                'public_ip'   => app(\App\Services\CustomerInstallation\Dns\ServerPublicIpResolver::class)->forServer($s),
             ])->values()->all(),
             'themes'                  => $themes->map(fn (Theme $t) => [
                 'id'          => $t->id,
@@ -299,10 +303,19 @@ class SiteOnboardingService
         }
 
         // Before anything is created: the domain must reach this server
-        // (installation 50 only failed at ISSUE_SSL, after 18 stages).
-        $dnsError = $this->guard->dnsPreflightError($domain, $server, (bool) ($data['ssl_enabled'] ?? true));
-        if ($dnsError !== null) {
-            throw ValidationException::withMessages(['domain' => $dnsError]);
+        // (installation 50 only failed at ISSUE_SSL, after 18 stages). The
+        // exception is a customer's own domain whose DNS they have not set
+        // up yet: it is built in the awaiting-DNS state, and the pipeline
+        // neither fails VALIDATE_DOMAIN_DNS nor ISSUE_SSL for it.
+        $dnsPending = false;
+        $dns = $this->guard->dnsPreflight($domain, $server, (bool) ($data['ssl_enabled'] ?? true));
+        if ($dns !== null && !$dns->ok) {
+            $dnsPending = $data['domain_mode'] === OnboardingDomainPolicy::MODE_CUSTOM
+                && !$dns->managedByPlatform
+                && DomainDnsPreflight::isAwaitingDnsCode($dns->code);
+            if (!$dnsPending) {
+                throw ValidationException::withMessages(['domain' => $dns->error]);
+            }
         }
 
         // 1. Hardware Resource Validation against Live Server Capacity
@@ -339,7 +352,7 @@ class SiteOnboardingService
             throw ValidationException::withMessages(['customer_name' => 'نام مشتری جدید الزامی است.']);
         }
 
-        $installation = $this->createReservedInstallation($server, $ramMb, $diskGb, $softDiskGb, $cpuCores, fn () => DB::transaction(function () use ($data, $mobile, $domain, $server, $theme, $vertical, $kitIds, $activeModuleIds, $ramMb, $diskGb, $softDiskGb, $cpuCores, $bandwidthGb, $actor) {
+        $installation = $this->createReservedInstallation($server, $ramMb, $diskGb, $softDiskGb, $cpuCores, fn () => DB::transaction(function () use ($data, $mobile, $domain, $server, $theme, $vertical, $kitIds, $activeModuleIds, $ramMb, $diskGb, $softDiskGb, $cpuCores, $bandwidthGb, $actor, $dnsPending) {
             $customer = Customer::query()->where('mobile', $mobile)->lockForUpdate()->first()
                 ?? $this->createCustomer->execute([
                     'name'         => trim((string) $data['customer_name']),
@@ -380,6 +393,7 @@ class SiteOnboardingService
                 'soft_disk_gb'      => $softDiskGb,
                 'cpu_cores'         => $cpuCores,
                 'bandwidth_gb'      => $bandwidthGb,
+                'dns_pending'       => $dnsPending,
             ];
 
             return CustomerInstallation::create([

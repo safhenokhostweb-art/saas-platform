@@ -2,6 +2,8 @@
 
 namespace App\Services\CustomerInstallation\Stages;
 
+use App\Services\CustomerInstallation\Dns\DomainDnsPreflight;
+use App\Services\CustomerInstallation\Dns\ServerPublicIpResolver;
 use App\Services\CustomerInstallation\Dto\InstallationContext;
 use App\Services\CustomerInstallation\Dto\StageResult;
 use App\Services\CustomerInstallation\Ssl\ArvanCdnDomainDecider;
@@ -42,14 +44,32 @@ use App\Services\CustomerInstallation\Ssl\SslProvisionerFactory;
  *        installation still completes.
  *   4. Issuance succeeds -> NginxVhostWriter::write() is called again so the
  *      real certificate path is written into the HTTPS server block.
+ *
+ * Phase 3 (custom domains): the www name is added to the certificate when it
+ * resolves to this server (InstallationContext::$certificateAliases). For an
+ * installation registered in the awaiting-DNS state ($req->dnsPending) the
+ * DNS is checked again here: still not pointing -> skip-success with status
+ * awaiting_dns, and a failed issuance is a warning rather than a failure.
+ * The site's domain panel (SiteDomainProvisioner) issues it later.
  */
 class IssueSslStage extends AbstractStage
 {
+    public const STATUS_AWAITING_DNS = 'awaiting_dns';
+
+    private readonly DomainDnsPreflight $preflight;
+
+    private readonly ServerPublicIpResolver $serverIps;
+
     public function __construct(
         private readonly SslProvisionerFactory $provisioners,
         private readonly ArvanCdnDomainDecider  $arvanDecider,
         private readonly NginxVhostWriter       $vhostWriter,
-    ) {}
+        ?DomainDnsPreflight $preflight = null,
+        ?ServerPublicIpResolver $serverIps = null,
+    ) {
+        $this->preflight = $preflight ?? app(DomainDnsPreflight::class);
+        $this->serverIps = $serverIps ?? app(ServerPublicIpResolver::class);
+    }
 
     public function name(): string { return 'ISSUE_SSL'; }
     public function label(): string { return 'صدور گواهی SSL'; }
@@ -95,9 +115,41 @@ class IssueSslStage extends AbstractStage
                 ], [], $this->elapsed());
             }
 
+            $serverIp = $this->serverIps->forContext($ctx);
+
+            if ($req->dnsPending) {
+                $dns = $this->preflight->check($domain, $serverIp, true);
+                if (!$dns->ok) {
+                    return StageResult::success($this->name(), [
+                        'ssl_managed_by' => $ctx->connection->driverType()->value,
+                        'status'         => self::STATUS_AWAITING_DNS,
+                        'dns_code'       => $dns->code,
+                        'message'        => (string) $dns->error,
+                    ], [], $this->elapsed());
+                }
+            }
+
+            // www joins the certificate only when it already points here: an
+            // unreachable name would make Let's Encrypt refuse the whole cert.
+            $www = $this->preflight->wwwAlias($domain);
+            $ctx->certificateAliases = [];
+            if ($www !== null && $this->preflight->check($www, $serverIp, true)->code === DomainDnsPreflight::PASS_POINTS_HERE) {
+                $ctx->certificateAliases = [$www];
+            }
+
             $driverType  = $ctx->connection->driverType();
             $provisioner = $this->provisioners->forDriverType($driverType);
             $result      = $provisioner->issueCertificate($ctx, $domain);
+
+            if (!$result->success && $req->dnsPending) {
+                // DNS can still be half-propagated on a site built before it
+                // was ready; the domain panel retries without blocking it.
+                return StageResult::success($this->name(), [
+                    'ssl_managed_by' => $driverType->value,
+                    'status'         => 'ssl_failed',
+                    'message'        => $result->message,
+                ], [], $this->elapsed());
+            }
 
             if (!$result->success) {
                 if ($driverType->isVpsFamily()) {
@@ -146,6 +198,7 @@ class IssueSslStage extends AbstractStage
                 'ssl_managed_by'          => $driverType->value,
                 'status'                  => $result->status,
                 'cert_path'               => $result->certPath,
+                'certificate_names'       => array_values(array_unique([$domain, ...$ctx->certificateAliases])),
                 'web_server_reconfigured' => $vhostReconfigured,
             ], [], $this->elapsed());
         });

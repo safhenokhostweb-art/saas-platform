@@ -27,6 +27,7 @@ class PublicDnsResolver implements DnsResolver
 
     private const TYPE_A = 1;
     private const TYPE_CNAME = 5;
+    private const TYPE_AAAA = 28;
 
     // RFC 1035 RCODEs reported in the DoH JSON "Status" field.
     private const RCODE_NOERROR = 0;
@@ -77,6 +78,47 @@ class PublicDnsResolver implements DnsResolver
         return DnsLookup::resolved($ips, $cname);
     }
 
+    public function lookupAAAA(string $host): DnsLookup
+    {
+        if (Cache::get(self::DOH_DOWN_KEY)) {
+            return $this->nativeLookupAAAA($host);
+        }
+
+        try {
+            $response = Http::connectTimeout(2)->timeout(5)
+                ->withHeaders(['Accept' => 'application/dns-json'])
+                ->get(self::DOH_URL, ['name' => $host, 'type' => 'AAAA']);
+        } catch (ConnectionException) {
+            Cache::put(self::DOH_DOWN_KEY, true, self::DOH_DOWN_TTL);
+
+            return $this->nativeLookupAAAA($host);
+        } catch (\Throwable) {
+            return $this->nativeLookupAAAA($host);
+        }
+
+        if (!$response->successful() || !is_array($response->json())) {
+            return $this->nativeLookupAAAA($host);
+        }
+
+        $status = $response->json('Status');
+        if ($status === self::RCODE_NXDOMAIN) {
+            return DnsLookup::notFound();
+        }
+        if ($status !== self::RCODE_NOERROR) {
+            return DnsLookup::unknown();
+        }
+
+        $ips = [];
+        foreach ((array) $response->json('Answer', []) as $answer) {
+            $data = rtrim((string) ($answer['data'] ?? ''), '.');
+            if ((int) ($answer['type'] ?? 0) === self::TYPE_AAAA && filter_var($data, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+                $ips[] = strtolower($data);
+            }
+        }
+
+        return DnsLookup::resolved($ips);
+    }
+
     private function nativeLookup(string $host): DnsLookup
     {
         $records = @dns_get_record($host, DNS_A);
@@ -85,5 +127,15 @@ class PublicDnsResolver implements DnsResolver
         }
 
         return DnsLookup::resolved(array_values(array_filter(array_column($records, 'ip'))));
+    }
+
+    private function nativeLookupAAAA(string $host): DnsLookup
+    {
+        $records = @dns_get_record($host, DNS_AAAA);
+        if ($records === false) {
+            return DnsLookup::unknown();
+        }
+
+        return DnsLookup::resolved(array_values(array_filter(array_map('strtolower', array_column($records, 'ipv6')))));
     }
 }

@@ -4,6 +4,7 @@ namespace App\Services\Onboarding;
 
 use App\Models\CustomerInstallation;
 use App\Models\Site;
+use App\Services\CustomerInstallation\Dns\DomainDnsPreflight;
 use App\Services\CustomerInstallation\InstallationTargetGuard;
 
 /**
@@ -101,23 +102,40 @@ class OnboardingDomainPolicy
     /**
      * Full check used by the live endpoint and on submit.
      *
-     * @return array{ok: bool, domain: ?string, error: ?string, platform_subdomain: bool}
+     * A custom domain whose DNS does not reach a server yet is not an error:
+     * the customer may still be waiting on their registrar or DNS panel. It
+     * comes back ok with dns_pending and a Persian warning, and the site is
+     * built in the awaiting-DNS state (SiteOnboardingService::start()).
+     *
+     * @return array{ok: bool, domain: ?string, error: ?string, warning: ?string, dns_pending: bool, platform_subdomain: bool}
      */
     public function check(string $mode, string $input, bool $withDns = true): array
     {
         $resolved = $this->resolve($mode, $input);
         $domain = $resolved['domain'];
         $error = $resolved['error'] ?? ($domain !== null ? $this->availabilityError($domain) : null);
+        $warning = null;
 
         if ($error === null && $domain !== null && $withDns && $mode === self::MODE_CUSTOM) {
-            $error = $this->guard->customDomainDnsError($domain);
+            $dns = $this->guard->customDomainDnsCheck($domain);
+            if ($dns !== null && !$dns->ok) {
+                if (DomainDnsPreflight::isAwaitingDnsCode($dns->code)) {
+                    $warning = $dns->error . ' ' . self::AWAITING_DNS_NOTE;
+                } else {
+                    $error = $dns->error;
+                }
+            }
         }
 
         return [
             'ok'                 => $error === null && $domain !== null,
             'domain'             => $domain,
             'error'              => $error,
+            'warning'            => $warning,
+            'dns_pending'        => $warning !== null,
             'platform_subdomain' => $domain !== null && $this->guard->isPlatformSubdomain($domain),
         ];
     }
+
+    public const AWAITING_DNS_NOTE = 'می‌توانید ادامه دهید: سایت در وضعیت «در انتظار DNS» ساخته می‌شود و پس از تنظیم رکوردها، اتصال و SSL از بخش «دامنه» در صفحهٔ سایت فعال می‌شود.';
 }

@@ -8,6 +8,8 @@ use App\Models\CustomerInstallation;
 use App\Models\CustomerRemoteServer;
 use App\Models\Theme;
 use App\Services\ActivityLogger;
+use App\Services\CustomerInstallation\Dns\DomainDnsPreflight;
+use App\Services\CustomerInstallation\Dns\ServerPublicIpResolver;
 use App\Services\Infrastructure\ServerCapacityService;
 use App\Services\Onboarding\OnboardingDomainPolicy;
 use App\Services\Onboarding\SiteOnboardingService;
@@ -114,9 +116,63 @@ class OnboardingWizardController extends Controller
     {
         $installation = $this->onboarding->start($request->validated(), $request->user());
 
-        return redirect()
+        $redirect = redirect()
             ->route('admin.infrastructure.customer-deployment.installations.show', $installation)
             ->with('success', "راه‌اندازی «{$installation->customer_domain}» آغاز شد. همهٔ مراحل — از سرور و دامنه تا لایسنس و قالب — به‌صورت خودکار اجرا می‌شوند.");
+
+        if (!empty($installation->request_payload['dns_pending'])) {
+            $redirect->with('warning', "DNS دامنهٔ «{$installation->customer_domain}» هنوز به سرور متصل نیست؛ سایت در وضعیت «در انتظار DNS» ساخته می‌شود. پس از تنظیم رکوردهای A، از بخش «دامنه» در صفحهٔ سایت «بررسی اتصال DNS» و «صدور SSL» را بزنید.");
+        }
+
+        return $redirect;
+    }
+
+    /**
+     * Step 5 DNS guide: the chosen server's public IP and whether the domain
+     * (and its www name) already point to it. Advisory only; never blocks.
+     */
+    public function checkDns(Request $request, DomainDnsPreflight $preflight, ServerPublicIpResolver $serverIps): JsonResponse
+    {
+        $data = $request->validate([
+            'mode'      => ['required', Rule::in([OnboardingDomainPolicy::MODE_SUBDOMAIN, OnboardingDomainPolicy::MODE_CUSTOM])],
+            'domain'    => ['required', 'string', 'max:253'],
+            'server_id' => ['required', 'integer', 'exists:customer_remote_servers,id'],
+            'ssl'       => ['nullable', 'boolean'],
+        ]);
+
+        $resolved = $this->domains->resolve($data['mode'], $data['domain']);
+        if ($resolved['domain'] === null) {
+            return response()->json(['ok' => false, 'error' => $resolved['error']], 422);
+        }
+
+        $domain = $resolved['domain'];
+        $serverIp = $serverIps->forServer(CustomerRemoteServer::findOrFail($data['server_id']));
+        $ssl = (bool) ($data['ssl'] ?? true);
+        $records = [];
+
+        if ($preflight->isPlatformManaged($domain)) {
+            return response()->json(['ok' => true, 'domain' => $domain, 'server_ip' => $serverIp, 'platform_subdomain' => true, 'records' => []]);
+        }
+
+        foreach (array_filter([$domain, $preflight->wwwAlias($domain)]) as $host) {
+            $check = $preflight->check($host, $serverIp, $ssl);
+            $records[] = [
+                'host'      => $host,
+                'name'      => $host === $domain ? '@' : 'www',
+                'ok'        => $check->ok && $check->code === DomainDnsPreflight::PASS_POINTS_HERE,
+                'code'      => $check->code,
+                'message'   => $check->error,
+                'resolved'  => $check->lookup->ips,
+            ];
+        }
+
+        return response()->json([
+            'ok'                 => $records[0]['ok'] ?? false,
+            'domain'             => $domain,
+            'server_ip'          => $serverIp,
+            'platform_subdomain' => false,
+            'records'            => $records,
+        ]);
     }
 
     /** Re-run the theme binding of a completed onboarding (assign + push). */

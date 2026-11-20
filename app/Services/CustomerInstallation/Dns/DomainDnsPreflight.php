@@ -34,8 +34,41 @@ class DomainDnsPreflight
     public const FAIL_WRONG_IP = 'dns_points_elsewhere';
     public const FAIL_WILDCARD_ONLY = 'dns_wildcard_only';
     public const FAIL_NO_SERVER_IP = 'server_ip_missing';
+    public const FAIL_AAAA_CONFLICT = 'dns_aaaa_conflict';
+
+    /**
+     * Failures a customer fixes in their own DNS panel. A custom domain that
+     * fails with one of these can still be registered in the awaiting-DNS
+     * state (CustomerInstallRequest::$dnsPending); a platform subdomain never.
+     */
+    public const AWAITING_DNS_CODES = [
+        self::FAIL_NOT_REGISTERED,
+        self::FAIL_WRONG_IP,
+        self::FAIL_WILDCARD_ONLY,
+        self::FAIL_AAAA_CONFLICT,
+    ];
 
     public function __construct(private readonly DnsResolver $dns) {}
+
+    public static function isAwaitingDnsCode(string $code): bool
+    {
+        return in_array($code, self::AWAITING_DNS_CODES, true);
+    }
+
+    /**
+     * The "www." name served (and redirected to the bare domain) next to a
+     * customer's own domain. Platform subdomains get none: their DNS is ours
+     * and nobody types www.shop.safhenokhost.ir.
+     */
+    public function wwwAlias(string $domain): ?string
+    {
+        $domain = strtolower(trim($domain, ". \t\n"));
+        if ($domain === '' || str_starts_with($domain, 'www.') || !str_contains($domain, '.') || $this->isPlatformManaged($domain)) {
+            return null;
+        }
+
+        return 'www.' . $domain;
+    }
 
     public function check(string $domain, ?string $serverIp, bool $sslEnabled): DnsPreflightResult
     {
@@ -80,8 +113,19 @@ class DomainDnsPreflight
 
         if ($pointsHere) {
             $notes = $viaWildcard ? ['Resolves through a wildcard record that points to this server.'] : [];
-            if ($serverIp === null || !in_array($serverIp, $lookup->ips, true)) {
+            $viaCdnEdge = $serverIp === null || !in_array($serverIp, $lookup->ips, true);
+            if ($viaCdnEdge) {
                 $notes[] = 'Resolves to ArvanCloud CDN edge addresses; the CDN origin must be this server.';
+            }
+
+            // Behind the CDN the edge answers IPv6 too. Pointed straight at
+            // this IPv4 server, any AAAA record sends Let's Encrypt elsewhere.
+            if ($sslEnabled && !$viaCdnEdge && ($ipv6 = $this->aaaaRecords($domain)) !== []) {
+                $list = implode('، ', $ipv6);
+
+                return DnsPreflightResult::fail(self::FAIL_AAAA_CONFLICT,
+                    "رکورد A دامنهٔ «{$domain}» درست به IP این سرور ({$serverIp}) اشاره می‌کند، اما رکورد AAAA (IPv6) هم دارد: {$list}. Let's Encrypt برای اعتبارسنجی IPv6 را ترجیح می‌دهد و گواهی SSL صادر نمی‌شود. رکورد AAAA را در پنل DNS حذف کنید (یا به IPv6 همین سرور تغییر دهید).",
+                    $domain, $serverIp, $lookup, $managed);
             }
 
             return DnsPreflightResult::pass(self::PASS_POINTS_HERE, $domain, $serverIp, $lookup, $managed, $notes);
@@ -166,6 +210,14 @@ class DomainDnsPreflight
         $probe = $this->dns->lookupA('cie-dns-probe-' . bin2hex(random_bytes(6)) . '.' . $parent);
 
         return $probe->isResolved() && $probe->ips === $lookup->ips;
+    }
+
+    /** @return list<string> IPv6 addresses; none when the lookup failed (proves nothing). */
+    private function aaaaRecords(string $domain): array
+    {
+        $lookup = $this->dns->lookupAAAA($domain);
+
+        return $lookup->isResolved() ? $lookup->ips : [];
     }
 
     private function ipList(DnsLookup $lookup): string

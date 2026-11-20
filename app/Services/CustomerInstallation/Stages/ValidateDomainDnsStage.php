@@ -33,10 +33,20 @@ class ValidateDomainDnsStage extends AbstractStage
             $result = $this->preflight->check($ctx->request->domain, $serverIp, $ctx->request->sslEnabled);
 
             if (!$result->ok) {
+                // A custom domain registered before its DNS is ready: build
+                // the site anyway; ISSUE_SSL waits and the site's domain
+                // panel finishes the connection later.
+                if ($ctx->request->dnsPending && !$result->managedByPlatform && DomainDnsPreflight::isAwaitingDnsCode($result->code)) {
+                    return StageResult::success($this->name(), $result->toArray() + [
+                        'awaiting_dns' => true,
+                        'warning'      => $result->error,
+                    ], [], $this->elapsed());
+                }
+
                 return StageResult::failure($this->name(), (string) $result->error, $this->elapsed());
             }
 
-            return StageResult::success($this->name(), $result->toArray(), [], $this->elapsed());
+            return StageResult::success($this->name(), $result->toArray() + ['awaiting_dns' => false], [], $this->elapsed());
         });
     }
 }

@@ -63,26 +63,74 @@ class OnboardingDnsPreflightTest extends TestCase
         ]));
     }
 
-    public function test_unregistered_custom_domain_is_rejected_before_anything_is_created(): void
+    public function test_unregistered_custom_domain_is_built_in_the_awaiting_dns_state(): void
     {
         $this->dns(new FakeDnsResolver(DnsLookup::notFound()));
 
         $this->submitCustom('solar-shop.ir', $this->publicServer())
-            ->assertSessionHasErrors(['domain' => 'دامنه یا زیردامنهٔ «solar-shop.ir» هنوز در DNS ثبت نشده است (هیچ رکورد A یا CNAME معتبری ندارد). ابتدا رکورد A آن را به IP این سرور (87.107.12.81) تنظیم کنید و پس از انتشار DNS دوباره تلاش کنید.']);
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('warning', fn (string $w) => str_contains($w, 'در انتظار DNS'));
 
-        $this->assertSame(0, CustomerInstallation::query()->count());
-        Queue::assertNotPushed(CustomerInstallationPipelineJob::class);
+        $installation = CustomerInstallation::query()->sole();
+        $this->assertSame('solar-shop.ir', $installation->customer_domain);
+        $this->assertTrue($installation->request_payload['dns_pending']);
+        Queue::assertPushed(CustomerInstallationPipelineJob::class);
     }
 
-    public function test_custom_domain_pointing_to_another_ip_is_rejected_when_ssl_is_requested(): void
+    public function test_custom_domain_pointing_to_another_ip_is_built_in_the_awaiting_dns_state(): void
     {
         $this->dns((new FakeDnsResolver(DnsLookup::notFound()))->set('solar-shop.ir', DnsLookup::resolved(['205.252.135.188'])));
 
-        $response = $this->submitCustom('solar-shop.ir', $this->publicServer());
+        $this->submitCustom('solar-shop.ir', $this->publicServer())->assertSessionHasNoErrors();
 
-        $response->assertSessionHasErrors('domain');
-        $this->assertStringContainsString('به IP این سرور متصل نیست', session('errors')->first('domain'));
-        $this->assertSame(0, CustomerInstallation::query()->count());
+        $this->assertTrue(CustomerInstallation::query()->sole()->request_payload['dns_pending']);
+    }
+
+    public function test_custom_domain_with_a_foreign_aaaa_record_is_built_in_the_awaiting_dns_state(): void
+    {
+        $this->dns((new FakeDnsResolver(DnsLookup::notFound()))
+            ->set('solar-shop.ir', DnsLookup::resolved([self::SERVER_IP]))
+            ->setAaaa('solar-shop.ir', DnsLookup::resolved(['2001:db8::1'])));
+
+        $this->submitCustom('solar-shop.ir', $this->publicServer())->assertSessionHasNoErrors();
+
+        $this->assertTrue(CustomerInstallation::query()->sole()->request_payload['dns_pending']);
+    }
+
+    public function test_a_connected_custom_domain_is_not_marked_pending(): void
+    {
+        $this->dns((new FakeDnsResolver(DnsLookup::notFound()))->set('solar-shop.ir', DnsLookup::resolved([self::SERVER_IP])));
+
+        $this->submitCustom('solar-shop.ir', $this->publicServer())->assertSessionHasNoErrors()->assertSessionMissing('warning');
+
+        $this->assertFalse(CustomerInstallation::query()->sole()->request_payload['dns_pending']);
+    }
+
+    public function test_step5_dns_check_reports_apex_and_www_against_the_chosen_server(): void
+    {
+        $server = $this->publicServer();
+        $this->dns((new FakeDnsResolver(DnsLookup::notFound()))
+            ->set('solar-shop.ir', DnsLookup::resolved([self::SERVER_IP]))
+            ->set('www.solar-shop.ir', DnsLookup::resolved(['5.6.7.8'])));
+
+        $json = $this->actingAs($this->admin())
+            ->getJson(route('admin.onboarding.check-dns', ['mode' => 'custom', 'domain' => 'www.solar-shop.ir', 'server_id' => $server->id, 'ssl' => 1]))
+            ->assertOk()->json();
+
+        $this->assertTrue($json['ok']);
+        $this->assertSame(self::SERVER_IP, $json['server_ip']);
+        $this->assertSame(['@', 'www'], array_column($json['records'], 'name'));
+        $this->assertSame([true, false], array_column($json['records'], 'ok'));
+        $this->assertSame(['5.6.7.8'], $json['records'][1]['resolved']);
+    }
+
+    public function test_wizard_options_expose_the_servers_public_ip_for_the_dns_guide(): void
+    {
+        $server = $this->publicServer();
+
+        $servers = app(\App\Services\Onboarding\SiteOnboardingService::class)->wizardOptions()['servers'];
+
+        $this->assertSame(self::SERVER_IP, collect($servers)->firstWhere('id', $server->id)['public_ip']);
     }
 
     public function test_custom_domain_pointing_to_the_server_starts_the_pipeline(): void
@@ -117,7 +165,7 @@ class OnboardingDnsPreflightTest extends TestCase
             ->assertSessionHasNoErrors();
     }
 
-    public function test_live_domain_check_flags_a_wildcard_only_custom_subdomain(): void
+    public function test_live_domain_check_warns_but_accepts_a_wildcard_only_custom_subdomain(): void
     {
         $this->dns((new FakeDnsResolver(DnsLookup::notFound()))->setWildcard('example.ir', DnsLookup::resolved(['5.6.7.8'])));
 
@@ -125,7 +173,19 @@ class OnboardingDnsPreflightTest extends TestCase
             ->getJson(route('admin.onboarding.check-domain', ['mode' => 'custom', 'domain' => 'solar.example.ir']))
             ->json();
 
+        $this->assertTrue($json['ok']);
+        $this->assertTrue($json['dns_pending']);
+        $this->assertNull($json['error']);
+        $this->assertStringContainsString('Wildcard', $json['warning']);
+    }
+
+    public function test_live_domain_check_still_rejects_an_invalid_custom_domain(): void
+    {
+        $json = $this->actingAs($this->admin())
+            ->getJson(route('admin.onboarding.check-domain', ['mode' => 'custom', 'domain' => 'not a domain']))
+            ->json();
+
         $this->assertFalse($json['ok']);
-        $this->assertStringContainsString('Wildcard', $json['error']);
+        $this->assertFalse($json['dns_pending']);
     }
 }

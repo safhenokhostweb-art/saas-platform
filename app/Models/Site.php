@@ -89,6 +89,12 @@ class Site extends Model implements SiteModelInterface
         return $this->belongsTo(\App\Models\Customer::class);
     }
 
+    /** Phase 3 — connection state of the site's domains (SiteDomainService). */
+    public function siteDomains()
+    {
+        return $this->hasMany(\App\Models\SiteDomain::class);
+    }
+
     public function themeAssignments()
     {
         return $this->hasMany(\App\Models\ThemeAssignment::class);

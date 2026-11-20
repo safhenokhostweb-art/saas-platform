@@ -57,6 +57,13 @@
     ],
     "reviewed": [
       {
+        "path": "database/migrations/2026_11_20_100000_create_site_domains_table.php",
+        "sha256": "edf1338fdba7db9a74159dabc0e7daf71a47345f3287765ab4fa87a1c1bdede0",
+        "reviewed_by": "Claude Opus 5.5 (agent review for the owner-requested 2026-11-20 Phase 3 release; not an owner sign-off)",
+        "reviewed_at": "2026-11-20",
+        "reason": "Create-only migration (Phase 3 custom domains): up() creates site_domains with an FK to sites (cascade on site delete); down() drops only that table (rollback of its own creation). No existing table or data is altered."
+      },
+      {
         "path": "database/migrations/2026_10_20_100000_create_ai_providers_table.php",
         "sha256": "dda18b495e81e0385ce76189e018ec107440f68062c2bc490f704b6f088b2fb9",
         "reviewed_by": "safhenokhostweb-art",
