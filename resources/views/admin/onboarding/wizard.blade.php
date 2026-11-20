@@ -648,6 +648,8 @@
                     <div class="ob-choices" role="group" aria-labelledby="ob-modules-label" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,14rem),1fr))">
                         <template x-for="mod in filteredModules()" :key="mod.id">
                             <button type="button" class="ob-choice" :aria-pressed="form.active_module_ids.includes(mod.id)"
+                                    :aria-disabled="!mod.selectable" :disabled="!mod.selectable" :title="mod.unselectable_reason || ''"
+                                    data-module-choice :data-selectable="mod.selectable ? '1' : '0'"
                                     @click="toggleActiveModule(mod.id)">
                                 <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
                                     <strong x-text="mod.title"></strong>
@@ -658,6 +660,7 @@
                                     <span x-show="mod.is_kit" class="ob-badge ob-badge-accent">کیت اختصاصی</span>
                                     <span x-show="mod.is_paid" class="ob-badge" style="color:#d97706;border-color:#fde68a">پرمیوم</span>
                                 </div>
+                                <small x-show="!mod.selectable" x-text="mod.unselectable_reason" style="color:var(--ob-muted)"></small>
                             </button>
                         </template>
                     </div>
@@ -810,10 +813,22 @@
                             <span class="ob-badge" :class="serverCapacity?.has_headroom ? 'ob-badge-ok' : 'ob-badge-accent'" x-text="serverCapacity?.has_headroom ? 'ظرفیت سخت‌افزاری ایمن' : 'هشدار پر بودن یا ریسک سرور'"></span>
                         </div>
                         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.5rem;font-size:.78rem">
-                            <div>رم آزاد فیزیکی: <strong class="ob-ltr" x-text="serverCapacity?.ram?.free_mb + ' MB'"></strong> / کل: <span class="ob-ltr" x-text="serverCapacity?.ram?.total_mb + ' MB'"></span></div>
-                            <div>دیسک آزاد فیزیکی: <strong class="ob-ltr" x-text="serverCapacity?.disk?.free_gb + ' GB'"></strong> / کل: <span class="ob-ltr" x-text="serverCapacity?.disk?.total_gb + ' GB'"></span></div>
-                            <div>تعهد رم (Overcommit): <strong class="ob-ltr" x-text="serverCapacity?.ram?.overcommit_ratio + 'x'"></strong></div>
-                            <div>تعداد سایت‌های سرور: <strong x-text="fa(serverCapacity?.sites_count || 0)"></strong></div>
+                            <div>رم آزاد: <strong class="ob-ltr" x-text="metric(serverCapacity?.ram?.free_mb, 'MB')"></strong> / کل: <span class="ob-ltr" x-text="metric(serverCapacity?.ram?.total_mb, 'MB')"></span></div>
+                            <div>دیسک آزاد: <strong class="ob-ltr" x-text="metric(serverCapacity?.disk?.free_gb, 'GB')"></strong> / کل: <span class="ob-ltr" x-text="metric(serverCapacity?.disk?.total_gb, 'GB')"></span></div>
+                            <div>سهمیه دیسک تخصیص‌یافته + رزرو: <strong class="ob-ltr" x-text="metric((serverCapacity?.disk?.allocated_gb ?? 0) + (serverCapacity?.disk?.reserved_gb ?? 0), 'GB')"></strong></div>
+                            <div>تعهد رم: <strong class="ob-ltr" x-text="metric(serverCapacity?.ram?.overcommit_ratio, 'x')"></strong> · پردازنده: <strong class="ob-ltr" x-text="metric(serverCapacity?.cpu?.overcommit_ratio, 'x')"></strong></div>
+                            <div>سایت‌ها / نصب در جریان: <strong x-text="fa(serverCapacity?.sites_count || 0) + ' / ' + fa(serverCapacity?.reservations_count || 0)"></strong></div>
+                            <div>منبع داده: <strong x-text="({live_probe: 'اندازه‌گیری برخط', registered_specs: 'مشخصات ثبت‌شده', unknown: 'نامشخص'})[serverCapacity?.metrics_source] || '—'"></strong></div>
+                        </div>
+                        <div data-capacity-validation x-show="capacityValidation" x-cloak style="margin-top:.6rem;font-size:.8rem">
+                            <p x-show="capacityChecking" style="color:var(--ob-muted)">در حال بررسی تخصیص…</p>
+                            <template x-for="(err, i) in (capacityValidation?.errors || [])" :key="'ce' + i">
+                                <p class="ob-err" role="alert" x-text="err"></p>
+                            </template>
+                            <template x-for="(w, i) in (capacityValidation?.warnings || [])" :key="'cw' + i">
+                                <p style="color:#92400e" x-text="w"></p>
+                            </template>
+                            <p x-show="capacityValidation?.valid && !(capacityValidation?.warnings || []).length" style="color:#047857">تخصیص انتخابی با ظرفیت سرور سازگار است.</p>
                         </div>
                     </div>
                 </div>
@@ -1021,7 +1036,7 @@
                 <span class="ob-spin" x-show="busy()" aria-hidden="true"></span>
                 مرحلهٔ بعد
             </button>
-            <button type="submit" class="ob-btn ob-btn-primary" x-show="step === 6" x-cloak :disabled="submitting">
+            <button type="submit" class="ob-btn ob-btn-primary" x-show="step === 6" x-cloak :disabled="submitting || capacityValidation?.valid === false" :title="capacityValidation?.valid === false ? 'تخصیص منابع با ظرفیت سرور سازگار نیست (مرحلهٔ ۵)' : ''">
                 <span class="ob-spin" x-show="submitting" aria-hidden="true"></span>
                 <span x-text="submitting ? 'در حال ثبت…' : 'تأیید و راه‌اندازی خودکار'"></span>
             </button>
@@ -1052,6 +1067,9 @@ function onboardingWizard(options, initial, prefill, errorStep) {
         activeModuleCategory: 'all',
         showDbPass: false,
         serverCapacity: null,
+        capacityValidation: null,
+        capacityChecking: false,
+        capacityTimer: null,
         capacityLoading: false,
         serverCapacityUrl: @js(route('admin.onboarding.server-capacity')),
         suggestInfraUrl: @js(route('admin.onboarding.suggest-infrastructure')),
@@ -1070,6 +1088,7 @@ function onboardingWizard(options, initial, prefill, errorStep) {
             if (this.form.business_vertical && !this.form.active_module_ids.length) {
                 this.selectDefaultVerticalModules();
             }
+            ['form.ram_mb', 'form.disk_gb', 'form.soft_disk_gb', 'form.cpu_cores'].forEach(key => this.$watch(key, () => this.scheduleCapacityCheck()));
         },
         fa(n) { return Number(n).toLocaleString('fa-IR'); },
 
@@ -1080,7 +1099,12 @@ function onboardingWizard(options, initial, prefill, errorStep) {
             }
             return this.options.modules.filter(m => m.category === this.activeModuleCategory);
         },
+        isModuleSelectable(id) {
+            const mod = this.options.modules.find(m => m.id === id);
+            return !!(mod && mod.selectable);
+        },
         toggleActiveModule(id) {
+            if (!this.isModuleSelectable(id)) { return; }
             const idx = this.form.active_module_ids.indexOf(id);
             if (idx === -1) {
                 this.form.active_module_ids.push(id);
@@ -1089,7 +1113,9 @@ function onboardingWizard(options, initial, prefill, errorStep) {
             }
         },
         selectAllModules() {
-            this.form.active_module_ids = this.options.modules.map(m => m.id);
+            // Only modules the wizard can activate: kits are licensed from the
+            // kits section, paid/license-only modules cannot be enabled here.
+            this.form.active_module_ids = this.options.modules.filter(m => m.selectable).map(m => m.id);
         },
         deselectAllModules() {
             this.form.active_module_ids = [];
@@ -1097,7 +1123,7 @@ function onboardingWizard(options, initial, prefill, errorStep) {
         selectDefaultVerticalModules() {
             const vert = this.form.business_vertical || 'general';
             const defaults = this.options.vertical_modules[vert] || this.options.vertical_modules['general'] || [];
-            this.form.active_module_ids = Array.from(new Set([...defaults]));
+            this.form.active_module_ids = Array.from(new Set([...defaults])).filter(id => this.isModuleSelectable(id));
         },
         selectedModuleTitlesSummary() {
             if (!this.form.active_module_ids.length) { return 'هیچ ماژولی انتخاب نشده است.'; }
@@ -1141,18 +1167,40 @@ function onboardingWizard(options, initial, prefill, errorStep) {
         async fetchServerCapacity(serverId) {
             if (!serverId) { return; }
             this.capacityLoading = true;
+            this.capacityChecking = true;
             try {
-                const res = await fetch(`${this.serverCapacityUrl}?server_id=${serverId}`, {
+                // The endpoint returns {capacity, validation}; the panel used to
+                // read the wrapper itself and always showed "undefined".
+                const params = new URLSearchParams({ server_id: serverId });
+                if (this.form.ram_mb) { params.set('ram_mb', this.form.ram_mb); }
+                if (this.form.disk_gb) { params.set('disk_gb', this.form.disk_gb); }
+                if (this.form.soft_disk_gb) { params.set('soft_disk_gb', this.form.soft_disk_gb); }
+                if (this.form.cpu_cores) { params.set('cpu_cores', this.form.cpu_cores); }
+                const res = await fetch(`${this.serverCapacityUrl}?${params}`, {
                     headers: { 'Accept': 'application/json' }
                 });
                 if (res.ok) {
-                    this.serverCapacity = await res.json();
+                    const data = await res.json();
+                    this.serverCapacity = data.capacity || null;
+                    this.capacityValidation = data.validation || null;
                 }
             } catch (e) {
                 console.error('Failed to fetch server capacity', e);
             } finally {
                 this.capacityLoading = false;
+                this.capacityChecking = false;
             }
+        },
+        // Debounced live re-validation of the chosen allocation.
+        scheduleCapacityCheck() {
+            clearTimeout(this.capacityTimer);
+            if (!this.form.remote_server_id) { return; }
+            this.capacityChecking = true;
+            this.capacityTimer = setTimeout(() => this.fetchServerCapacity(this.form.remote_server_id), 600);
+        },
+        metric(value, unit) {
+            if (value === null || value === undefined || Number.isNaN(Number(value))) { return 'نامشخص'; }
+            return Number(value).toLocaleString('fa-IR', { maximumFractionDigits: 2 }) + ' ' + unit;
         },
         async fetchSuggestedInfrastructure() {
             if (!this.form.remote_server_id) { return; }

@@ -49,9 +49,21 @@ class CalculateSiteResourcesCommand extends Command
             try {
                 $metrics = $this->calculator->calculate($site, $dryRun);
 
+                // Alerts first (2026-11-19): they advance the soft-disk grace
+                // state, which the summary pushed below then carries.
+                $usage = null;
+                if (!$dryRun) {
+                    $usage = SiteResourceUsage::where('site_id', $site->id)->first();
+                    $limit = SiteResourceLimit::defaultForSite($site);
+                    if ($usage) {
+                        $this->alertService->checkAndAlertStorage($site, $usage, $limit);
+                        $usage->refresh();
+                    }
+                }
+
                 if ($push && !$dryRun) {
                     try {
-                        $this->calculator->pushSummaryToCustomerSite($site, $metrics);
+                        $this->calculator->pushSummaryToCustomerSite($site, $metrics, $usage);
                     } catch (\Throwable $pushErr) {
                         // GAP-M08: notify platform admin on push failure
                         $this->alertService->alertPushFailed($site, $pushErr->getMessage());
@@ -59,17 +71,8 @@ class CalculateSiteResourcesCommand extends Command
                     }
                 }
 
-                // Check alerts
-                if (!$dryRun) {
-                    $usage = SiteResourceUsage::where('site_id', $site->id)->first();
-                    $limit = SiteResourceLimit::defaultForSite($site);
-                    if ($usage) {
-                        $this->alertService->checkAndAlertStorage($site, $usage, $limit);
-                    }
-                }
-
                 $processed++;
-                $this->line("  ✓ [{$site->id}] {$site->title} — DB: " . \App\Models\SiteResourceUsage::formatBytes($metrics['db_bytes']) . ", فایل: " . \App\Models\SiteResourceUsage::formatBytes($metrics['storage_bytes']));
+                $this->line("  ✓ [{$site->id}] {$site->title} — DB: " . \App\Models\SiteResourceUsage::formatBytes($metrics['db_bytes']) . ", فایل: " . ($metrics['storage_bytes'] === null ? 'اندازه‌گیری نشده' : \App\Models\SiteResourceUsage::formatBytes($metrics['storage_bytes'])));
             } catch (\Throwable $e) {
                 $errors++;
                 $this->warn("  ✗ [{$site->id}] {$site->title}: {$e->getMessage()}");
