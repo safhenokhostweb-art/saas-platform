@@ -40,9 +40,15 @@ class OnboardingDnsPreflightTest extends TestCase
 
     private function publicServer(string $host = self::SERVER_IP): CustomerRemoteServer
     {
-        return CustomerRemoteServer::create([
+        $server = CustomerRemoteServer::create([
             'label' => 'Prod', 'type' => 'fake', 'host' => $host, 'port' => 22, 'username' => 'deploy', 'auth_method' => 'key',
         ]);
+        // Registered hardware: the capacity guard no longer invents specs.
+        \App\Models\Infrastructure\InfraServer::firstOrCreate(['ip_address' => $host], [
+            'name' => 'Prod ' . $host, 'hostname' => $host, 'cpu_cores' => 8, 'ram_gb' => 16, 'disk_gb' => 250, 'is_active' => true,
+        ]);
+
+        return $server;
     }
 
     private function dns(FakeDnsResolver $dns): void

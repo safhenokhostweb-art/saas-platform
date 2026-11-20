@@ -6,6 +6,7 @@ use App\Models\Site;
 use App\Models\SiteResourceUsage;
 use App\Models\SiteStorageSnapshot;
 use App\Models\SiteBandwidthUsage;
+use App\Services\DevOps\TenantResourceGovernor;
 use App\Services\Infrastructure\Monitoring\InfrastructureErrorCollector;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -22,8 +23,18 @@ class SiteResourceCalculatorService
      */
     public function calculate(Site $site, bool $dryRun = false): array
     {
+        // 2026-11-19 (P1): storage is the web root's REAL disk usage as
+        // measured by TenantResourceGovernor (du over the site's own
+        // connection). It used to be row counts x fixed averages (150 KB per
+        // post...), so every 70/80/95% alert fired on invented numbers.
+        // When no fresh measurement exists, storage_bytes is null and no
+        // threshold alert is raised.
+        $measured = $this->measuredDiskUsage($site, $dryRun);
+
         $metrics = [
-            'storage_bytes'  => 0,
+            'storage_bytes'  => $measured['bytes'],
+            'storage_measured'    => $measured['bytes'] !== null,
+            'storage_measured_at' => $measured['at']?->toDateTimeString(),
             'db_bytes'       => 0,
             'backup_bytes'   => 0,
             'archive_bytes'  => 0,
@@ -36,7 +47,6 @@ class SiteResourceCalculatorService
             $metrics['db_bytes']      = $this->getDatabaseBytes($site);
             $metrics['archive_bytes'] = $this->getArchiveBytes($site);
             $metrics['backup_bytes']  = $this->getBackupBytes($site);
-            $metrics['storage_bytes'] = $this->getStorageBytes($site);
             $metrics['file_count']    = $this->getFileCount($site);
 
             $bw = SiteBandwidthUsage::currentMonthForSite($site->id);
@@ -77,48 +87,34 @@ class SiteResourceCalculatorService
         }
     }
 
+    /** Measurements older than this are not trusted for alerts (governor runs every 6h). */
+    public const MEASUREMENT_MAX_AGE_HOURS = 26;
+
     /**
-     * Sum sizes of files uploaded to the customer site (tracked via DB records).
+     * The latest real web-root measurement: the governor's if fresh, else a
+     * one-off audit now. Never an estimate.
+     *
+     * @return array{bytes: ?int, at: ?\Illuminate\Support\Carbon}
      */
-    public function getStorageBytes(Site $site): int
+    public function measuredDiskUsage(Site $site, bool $dryRun = false): array
     {
-        if (empty($site->db_name)) return 0;
+        $usage = SiteResourceUsage::where('site_id', $site->id)->first();
+        if ($usage?->disk_usage_bytes !== null
+            && $usage->disk_audited_at !== null
+            && $usage->disk_audited_at->gt(now()->subHours(self::MEASUREMENT_MAX_AGE_HOURS))) {
+            return ['bytes' => (int) $usage->disk_usage_bytes, 'at' => $usage->disk_audited_at];
+        }
 
         try {
-            $conn = $this->openSiteConnection($site);
-            $db   = DB::connection($conn);
-            $total = 0;
-
-            // Sum image/file columns across key tables where customers upload files
-            $tableSources = [
-                ['table' => 'posts',     'columns' => ['image']],
-                ['table' => 'products',  'columns' => ['image', 'gallery']],
-                ['table' => 'courses',   'columns' => ['image', 'video_url']],
-                ['table' => 'site_uploads', 'columns' => ['path']],
-            ];
-
-            foreach ($tableSources as $source) {
-                try {
-                    if (!$db->getSchemaBuilder()->hasTable($source['table'])) continue;
-                    $count = $db->table($source['table'])->count();
-                    // Estimate average sizes per content type
-                    $avgBytes = match ($source['table']) {
-                        'posts'        => 150_000,
-                        'products'     => 300_000,
-                        'courses'      => 500_000,
-                        'site_uploads' => 200_000,
-                        default        => 100_000,
-                    };
-                    $total += $count * $avgBytes;
-                } catch (\Throwable) {}
+            $audit = app(TenantResourceGovernor::class)->audit($site, persist: ! $dryRun);
+            if (($audit['ok'] ?? false) && $audit['disk_usage_bytes'] !== null) {
+                return ['bytes' => (int) $audit['disk_usage_bytes'], 'at' => now()];
             }
-
-            $this->closeSiteConnection($conn);
-            return $total;
         } catch (\Throwable $e) {
-            Log::debug("ResourceCalculator: getStorageBytes failed for site {$site->id}: " . $e->getMessage());
-            return 0;
+            Log::info("ResourceCalculator: disk audit failed for site {$site->id}: " . $e->getMessage());
         }
+
+        return ['bytes' => null, 'at' => $usage?->disk_audited_at];
     }
 
     /**
@@ -194,25 +190,30 @@ class SiteResourceCalculatorService
     {
         $existing = SiteResourceUsage::where('site_id', $site->id)->first();
 
-        $data = array_merge($metrics, ['calculated_at' => now()]);
+        $data = array_merge(
+            array_diff_key($metrics, array_flip(['storage_measured', 'storage_measured_at'])),
+            ['calculated_at' => now()],
+        );
+        if ($metrics['storage_bytes'] === null) {
+            unset($data['storage_bytes']); // unmeasured: keep the last real figure, never write an estimate
+        }
 
         if ($existing) {
-            // Reset alert flags if storage dropped (e.g., customer deleted files)
+            // Reset hard-threshold flags only on a real measurement below 80%.
             $limit = \App\Models\SiteResourceLimit::defaultForSite($site);
-            $pct   = $limit->storage_limit_bytes > 0
-                ? ($metrics['storage_bytes'] / $limit->storage_limit_bytes) * 100
-                : 0;
-            if ($pct < config('resource_governance.alert_warning_percent', 80)) {
+            $hard  = (int) ($limit->disk_hard_limit_bytes ?: $limit->storage_limit_bytes);
+            if ($metrics['storage_bytes'] !== null && $hard > 0
+                && ($metrics['storage_bytes'] / $hard) * 100 < config('resource_governance.alert_warning_percent', 80)) {
                 $data['alerted_80'] = false;
                 $data['alerted_95'] = false;
             }
             $existing->update($data);
         } else {
-            SiteResourceUsage::create(array_merge(['site_id' => $site->id], $data));
+            SiteResourceUsage::create(array_merge(['site_id' => $site->id, 'storage_bytes' => 0], $data));
         }
 
         SiteStorageSnapshot::upsertToday($site->id, [
-            'storage_bytes' => $metrics['storage_bytes'],
+            'storage_bytes' => $metrics['storage_bytes'] ?? (int) ($existing?->storage_bytes ?? 0),
             'db_bytes'      => $metrics['db_bytes'],
             'backup_bytes'  => $metrics['backup_bytes'],
             'archive_bytes' => $metrics['archive_bytes'],
@@ -260,11 +261,23 @@ class SiteResourceCalculatorService
             $ramLimit  = (int) ($limit->memory_limit_bytes ?: 1073741824);
             $cpuLimit  = (float) ($limit->cpu_cores_limit ?: 1.0);
 
-            $usedBytes = $metrics['storage_bytes'] ?? 0;
-            $pct = $hardLimit > 0 ? round(($usedBytes / $hardLimit) * 100, 1) : 0;
-            $softPct = $softLimit > 0 ? round(($usedBytes / $softLimit) * 100, 1) : 0;
+            $usage = $usage ?? SiteResourceUsage::where('site_id', $site->id)->first();
+            $measuredBytes = $metrics['storage_bytes'] ?? null;
+            $usedBytes = (int) ($measuredBytes ?? 0);
+            $pct = ($measuredBytes !== null && $hardLimit > 0) ? round(($usedBytes / $hardLimit) * 100, 1) : null;
+            $softPct = ($measuredBytes !== null && $softLimit > 0) ? round(($usedBytes / $softLimit) * 100, 1) : null;
+            $graceDays = (int) config('resource_governance.soft_disk_grace_days', 7);
+            $softSince = $usage?->soft_exceeded_at;
 
             $summary = json_encode([
+                'storage_measured'      => $measuredBytes !== null,
+                'measured_at'           => $metrics['storage_measured_at'] ?? null,
+                'warning_percent'       => (int) config('resource_governance.alert_warning_percent', 80),
+                'critical_percent'      => (int) config('resource_governance.alert_critical_percent', 95),
+                'soft_exceeded_at'      => $softSince?->toIso8601String(),
+                'soft_grace_days'       => $graceDays,
+                'soft_grace_ends_at'    => $softSince?->copy()->addDays($graceDays)->toIso8601String(),
+                'soft_grace_expired'    => $usage?->soft_grace_escalated_at !== null,
                 'storage_pct'           => $pct,
                 'storage_bytes'         => $usedBytes,
                 'storage_limit'         => $hardLimit,
@@ -295,43 +308,9 @@ class SiteResourceCalculatorService
                 ]);
             }
 
-            // Sync Warning notification & activity log to customer dashboard if threshold reached (80% or soft limit)
-            if ($pct >= 80.0 || $usedBytes >= $softLimit) {
-                $level = $pct >= 95.0 ? 'critical' : 'warning';
-                $title = $level === 'critical' ? '🚨 بحران فضا: ظرفیت سایت در آستانه تکمیل' : '⚠️ هشدار فضا: مصرف منابع سایت به آستانه هشدار رسید';
-                $body  = "مصرف دیسک سایت شما به {$pct}٪ از سقف مجاز رسیده است. برای جلوگیری از اختلال در بارگذاری فایل‌ها، فضای خود را ارتقا دهید.";
-
-                // Insert into customer-site's admin_notifications if table exists
-                try {
-                    $alreadyNotifiedToday = $db->table('admin_notifications')
-                        ->where('type', 'resource_warning')
-                        ->where('created_at', '>=', now()->subHours(24))
-                        ->exists();
-
-                    if (!$alreadyNotifiedToday) {
-                        $db->table('admin_notifications')->insert([
-                            'type'       => 'resource_warning',
-                            'title'      => $title,
-                            'body'       => $body,
-                            'link'       => '/account/resources',
-                            'is_read'    => false,
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]);
-                    }
-                } catch (\Throwable) {}
-
-                // Insert into customer-site's admin_activity_log if table exists
-                try {
-                    $db->table('admin_activity_log')->insert([
-                        'action'      => 'resource_threshold_warning',
-                        'description' => "هشدار مصرف منابع سخت‌افزاری ({$pct}٪)",
-                        'properties'  => json_encode(['storage_pct' => $pct, 'used_bytes' => $usedBytes, 'level' => $level]),
-                        'created_at'  => now(),
-                        'updated_at'  => now(),
-                    ]);
-                } catch (\Throwable) {}
-            }
+            // Threshold notifications/activity on the customer site are written
+            // per state transition by SiteResourceAlertService (recordCustomerSiteEvent),
+            // not on every daily push from an estimate as before.
 
             // Clear settings cache
             try {
@@ -342,6 +321,49 @@ class SiteResourceCalculatorService
         } catch (\Throwable $e) {
             // GAP-M08: re-throw so caller can fire platform admin notification
             throw $e;
+        }
+    }
+
+    /**
+     * Two-way logging: record a resource event on the customer site itself
+     * (its admin inbox and its admin activity log), over the same connection
+     * the summary push uses. Returns false when the site DB is unreachable;
+     * the platform-side log is written by the caller regardless.
+     *
+     * @param  array<string, mixed>  $properties
+     */
+    public function recordCustomerSiteEvent(Site $site, string $type, string $title, string $body, array $properties = []): bool
+    {
+        if (empty($site->db_name)) {
+            return false;
+        }
+
+        try {
+            $conn = $this->openSiteConnection($site);
+            $db = DB::connection($conn);
+            try {
+                $db->table('admin_notifications')->insert([
+                    'type' => mb_substr($type, 0, 40), 'title' => $title, 'body' => $body,
+                    'link' => '/account/resources', 'is_read' => false,
+                    'created_at' => now(), 'updated_at' => now(),
+                ]);
+            } catch (\Throwable) {
+            }
+            try {
+                $db->table('admin_activity_log')->insert([
+                    'action' => $type, 'description' => $title,
+                    'properties' => json_encode($properties, JSON_UNESCAPED_UNICODE),
+                    'created_at' => now(), 'updated_at' => now(),
+                ]);
+            } catch (\Throwable) {
+            }
+            $this->closeSiteConnection($conn);
+
+            return true;
+        } catch (\Throwable $e) {
+            Log::warning("ResourceCalculator: customer-site event '{$type}' not recorded for site {$site->id}: " . $e->getMessage());
+
+            return false;
         }
     }
 

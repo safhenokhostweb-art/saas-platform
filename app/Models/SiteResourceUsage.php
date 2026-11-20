@@ -26,12 +26,18 @@ class SiteResourceUsage extends Model
         'ram_weight',
         'alerted_80',
         'alerted_95',
+        'soft_exceeded_at',
+        'alerted_soft',
+        'soft_grace_escalated_at',
         'calculated_at',
     ];
 
     protected $casts = [
         'alerted_80'    => 'boolean',
         'alerted_95'    => 'boolean',
+        'alerted_soft'  => 'boolean',
+        'soft_exceeded_at'        => 'datetime',
+        'soft_grace_escalated_at' => 'datetime',
         'calculated_at' => 'datetime',
         'disk_audited_at' => 'datetime',
     ];
