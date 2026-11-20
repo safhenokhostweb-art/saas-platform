@@ -5,6 +5,7 @@ namespace App\Services\CustomerInstallation;
 use App\Models\CustomerInstallationPackage;
 use App\Models\CustomerRemoteServer;
 use App\Models\Infrastructure\DnsProviderSetting;
+use App\Services\CustomerInstallation\Dns\DnsPreflightResult;
 use App\Services\CustomerInstallation\Dns\DomainDnsPreflight;
 use App\Services\CustomerInstallation\Dns\ServerPublicIpResolver;
 use App\Services\CustomerInstallation\Enums\DriverType;
@@ -29,6 +30,15 @@ class InstallationTargetGuard
      */
     public function dnsPreflightError(string $domain, CustomerRemoteServer $server, bool $sslEnabled): ?string
     {
+        return $this->dnsPreflight($domain, $server, $sslEnabled)?->error;
+    }
+
+    /**
+     * The full submit-time result, or null when the decision is left to the
+     * pipeline (a platform subdomain on a server without a known public IP).
+     */
+    public function dnsPreflight(string $domain, CustomerRemoteServer $server, bool $sslEnabled): ?DnsPreflightResult
+    {
         $serverIp = $this->serverIps->forServer($server);
 
         // Without SSH only the server record's host is known. When it is not
@@ -38,7 +48,7 @@ class InstallationTargetGuard
             return null;
         }
 
-        return $this->dnsPreflight->check($domain, $serverIp, $sslEnabled)->error;
+        return $this->dnsPreflight->check($domain, $serverIp, $sslEnabled);
     }
 
     /** Persian error when the server's driver cannot run an installation, else null. */
@@ -98,11 +108,17 @@ class InstallationTargetGuard
      */
     public function customDomainDnsError(string $domain): ?string
     {
+        return $this->customDomainDnsCheck($domain)?->error;
+    }
+
+    /** Server-independent live check of a custom domain; null for a platform subdomain. */
+    public function customDomainDnsCheck(string $domain): ?DnsPreflightResult
+    {
         $domain = preg_replace('#^https?://#i', '', rtrim($domain, '/'));
         if ($this->isPlatformSubdomain($domain)) {
             return null;
         }
 
-        return $this->dnsPreflight->check($domain, null, false)->error;
+        return $this->dnsPreflight->check($domain, null, false);
     }
 }

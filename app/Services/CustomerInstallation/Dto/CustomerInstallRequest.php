@@ -43,6 +43,10 @@ class CustomerInstallRequest
         public readonly ?float  $softDiskGb = null,
         public readonly float   $cpuCores = 1.0,
         public readonly float   $bandwidthGb = 10.0,
+        // A custom domain registered before its DNS reaches the server:
+        // VALIDATE_DOMAIN_DNS passes with a warning and ISSUE_SSL waits
+        // (status awaiting_dns) instead of failing the installation.
+        public readonly bool    $dnsPending = false,
     ) {}
 
     public static function fromArray(array $data): self
@@ -82,6 +86,7 @@ class CustomerInstallRequest
             softDiskGb:           isset($data['soft_disk_gb']) ? (float) $data['soft_disk_gb'] : null,
             cpuCores:             (float) ($data['cpu_cores'] ?? 1.0),
             bandwidthGb:          (float) ($data['bandwidth_gb'] ?? 10.0),
+            dnsPending:           (bool) ($data['dns_pending'] ?? false),
         );
     }
 
@@ -122,6 +127,7 @@ class CustomerInstallRequest
             'soft_disk_gb'          => $this->softDiskGb,
             'cpu_cores'             => $this->cpuCores,
             'bandwidth_gb'          => $this->bandwidthGb,
+            'dns_pending'           => $this->dnsPending,
         ];
     }
 }

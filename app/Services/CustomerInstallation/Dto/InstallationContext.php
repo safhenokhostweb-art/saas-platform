@@ -11,6 +11,23 @@ class InstallationContext
 {
     public array $stageOutputs = [];
     public array $rollbackStack = [];
+
+    /**
+     * Extra names for the certificate of $request->domain (the www name when
+     * it points here). Set by IssueSslStage, read by VpsSslProvisioner.
+     *
+     * @var list<string>
+     */
+    public array $certificateAliases = [];
+
+    /**
+     * Extra hosts the vhost answers and 301-redirects to $request->domain: a
+     * site's previous domains after a domain change (SiteDomainProvisioner).
+     * The domain's own www name is added by NginxVhostWriter itself.
+     *
+     * @var list<string>
+     */
+    public array $vhostAliases = [];
     private ?string $resolvedWebRoot = null;
 
     /**

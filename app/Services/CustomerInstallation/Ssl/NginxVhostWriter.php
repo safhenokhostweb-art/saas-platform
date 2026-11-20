@@ -2,6 +2,7 @@
 
 namespace App\Services\CustomerInstallation\Ssl;
 
+use App\Services\CustomerInstallation\Dns\DomainDnsPreflight;
 use App\Services\CustomerInstallation\Dto\InstallationContext;
 use App\Services\CustomerInstallation\Dto\StageResult;
 
@@ -29,14 +30,18 @@ class NginxVhostWriter
 
     private readonly ArvanRealIpSnippet $realIpSnippet;
 
+    private readonly DomainDnsPreflight $preflight;
+
     public function __construct(
         private readonly ArvanCdnDomainDecider $arvanDecider,
         private readonly VpsSslProvisioner     $sslProvisioner,
         ?NginxVhostTemplate $template = null,
         ?ArvanRealIpSnippet $realIpSnippet = null,
+        ?DomainDnsPreflight $preflight = null,
     ) {
         $this->template = $template ?? new NginxVhostTemplate();
         $this->realIpSnippet = $realIpSnippet ?? new ArvanRealIpSnippet();
+        $this->preflight = $preflight ?? app(DomainDnsPreflight::class);
     }
 
     public function write(InstallationContext $ctx): StageResult
@@ -90,7 +95,20 @@ class NginxVhostWriter
             ? ArvanRealIpSnippet::STATUS_PRESENT
             : ArvanRealIpSnippet::STATUS_INSTALLED;
 
-        $nginxConfig = $this->template->render($domain, $webRoot, $phpFpmSocket, $sslPaths);
+        // Hosts answered next to the domain and redirected to it: its www
+        // name (customer domains) and, after a domain change, the previous
+        // domains. With a real certificate on a non-CDN domain, port 80 only
+        // redirects to HTTPS; aliases the certificate covers get a 443
+        // redirect block too.
+        $redirectHosts = array_values(array_unique(array_filter([
+            $this->preflight->wwwAlias($domain),
+            ...$ctx->vhostAliases,
+        ])));
+        $arvanManaged = $this->arvanDecider->isManagedByArvan($domain);
+        $forceHttps = $sslPaths !== null && !$arvanManaged;
+        $httpsRedirects = $forceHttps ? $this->httpsRedirectGroups($ctx, $domain, $redirectHosts) : [];
+
+        $nginxConfig = $this->template->render($domain, $webRoot, $phpFpmSocket, $sslPaths, $redirectHosts, $forceHttps, $httpsRedirects);
         $encoded     = base64_encode($nginxConfig);
 
         // Write nginx config
@@ -123,6 +141,9 @@ class NginxVhostWriter
             'ssl_enabled'       => $req->sslEnabled,
             'ssl_block_written' => $sslPaths !== null,
             'real_ip_snippet'   => $snippetStatus,
+            'redirect_hosts'    => $redirectHosts,
+            'force_https'       => $forceHttps,
+            'https_redirects'   => array_merge([], ...array_column($httpsRedirects, 'names')),
         ], [
             'config_path' => $configPath,
             'enable_path' => $enablePath,
@@ -154,6 +175,57 @@ class NginxVhostWriter
             'cert' => "/etc/letsencrypt/live/{$domain}/fullchain.pem",
             'key'  => "/etc/letsencrypt/live/{$domain}/privkey.pem",
         ];
+    }
+
+    /**
+     * 443 redirect blocks for alias hosts some certificate on the server
+     * covers: the domain's own lineage (its www name) first, then a lineage
+     * named after the alias or its bare domain (a previous domain's own
+     * certificate), then the shared CDN certificate for a platform
+     * subdomain. Aliases no certificate covers are redirected on port 80 only.
+     *
+     * @param list<string> $aliases
+     * @return list<array{names: list<string>, cert: string, key: string}>
+     */
+    private function httpsRedirectGroups(InstallationContext $ctx, string $domain, array $aliases): array
+    {
+        if ($aliases === []) {
+            return [];
+        }
+
+        $groups = [];
+        $remaining = $aliases;
+        $lineages = array_values(array_unique([$domain, ...$aliases, ...array_map(
+            fn (string $a) => str_starts_with($a, 'www.') ? substr($a, 4) : $a,
+            $aliases,
+        )]));
+
+        foreach ($lineages as $lineage) {
+            if ($remaining === []) {
+                break;
+            }
+            $covered = array_values(array_intersect($remaining, $this->sslProvisioner->certificateNames($ctx, $lineage)));
+            if ($covered === []) {
+                continue;
+            }
+            $groups[] = [
+                'names' => $covered,
+                'cert'  => "/etc/letsencrypt/live/{$lineage}/fullchain.pem",
+                'key'   => "/etc/letsencrypt/live/{$lineage}/privkey.pem",
+            ];
+            $remaining = array_values(array_diff($remaining, $covered));
+        }
+
+        $cdn = array_values(array_filter($remaining, fn (string $a) => $this->arvanDecider->isManagedByArvan($a)));
+        if ($cdn !== []) {
+            $groups[] = [
+                'names' => $cdn,
+                'cert'  => config('customer_installation.nginx.ssl_cert', '/etc/ssl/safhenokhost/safhenokhost.crt'),
+                'key'   => config('customer_installation.nginx.ssl_key', '/etc/ssl/safhenokhost/safhenokhost.key'),
+            ];
+        }
+
+        return $groups;
     }
 
     private function detectPhpFpmSocket(InstallationContext $ctx): string

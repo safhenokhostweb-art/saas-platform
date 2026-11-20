@@ -31,6 +31,27 @@ class FakeDnsResolver implements DnsResolver
         return $this;
     }
 
+    /** @var array<string, DnsLookup> AAAA answers; any other host has none. */
+    private array $aaaa = [];
+
+    /** @var list<string> */
+    public array $aaaaQueries = [];
+
+    public function setAaaa(string $host, DnsLookup $lookup): self
+    {
+        $this->aaaa[strtolower($host)] = $lookup;
+
+        return $this;
+    }
+
+    public function lookupAAAA(string $host): DnsLookup
+    {
+        $host = strtolower($host);
+        $this->aaaaQueries[] = $host; // kept apart: tests assert $queries exactly
+
+        return $this->aaaa[$host] ?? DnsLookup::notFound();
+    }
+
     public function setWildcard(string $parentZone, DnsLookup $lookup): self
     {
         $this->wildcards[strtolower($parentZone)] = $lookup;

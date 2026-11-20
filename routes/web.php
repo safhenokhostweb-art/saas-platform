@@ -483,6 +483,7 @@ Route::prefix('admin')
                 Route::get('/', 'create')->name('create');
                 Route::get('/lookup-customer', 'lookupCustomer')->middleware('throttle:60,1')->name('lookup-customer');
                 Route::get('/check-domain', 'checkDomain')->middleware('throttle:60,1')->name('check-domain');
+                Route::get('/check-dns', 'checkDns')->middleware('throttle:30,1')->name('check-dns');
                 Route::get('/server-capacity', 'serverCapacity')->middleware('throttle:60,1')->name('server-capacity');
                 Route::get('/suggest-infrastructure', 'suggestInfrastructure')->middleware('throttle:60,1')->name('suggest-infrastructure');
                 Route::post('/', 'store')->middleware('throttle:10,1')->name('store');
@@ -522,6 +523,15 @@ Route::prefix('admin')
         Route::get('sites/{site}/agent/password', [\App\Http\Controllers\Admin\PlatformSiteAgentController::class, 'revealPassword'])->name('sites.agents.reveal-password');
         Route::post('sites/{site}/agent/log-access', [\App\Http\Controllers\Admin\PlatformSiteAgentController::class, 'logAccess'])->name('sites.agents.log-access');
         Route::delete('sites/{site}/agent', [\App\Http\Controllers\Admin\PlatformSiteAgentController::class, 'revoke'])->name('sites.agents.revoke');
+        // Phase 3 — site domain panel (DNS check, SSL, custom domain).
+        Route::scopeBindings()->controller(\App\Http\Controllers\Admin\SiteDomainController::class)->group(function () {
+            Route::get('sites/{site}/domain', 'show')->name('sites.domain.show');
+            Route::post('sites/{site}/domain', 'store')->middleware('throttle:10,1')->name('sites.domain.store');
+            Route::post('sites/{site}/domain/{siteDomain}/check', 'check')->middleware('throttle:20,1')->name('sites.domain.check');
+            Route::post('sites/{site}/domain/{siteDomain}/ssl', 'ssl')->middleware('throttle:5,1')->name('sites.domain.ssl');
+            Route::post('sites/{site}/domain/{siteDomain}/activate', 'activate')->middleware('throttle:5,1')->name('sites.domain.activate');
+            Route::delete('sites/{site}/domain/{siteDomain}', 'destroy')->middleware('throttle:10,1')->name('sites.domain.destroy');
+        });
         Route::get('sites/{site}/modules', [SiteModuleController::class, 'edit'])->name('sites.modules.edit');
         Route::put('sites/{site}/modules', [SiteModuleController::class, 'update'])->name('sites.modules.update');
         Route::post('sites/{site}/modules/toggle', [SiteModuleController::class, 'toggle'])->name('sites.modules.toggle');

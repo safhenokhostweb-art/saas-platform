@@ -533,7 +533,7 @@
         {{-- ── Step 2: site & domain ──────────────────────────────────── --}}
         <section class="ob-card" x-show="step === 2" x-cloak aria-labelledby="ob-s2">
             <h2 id="ob-s2">سایت و دامنه</h2>
-            <p class="ob-lead">رکورد DNS زیردامنه‌های پلتفرم خودکار ساخته می‌شود. دامنهٔ اختصاصی باید از قبل به سرور اشاره کند.</p>
+            <p class="ob-lead">رکورد DNS زیردامنه‌های پلتفرم خودکار ساخته می‌شود. دامنهٔ اختصاصی مشتری (ایرنیک یا بین‌المللی) را حتی اگر DNS آن هنوز تنظیم نشده ثبت کنید؛ راهنمای رکوردها پس از انتخاب سرور در مرحلهٔ ۵ نمایش داده می‌شود.</p>
 
             <div class="ob-grid">
                 <div class="ob-field">
@@ -568,6 +568,9 @@
                             <span class="ob-ltr" x-text="domain.domain"></span> آزاد است<span x-show="domain.platform"> — DNS خودکار ساخته می‌شود</span>.
                         </p>
                         <p class="ob-err" x-show="domain.state === 'error'" x-cloak x-text="domain.error"></p>
+                        <div class="ob-panel ob-panel-warn" x-show="domain.state === 'warn'" x-cloak role="status" data-testid="domain-dns-pending">
+                            <strong>در انتظار DNS:</strong> <span x-text="domain.warning"></span>
+                        </div>
                     </div>
                     @error('domain')<p class="ob-err">{{ $message }}</p>@enderror
                 </div>
@@ -758,6 +761,45 @@
                         هنوز سروری ثبت نشده است. <a href="{{ route('admin.infrastructure.customer-deployment.servers.create') }}" target="_blank" rel="noopener" style="font-weight:700;text-decoration:underline">افزودن سرور</a>
                     </div>
                     @error('remote_server_id')<p class="ob-err">{{ $message }}</p>@enderror
+                </div>
+
+                {{-- Phase 3: DNS guide for a customer's own domain, once the server (and so its IP) is known --}}
+                <div class="ob-field" x-show="form.domain_mode === 'custom' && form.remote_server_id" x-cloak data-testid="dns-guide-step5">
+                    <div class="ob-panel" role="region" aria-labelledby="ob-dns-guide">
+                        <strong id="ob-dns-guide">راهنمای اتصال دامنهٔ <span class="ob-ltr" x-text="domain.domain || form.domain"></span></strong>
+                        <template x-if="selectedServer()?.public_ip">
+                            <div>
+                                <p class="ob-hint" style="margin-block:.4rem">در پنل DNS دامنه این رکوردها را بسازید:</p>
+                                <table class="ob-dns-table" style="width:100%;font-size:.85rem;border-collapse:collapse">
+                                    <thead><tr><th style="text-align:start">نوع</th><th style="text-align:start">نام</th><th style="text-align:start">مقدار (IP سرور)</th><th style="text-align:start">وضعیت</th></tr></thead>
+                                    <tbody>
+                                        <template x-for="name in ['@', 'www']" :key="name">
+                                            <tr>
+                                                <td class="ob-ltr">A</td>
+                                                <td class="ob-ltr" x-text="name"></td>
+                                                <td class="ob-ltr" x-text="selectedServer().public_ip"></td>
+                                                <td x-text="dnsRecordLabel(name)"></td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </template>
+                        <p class="ob-err" x-show="!selectedServer()?.public_ip" x-cloak>IP عمومی این سرور مشخص نیست؛ در تنظیمات سرور، آدرس (host) را IP عمومی آن قرار دهید.</p>
+                        <ul class="ob-hint" style="margin:.5rem 0 0;padding-inline-start:1.1rem;line-height:1.9">
+                            <li><strong>‎.ir‎ (ایرنیک):</strong> ایرنیک فقط NS دامنه را نگه می‌دارد؛ رکوردهای A را در سرویسی بسازید که NSهای ثبت‌شده در nic.ir به آن تعلق دارند (مثلاً DNS ابرآروان یا هاست شما).</li>
+                            <li><strong>‎.com / .net / .org‎:</strong> رکوردها را در بخش DNS Management ثبت‌کننده یا سرویس DNS فعلی دامنه بسازید.</li>
+                            <li>رکورد AAAA (IPv6) نامرتبط با این سرور را حذف کنید؛ وگرنه SSL صادر نمی‌شود.</li>
+                            <li>اگر DNS هنوز آماده نیست، ادامه دهید: سایت در وضعیت «در انتظار DNS» ساخته می‌شود و اتصال و SSL بعداً از بخش «دامنه» در صفحهٔ سایت انجام می‌شود.</li>
+                        </ul>
+                        <div style="display:flex;gap:.5rem;align-items:center;margin-top:.6rem;flex-wrap:wrap">
+                            <button type="button" class="ob-btn ob-btn-ghost" @click="checkDns()" :disabled="dns.state === 'loading'" data-testid="check-dns-step5">بررسی اتصال</button>
+                            <span class="ob-hint" x-show="dns.state === 'loading'" x-cloak>در حال بررسی…</span>
+                            <span class="ob-ok-text" x-show="dns.state === 'done' && dns.records[0]?.ok" x-cloak>دامنه به این سرور متصل است.</span>
+                            <span class="ob-err" x-show="dns.state === 'done' && !dns.records[0]?.ok" x-cloak x-text="dns.records[0]?.message || 'هنوز به این سرور متصل نیست.'"></span>
+                            <span class="ob-err" x-show="dns.state === 'error'" x-cloak x-text="dns.error"></span>
+                        </div>
+                    </div>
                 </div>
 
                 {{-- Live Server Capacity Monitor Banner --}}
@@ -1001,7 +1043,9 @@ function onboardingWizard(options, initial, prefill, errorStep) {
         touched: { step1: false, step2: false },
         stepLabels: ['مشتری', 'سایت و دامنه', 'لایسنس و کیت', 'قالب', 'سرور', 'بازبینی'],
         customer: { state: 'idle', data: null, mobile: null, seq: 0 },
-        domain: { state: 'idle', domain: null, error: null, platform: false, seq: 0 },
+        domain: { state: 'idle', domain: null, error: null, warning: null, platform: false, seq: 0 },
+        dns: { state: 'idle', records: [], server_ip: null, error: null, seq: 0 },
+        dnsUrl: @js(route('admin.onboarding.check-dns')),
         lookupUrl: @js(route('admin.onboarding.lookup-customer')),
         domainUrl: @js(route('admin.onboarding.check-domain')),
 
@@ -1066,8 +1110,31 @@ function onboardingWizard(options, initial, prefill, errorStep) {
         },
 
         // Infrastructure & Capacity methods
+        selectedServer() { return this.options.servers.find(s => s.id === this.form.remote_server_id) || null; },
+        dnsRecordLabel(name) {
+            if (this.dns.state !== 'done') { return '—'; }
+            const r = this.dns.records.find(x => x.name === name);
+            return r ? (r.ok ? 'متصل' : 'متصل نیست') : '—';
+        },
+        async checkDns() {
+            const value = (this.form.domain || '').trim();
+            if (!value || !this.form.remote_server_id) { return; }
+            const seq = ++this.dns.seq;
+            this.dns.state = 'loading';
+            try {
+                const q = new URLSearchParams({ mode: this.form.domain_mode, domain: value, server_id: this.form.remote_server_id, ssl: this.form.ssl_enabled ? 1 : 0 });
+                const res = await fetch(this.dnsUrl + '?' + q, { headers: { 'Accept': 'application/json' } });
+                const data = await res.json();
+                if (seq !== this.dns.seq) { return; }
+                if (!res.ok) { this.dns = { ...this.dns, state: 'error', error: data.error || 'بررسی DNS ممکن نشد.' }; return; }
+                this.dns = { ...this.dns, state: 'done', records: data.records || [], server_ip: data.server_ip, error: null };
+            } catch (e) {
+                if (seq === this.dns.seq) { this.dns = { ...this.dns, state: 'error', error: 'بررسی DNS ممکن نشد؛ دوباره تلاش کنید.' }; }
+            }
+        },
         async selectServer(serverId) {
             this.form.remote_server_id = serverId;
+            this.dns = { ...this.dns, state: 'idle', records: [] };
             await this.fetchServerCapacity(serverId);
             await this.fetchSuggestedInfrastructure();
         },
@@ -1175,7 +1242,8 @@ function onboardingWizard(options, initial, prefill, errorStep) {
                 if (!res.ok) { throw new Error(res.status); }
                 const data = await res.json();
                 if (seq !== this.domain.seq) { return; }
-                this.domain = { ...this.domain, state: data.ok ? 'ok' : 'error', domain: data.domain, error: data.error, platform: data.platform_subdomain };
+                this.domain = { ...this.domain, state: data.ok ? (data.dns_pending ? 'warn' : 'ok') : 'error', domain: data.domain, error: data.error, warning: data.warning, platform: data.platform_subdomain };
+                this.dns = { ...this.dns, state: 'idle', records: [] };
             } catch (e) {
                 if (seq === this.domain.seq) { this.domain = { ...this.domain, state: 'error', error: 'بررسی دامنه ممکن نشد؛ دوباره تلاش کنید.' }; }
             }
@@ -1236,7 +1304,7 @@ function onboardingWizard(options, initial, prefill, errorStep) {
                 if (this.customer.state === 'existing') { return !this.customer.data?.trashed; }
                 return this.customer.state === 'new' && this.form.customer_name.trim() !== '' && !unsafe.test(this.form.customer_name);
             }
-            if (n === 2) { return this.titleValid() && this.domain.state === 'ok'; }
+            if (n === 2) { return this.titleValid() && (this.domain.state === 'ok' || this.domain.state === 'warn'); }
             if (n === 5) { return this.form.remote_server_id !== null; }
             return true;
         },

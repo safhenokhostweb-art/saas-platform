@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\CustomerInstallation;
 use App\Services\CustomerInstallation\CustomerInstallationOrchestrator;
 use App\Services\CustomerInstallation\RollbackDispatcher;
+use App\Services\Domains\SiteDomainService;
 use App\Services\Infrastructure\SlackAlertService;
 use App\Services\ModuleUpdateEligibilityService;
 use App\Services\Onboarding\SiteTemplateBinder;
@@ -92,11 +93,24 @@ class CustomerInstallationPipelineJob implements ShouldQueue
         // touches an unrelated table (site_modules), not pipeline behavior.
         $this->syncModuleDeploymentStatus($installation->fresh());
 
+        // Phase 3: record the domain's DNS/SSL state for the site domain
+        // panel. Never fails the job: the installation itself is done.
+        $domains = app(SiteDomainService::class);
+        try {
+            $domains->recordFromInstallation($installation->fresh());
+        } catch (\Throwable $e) {
+            Log::warning('CIE: could not record site domain state', ['installation_id' => $installation->id, 'error' => $e->getMessage()]);
+        }
+
         // ADR-088: the theme assigned by INSTALL_THEME can only be pushed
         // onto the customer-site once CUSTOMER_READY has opened it (before
         // that, every request redirects to /install). No-op unless the
-        // installation completed with a binding waiting.
-        app(SiteTemplateBinder::class)->dispatchIfPending($installation);
+        // installation completed with a binding waiting. A domain still
+        // awaiting DNS cannot be reached: the push stays pending until the
+        // domain panel connects it (SiteDomainProvisioner).
+        if (!$domains->holdsTemplatePush($installation->fresh())) {
+            app(SiteTemplateBinder::class)->dispatchIfPending($installation);
+        }
     }
 
     /**

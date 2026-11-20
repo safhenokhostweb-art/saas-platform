@@ -254,6 +254,7 @@
             <a href="{{ route('admin.sites.index') }}" class="btn btn-secondary">انصراف</a>
             <a href="{{ route('admin.captcha.site', $site) }}" class="btn btn-outline-primary">تنظیمات کپچا این سایت</a>
             <a href="{{ route('admin.sites.modules.edit', $site) }}" class="btn btn-outline-primary">ماژول‌های این سایت</a>
+            <a href="{{ route('admin.sites.domain.show', $site) }}" class="btn btn-outline-primary">دامنه و SSL</a>
             <a href="{{ route('admin.sites.asset-access', $site) }}" class="btn btn-outline-primary">قالب‌ها و ویجت‌های اختصاصی</a>
             @if(\App\Helpers\PlatformModules::isEnabled('notifications'))
             <a href="{{ route('admin.sites.notifications.index', $site) }}" class="btn btn-outline-primary">اعلان‌های این سایت</a>

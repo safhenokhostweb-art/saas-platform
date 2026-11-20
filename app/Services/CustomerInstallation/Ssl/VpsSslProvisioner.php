@@ -27,6 +27,9 @@ use App\Services\CustomerInstallation\Ssl\Dto\SslStatus;
  */
 class VpsSslProvisioner implements SslProvisionerInterface
 {
+    /** Run by certbot after every successful issuance or renewal. */
+    public const DEPLOY_HOOK = 'systemctl reload nginx';
+
     /**
      * Phase 15-B1 — deliberately does NOT pre-check checkCertificate() before
      * running certbot: `certbot certonly` is itself idempotent (it skips
@@ -48,13 +51,22 @@ class VpsSslProvisioner implements SslProvisionerInterface
         }
 
         $webRoot = $ctx->webRoot();
-        $email   = $ctx->request->email;
+        $email   = trim($ctx->request->email);
         $bin     = config('customer_installation.ssl.certbot_bin', 'certbot');
 
+        // One lineage per site domain (--cert-name keeps the path at
+        // /etc/letsencrypt/live/{domain}/ when www is added later, --expand
+        // lets it grow). The deploy hook is stored in the renewal config, so
+        // certbot's own timer reloads nginx after every automatic renewal.
+        $names = array_values(array_unique(array_filter([$domain, ...$ctx->certificateAliases])));
+        $nameArgs = implode('', array_map(fn (string $name) => ' -d ' . escapeshellarg($name), $names));
+
         $cmd = escapeshellcmd($bin) . ' certonly --webroot -w ' . escapeshellarg($webRoot . '/public')
-            . ' -d ' . escapeshellarg($domain)
-            . ' --non-interactive --agree-tos -m ' . escapeshellarg($email)
-            . ' --no-eff-email 2>&1';
+            . ' --cert-name ' . escapeshellarg($domain) . $nameArgs . ' --expand'
+            . ' --non-interactive --agree-tos '
+            // The onboarding wizard records no email; certbot refuses -m ''.
+            . ($email !== '' ? '-m ' . escapeshellarg($email) : '--register-unsafely-without-email')
+            . ' --no-eff-email --deploy-hook ' . escapeshellarg(self::DEPLOY_HOOK) . ' 2>&1';
 
         $result = $ctx->connection->execute($cmd);
 
@@ -82,7 +94,8 @@ class VpsSslProvisioner implements SslProvisionerInterface
         }
 
         $bin = config('customer_installation.ssl.certbot_bin', 'certbot');
-        $cmd = escapeshellcmd($bin) . ' renew --cert-name ' . escapeshellarg($domain) . ' --non-interactive 2>&1';
+        $cmd = escapeshellcmd($bin) . ' renew --cert-name ' . escapeshellarg($domain)
+            . ' --non-interactive --deploy-hook ' . escapeshellarg(self::DEPLOY_HOOK) . ' 2>&1';
 
         $result = $ctx->connection->execute($cmd);
 
@@ -112,6 +125,28 @@ class VpsSslProvisioner implements SslProvisionerInterface
         } catch (\Throwable) {
             return SslStatus::unknown();
         }
+    }
+
+    /**
+     * DNS names (SANs) of the certificate lineage $certName, lowercased; []
+     * when it does not exist or cannot be read. NginxVhostWriter uses it to
+     * decide which alias hosts get an HTTPS redirect block.
+     *
+     * @return list<string>
+     */
+    public function certificateNames(InstallationContext $ctx, string $certName): array
+    {
+        try {
+            $result = $ctx->connection->execute(
+                'openssl x509 -in ' . escapeshellarg($this->certPath($certName)) . ' -noout -text 2>/dev/null | grep -o ' . escapeshellarg('DNS:[^,]*')
+            );
+        } catch (\Throwable) {
+            return [];
+        }
+
+        preg_match_all('/DNS:([A-Za-z0-9.*-]+)/', (string) $result->stdout, $m);
+
+        return array_values(array_unique(array_map('strtolower', $m[1])));
     }
 
     private function certbotAvailable(InstallationContext $ctx): bool
