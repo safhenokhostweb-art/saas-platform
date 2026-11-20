@@ -6010,3 +6010,30 @@ Prior to this decision, the onboarding wizard supported only initial site provis
    - All fleet operations run purely server-to-server over authenticated HTTPS (`provision.secret`).
    - No direct SSH or database manipulation on customer production servers.
 
+
+## ADR-090 — Site Full Purge (حذف کامل سایت) from the Admin Panel
+
+**Status:** Accepted (2026-11-20)  
+**Scope:** `saas-platform`  
+**Deciders:** Project Owner & Claude Code  
+
+**Context:**
+The panel's «حذف» button (`SiteController::destroy` → `SiteDeletionService`) only removed platform DB rows: the web root, Nginx vhost (still serving), Let's Encrypt lineages, cron, Supervisor worker, customer database/user, pull backups (`tenants/site-{id}/`) and tenant media (`sites/{id}/`) all stayed behind. The older installation-level pipeline (`CustomerDeleteOrchestrator`) covered more, but never removed SSL lineages, pull backups or media; re-resolved the web root from the mutable `customer_remote_servers.path` and ran an unguarded `rm -rf`; reloaded Nginx without `nginx -t`; and reported `complete` even when non-critical stages failed.
+
+**Decision:**
+1. **Two explicit actions.** «حذف از پنل» (DB only, now labelled as such) and «حذف کامل» (`GET/POST admin/sites/{site}/purge`, `SitePurgeController`), which runs the extended `CustomerDeleteOrchestrator` immediately (no grace period — owner).
+2. **Authorization:** super-admin only. Permission `sites.purge` is seeded but assigned to no role; `SitePurgeRequest::allowed()` also requires `User::isSuperAdmin()`.
+3. **Confirmation:** dry-run preview of the exact plan (paths, vhost, certificates, DB, Arvan prefixes with live object counts), typing the domain, current password in the same request (`current_password` rule — stricter than a session `password.confirm` window; the app has no such route), an irreversibility checkbox, and the plan's SHA-256: the POST rebuilds the plan and refuses if it differs.
+4. **Frozen plan.** `PurgePlanBuilder` builds the plan once; it is stored in `customer_deletions.plan` / `plan_sha256` and `DeleteContext` reads web root, DB names and certificate names from it. The web root comes from the install log (`EXTRACT_PACKAGE.web_root`), never from live server config. The installation-level flow stores a plan too.
+5. **Guards** (`app/Services/CustomerDeletion/Guards`) — a violation becomes a *manual action*, never a destructive command:
+   - `RemotePathGuard`: VPS = exactly `/var/www/{cust_…_{installationId}}`; shared hosting = a directory inside `/home/{user}` that is not account-level, recorded in the install log and unique to the installation; absolute/normalised/no metacharacters; system paths denied. The stage also requires `readlink -f` to equal the path, then runs `rm -rf --one-file-system --`.
+   - `ObjectPrefixGuard`: prefixes are built from a positive site id and must equal one of `tenants/site-{id}/`, `customers/site-{id}/`, `customer-sites/tenant-{id}/`, `saas-platform/archives/site_{id}_` (backups) or `sites/{id}/` (media); each listed key is re-checked before deletion.
+   - `DatabaseNameGuard` (identifier shape; MySQL system schemas/users and every configured platform DB/user denied) and `DomainGuard` (hostname, not IP/wildcard/platform host).
+6. **Stages:** new `REMOVE_SSL` (`certbot delete` only when the renewal config's webroot is this site's and no Nginx config still references it) and `REMOVE_TENANT_MEDIA`; `REMOVE_WEBSERVER` runs `nginx -t` before, moves files aside, `nginx -t` again, reloads, restores on failure; `REMOVE_RECOVERY_METADATA` purges all four backup prefixes via `TenantObjectPurger` (paginated S3, DeleteObjects errors checked, verified empty, deletes every version + delete marker if versioning is Enabled/Suspended — both Arvan buckets were "never enabled" on 2026-11-20). «حذف بکاپ‌ها» → `DELETE_EVERYTHING` (no final backup kept); unticked → `NEVER_DELETE_BACKUP` (final backup, everything kept).
+7. **Outcome semantics:** a failed non-critical stage no longer ends `complete`: the run continues, but `REMOVE_PLATFORM_RECORDS` (`requiresCleanRun`) is withheld and the deletion ends `failed`, so the site stays in the panel and Retry resumes from the failed stages. Deliberately skipped unsafe items end `complete_with_warnings` with `manual_actions`. One run per deletion (`ShouldBeUnique` job + cache lock). The Customer record is always kept (owner). `db:backup-sites` skips sites with an open deletion.
+8. **Audit:** `ActivityLogger` `site.purge_requested`, `customer.deletion_requested`, `customer.deletion_retried` (actor, IP, UA, plan hash, options); `customer_deletions` (+ `requested_ip`, `requested_user_agent`) and `customer_deletion_logs` outlive the site (no FK on `site_id`).
+
+**Consequences:**
+- Behaviour change for the installation-level flow: cPanel/DirectAdmin web roots without a recorded, unique path are no longer `rm -rf`'d (previously the account's `public_html` could be); such runs end `complete_with_warnings`.
+- `TenantObjectPurger` refuses real object storage under `APP_ENV=testing` (the local `.env` holds real Arvan keys).
+- Media deletion uses the dedicated `TENANT_MEDIA_*` key; if that config is incomplete the media stage fails (retryable) and the site is kept.

@@ -118,9 +118,14 @@ class DeletionHostingAbstractionTest extends TestCase
         app(CustomerDeleteOrchestrator::class)->run($deletion);
 
         $deletion->refresh();
-        $this->assertSame('complete', $deletion->status, $deletion->failure_reason ?? '');
+        // ADR-090 — without a recorded, unique web root the account's
+        // public_html is never rm -rf'd automatically: it is left as a
+        // manual action and the deletion ends complete_with_warnings.
+        $this->assertSame('complete_with_warnings', $deletion->status, $deletion->failure_reason ?? '');
+        $this->assertArrayHasKey('REMOVE_FILES', $deletion->manual_actions);
 
         $commandLog = implode("\n", $driver->getCommandLog());
+        $this->assertStringNotContainsString('rm -rf', $commandLog);
         $this->assertStringNotContainsString('mysql -u root', $commandLog);
         $this->assertStringNotContainsString('mysqldump -u root', $commandLog);
         $this->assertStringNotContainsString('/etc/supervisor', $commandLog);
@@ -158,6 +163,16 @@ class DeletionHostingAbstractionTest extends TestCase
         // A capability set with everything OFF except what's required for the
         // pipeline to complete at all (database deletion, so REMOVE_DATABASE/
         // REMOVE_DATABASE_USER still exercise their own logic in this test).
+        // ADR-090 — the cPanel DB provisioner talks UAPI; fake it so the DB
+        // stages genuinely succeed (before ADR-090 they failed against the
+        // network and the run still reported "complete").
+        Http::fake([
+            '*Mysql/delete_database' => Http::response(['status' => 1, 'data' => []], 200),
+            '*Mysql/delete_user'     => Http::response(['status' => 1, 'data' => []], 200),
+            '*Mysql/list_databases'  => Http::response(['status' => 1, 'data' => []], 200),
+            '*Mysql/list_users'      => Http::response(['status' => 1, 'data' => []], 200),
+        ]);
+
         $capabilities = new DriverCapabilities(supportsDatabaseDeletion: true);
         $driver = new FakeRemoteDriver($capabilities, DriverType::CPANEL);
         $this->bindFakeConnection($driver);
@@ -167,7 +182,8 @@ class DeletionHostingAbstractionTest extends TestCase
         app(CustomerDeleteOrchestrator::class)->run($deletion);
 
         $deletion->refresh();
-        $this->assertSame('complete', $deletion->status, $deletion->failure_reason ?? '');
+        // Web root on shared hosting without a plan → manual (see the cPanel test above).
+        $this->assertSame('complete_with_warnings', $deletion->status, $deletion->failure_reason ?? '');
 
         $skippedStages = CustomerDeletionLog::where('deletion_id', $deletion->id)
             ->where('event', 'skipped')
@@ -215,7 +231,12 @@ class DeletionHostingAbstractionTest extends TestCase
         app(CustomerDeleteOrchestrator::class)->run($deletion);
 
         $deletion->refresh();
-        $this->assertSame('complete', $deletion->status, $deletion->failure_reason ?? '');
+        // ADR-090 — a failed non-critical stage no longer ends "complete":
+        // the run continues, stops before REMOVE_PLATFORM_RECORDS and is
+        // marked failed so Retry can finish it.
+        $this->assertSame('failed', $deletion->status);
+        $this->assertStringContainsString('REMOVE_DATABASE', (string) $deletion->failure_reason);
+        $this->assertStringNotContainsString('Sup3rSecretLeak99', (string) $deletion->failure_reason);
 
         $failureLog = CustomerDeletionLog::where('deletion_id', $deletion->id)
             ->where('stage', 'REMOVE_DATABASE')

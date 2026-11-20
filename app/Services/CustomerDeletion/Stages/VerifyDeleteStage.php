@@ -7,6 +7,7 @@ use App\Models\PlatformLicense;
 use App\Models\Site;
 use App\Services\CustomerDeletion\Dto\DeleteContext;
 use App\Services\CustomerDeletion\Dto\DeleteStageResult;
+use App\Services\CustomerDeletion\Guards\PurgeGuardViolation;
 use App\Services\CustomerInstallation\Provisioning\DatabaseProvisionerFactory;
 
 /**
@@ -68,12 +69,36 @@ class VerifyDeleteStage extends AbstractDeleteStage
         $capabilities = $ctx->connection->capabilities();
 
         // ── Remote server checks ─────────────────────────────────────────────
-        $checks[] = [
-            'check'    => 'Web root removed',
-            'passed'   => !$this->remoteExists($ctx, $ctx->webRoot),
-            'detail'   => $ctx->webRoot,
-            'critical' => true,
-        ];
+        try {
+            RemoveFilesStage::guardedWebRoot($ctx);
+            $checks[] = [
+                'check'    => 'Web root removed',
+                'passed'   => !$this->remoteExists($ctx, $ctx->webRoot),
+                'detail'   => $ctx->webRoot,
+                'critical' => true,
+            ];
+        } catch (PurgeGuardViolation $e) {
+            // ADR-090 — deliberately left for a human (listed in manual_actions).
+            $checks[] = [
+                'check'    => 'Web root removed',
+                'passed'   => true,
+                'detail'   => 'manual action required: ' . $e->getMessage(),
+                'critical' => false,
+            ];
+        }
+
+        foreach ($ctx->certificates as $cert) {
+            if (($cert['action'] ?? null) !== 'delete' || !$capabilities->supportsWebServerConfiguration) {
+                continue;
+            }
+            $renewal = '/etc/letsencrypt/renewal/' . $cert['name'] . '.conf';
+            $checks[] = [
+                'check'    => "Certificate {$cert['name']} removed",
+                'passed'   => !$this->remoteExists($ctx, $renewal),
+                'detail'   => $renewal,
+                'critical' => false,
+            ];
+        }
 
         if ($capabilities->supportsWebServerConfiguration) {
             $checks[] = [

@@ -32,10 +32,12 @@ class CustomerDeleteStateManager
     {
         $deletion->markStageComplete($stage);
 
-        $event = $result->skipped ? 'skipped' : 'completed';
-        $msg   = $result->skipped
-            ? "مرحله {$stage} رد شد: " . ($result->output['reason'] ?? '')
-            : "مرحله {$stage} کامل شد در {$result->durationMs}ms";
+        $event = $result->manual ? 'manual' : ($result->skipped ? 'skipped' : 'completed');
+        $msg   = match ($event) {
+            'manual'  => "مرحله {$stage} نیاز به اقدام دستی دارد: " . ($result->output['manual_action'] ?? ''),
+            'skipped' => "مرحله {$stage} رد شد: " . ($result->output['reason'] ?? ''),
+            default   => "مرحله {$stage} کامل شد در {$result->durationMs}ms",
+        };
 
         $this->log($deletion, $stage, $event, $msg, $result->output, $result->durationMs);
         $this->emitProgress($deletion->id, $stage, $event, $msg);
@@ -56,6 +58,18 @@ class CustomerDeleteStateManager
         ]);
         $this->log($deletion, 'COMPLETE', 'completed', 'حذف مشتری با موفقیت انجام شد');
         $this->emitProgress($deletion->id, 'COMPLETE', 'completed', 'حذف کامل شد');
+    }
+
+    /** ADR-090 — finished, but some resources were left for a human on purpose. */
+    public function markCompleteWithWarnings(CustomerDeletion $deletion, array $manualActions): void
+    {
+        $deletion->update([
+            'status'         => CustomerDeletion::STATUS_COMPLETE_WITH_WARNINGS,
+            'completed_at'   => now(),
+            'manual_actions' => $manualActions,
+        ]);
+        $this->log($deletion, 'COMPLETE', 'completed', 'حذف انجام شد؛ ' . count($manualActions) . ' مورد نیاز به اقدام دستی دارد', ['manual_actions' => $manualActions]);
+        $this->emitProgress($deletion->id, 'COMPLETE', 'completed', 'حذف انجام شد — موارد دستی باقی است');
     }
 
     public function markFailed(CustomerDeletion $deletion, string $reason): void

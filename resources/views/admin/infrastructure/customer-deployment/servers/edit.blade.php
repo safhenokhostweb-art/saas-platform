@@ -138,7 +138,8 @@
     @endif
 
     <form method="POST" action="{{ route('admin.infrastructure.customer-deployment.servers.update', $server) }}"
-          x-data="editServerForm()">
+          x-data="editServerForm()"
+          @ssh-key-migrated.window="migratedPrivateKey = $event.detail.key">
         @csrf @method('PUT')
 
         {{-- Hidden auth_method for panel drivers (managed by Alpine) --}}
@@ -146,9 +147,14 @@
         <input type="hidden" name="auth_method" x-bind:value="panelAuthMode">
         @endif
 
-        {{-- Hidden private_key for SSH migration wizard --}}
+        {{-- Hidden private_key for SSH migration wizard.
+             Three controls share name="private_key" (this one, the paste
+             textarea, the inline generator); PHP keeps only the LAST one
+             submitted, so each is disabled/unnamed while empty — otherwise an
+             empty later field would silently discard a pasted or migrated key.
+             Empty everywhere = no private_key sent = stored key kept. --}}
         @if($isSshDriver)
-        <input type="hidden" name="private_key" x-bind:value="migratedPrivateKey">
+        <input type="hidden" name="private_key" x-bind:value="migratedPrivateKey" x-bind:disabled="!migratedPrivateKey">
         @endif
 
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-5">
@@ -225,7 +231,8 @@
                     @endif
                 </div>
 
-                <div x-data="{ sshEditMode: '{{ $currentAuthMethod === 'key' ? 'key' : 'password' }}' }">
+                <div x-data="{ sshEditMode: '{{ $currentAuthMethod === 'key' ? 'key' : 'password' }}' }"
+                     @ssh-key-migrated.window="sshEditMode = 'key'">
 
                     <div class="grid grid-cols-2 gap-3 mb-4">
                         <button type="button" x-on:click="sshEditMode = 'key'; $dispatch('ssh-mode-change', { mode: 'key' })"
@@ -282,8 +289,10 @@
                                     کلید خصوصی SSH جدید
                                     <span class="text-gray-400 font-normal text-xs mr-1">(خالی = بدون تغییر)</span>
                                 </label>
-                                <div x-data="{ pubKeyWarning: false }">
+                                <div x-data="{ pubKeyWarning: false, pasted: @js((string) old('private_key', '')) }">
                                 <textarea name="private_key" rows="6"
+                                    x-model="pasted"
+                                    x-bind:name="pasted.trim() !== '' ? 'private_key' : null"
                                     @input="pubKeyWarning = /^(ssh-|ecdsa-|sk-)/.test($event.target.value.trim())"
                                     :class="pubKeyWarning ? 'border-red-400 bg-red-50' : ''"
                                     placeholder="-----BEGIN OPENSSH PRIVATE KEY-----&#10;برای بازنویسی کلید موجود، کلید جدید را وارد کنید&#10;-----END OPENSSH PRIVATE KEY-----"
@@ -328,7 +337,7 @@
                                         </div>
                                         <div class="bg-gray-900 rounded p-2 font-mono text-xs text-green-400 break-all" x-text="pub"></div>
                                     </div>
-                                    <input type="hidden" name="private_key" :value="priv">
+                                    <input type="hidden" name="private_key" :value="priv" :disabled="!priv">
                                     <p class="text-xs text-blue-700 bg-blue-50 p-2 rounded">کلید عمومی را در <code class="bg-blue-100 px-1">~/.ssh/authorized_keys</code> سرور اضافه کنید، سپس فرم را ذخیره کنید.</p>
                                 </div>
 
@@ -576,12 +585,11 @@ function sshMigrationWizard() {
                 if (data.success) {
                     this.publicKey  = data.public_key;
                     this.privateKey = data.private_key;
-                    // Inject into the form's hidden field
-                    const hidden = document.querySelector('input[name="private_key"]');
-                    if (hidden) hidden.value = data.private_key;
-                    // Change auth_method to key
-                    const authField = document.querySelector('input[name="auth_method"]');
-                    if (authField) authField.value = 'key';
+                    // Hand the key to the form (hidden private_key) and flip
+                    // the SSH auth selector to "key" so auth_method=key is
+                    // submitted — via Alpine state, not raw DOM writes that
+                    // the bindings would overwrite.
+                    window.dispatchEvent(new CustomEvent('ssh-key-migrated', { detail: { key: data.private_key } }));
                     this.step = 2;
                 } else {
                     this.genError = data.error || 'خطا در تولید کلید';

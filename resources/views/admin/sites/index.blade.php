@@ -3,6 +3,7 @@
 @section('header', 'مدیریت سایت‌ها')
 
 @section('content')
+@php $canPurge = \App\Http\Requests\Admin\SitePurgeRequest::allowed(auth()->user()); @endphp
 <x-module-features module='sites' />
 <div class='mb-4 flex items-center gap-2'>
     <a href="{{ route('admin.onboarding.create') }}" class='btn btn-primary flex items-center gap-1.5'>
@@ -72,8 +73,11 @@
                             type="button"
                             onclick="confirmDeleteSite({{ $site->id }}, '{{ addslashes($site->title) }}')"
                             class='text-red-600 hover:underline text-xs mr-2'>
-                            حذف
+                            حذف از پنل
                         </button>
+                        @if($canPurge)
+                            <a href="{{ route('admin.sites.purge.show', $site) }}" class='text-red-800 font-semibold hover:underline text-xs mr-2'>حذف کامل</a>
+                        @endif
                     </td>
                 </tr>
                 @empty
@@ -95,7 +99,7 @@
                 </svg>
             </div>
             <div>
-                <h3 class="font-bold text-gray-900">حذف سرتاسری سایت</h3>
+                <h3 class="font-bold text-gray-900">حذف سایت فقط از پنل</h3>
                 <p class="text-xs text-gray-500">این عملیات قابل بازگشت نیست</p>
             </div>
         </div>
@@ -106,6 +110,7 @@
             <li>• سایت به همراه ماژول‌ها، تنظیمات و اعلان‌هایش کامل حذف می‌شود</li>
             <li>• نصب‌های مرتبط به وضعیت «حذف‌شده» تغییر می‌کنند (لاگ باقی می‌ماند)</li>
             <li>• سوابق لایسنس، خرید و فعالیت برای حسابرسی نگه داشته می‌شوند، بدون اتصال به سایت</li>
+            <li class="text-amber-700 font-medium">• فایل‌ها، دیتابیس، Nginx، SSL و بکاپ‌ها/مدیای آروان روی سرور باقی می‌مانند. برای آزاد کردن فضا از «حذف کامل» استفاده کنید.</li>
         </ul>
         <div class="flex gap-3 justify-end">
             <button type="button" onclick="closeDeleteModal()" class="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200">

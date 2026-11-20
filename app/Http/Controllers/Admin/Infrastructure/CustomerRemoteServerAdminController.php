@@ -10,6 +10,7 @@ use App\Services\CustomerInstallation\Enums\DriverType;
 use App\Services\CustomerInstallation\Dto\DriverCapabilities;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use phpseclib3\Crypt\EC;
 
 class CustomerRemoteServerAdminController extends Controller
@@ -115,7 +116,7 @@ class CustomerRemoteServerAdminController extends Controller
                 'path'   => 'nullable|string|max:500',
                 'is_platform_managed' => 'nullable|boolean',
             ],
-            $this->credentialRules($type, optional: true),
+            $this->credentialRules($type, optional: true, existing: $server),
             $this->connectionRules($type),
         ));
 
@@ -124,6 +125,7 @@ class CustomerRemoteServerAdminController extends Controller
             'host'     => $validated['host'],
             'port'     => (int) ($validated['port'] ?? $server->port),
             'username' => $validated['username'] ?? $server->username,
+            'auth_method' => $validated['auth_method'] ?? $server->auth_method,
             'domain'   => $validated['domain'] ?? null,
             'path'     => $validated['path'] ?? null,
             'is_platform_managed' => $request->boolean('is_platform_managed'),
@@ -212,15 +214,28 @@ class CustomerRemoteServerAdminController extends Controller
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
-    private function credentialRules(string $type, bool $optional = false): array
+    /**
+     * A secret is required only when the chosen auth method needs it AND no
+     * encrypted value is already stored. On create ($existing = null) that is
+     * always the case; on edit an empty field means "keep the stored secret",
+     * so the admin can change other fields (e.g. is_platform_managed) without
+     * re-pasting the private key, and switching auth_method to a method that
+     * has no stored secret still demands one.
+     */
+    private function credentialRules(string $type, bool $optional = false, ?CustomerRemoteServer $existing = null): array
     {
         $req = $optional ? 'nullable' : 'required';
+
+        $requiredFor = fn (string $method, string $column) => Rule::requiredIf(
+            fn () => request()->input('auth_method') === $method
+                && empty($existing?->getRawOriginal($column))
+        );
 
         return match($type) {
             'ssh', 'docker' => [
                 'auth_method' => 'required|in:key,password',
                 'private_key' => [
-                    "required_if:auth_method,key",
+                    $requiredFor('key', 'private_key_encrypted'),
                     "nullable",
                     "string",
                     function ($attr, $value, $fail) {
@@ -231,12 +246,12 @@ class CustomerRemoteServerAdminController extends Controller
                         }
                     },
                 ],
-                'password'    => "required_if:auth_method,password|nullable|string|max:500",
+                'password'    => [$requiredFor('password', 'password_encrypted'), 'nullable', 'string', 'max:500'],
             ],
             'cpanel', 'directadmin' => [
                 'auth_method' => 'required|in:api_token,password',
-                'api_token'   => 'required_if:auth_method,api_token|nullable|string|max:500',
-                'password'    => 'required_if:auth_method,password|nullable|string|max:500',
+                'api_token'   => [$requiredFor('api_token', 'api_token_encrypted'), 'nullable', 'string', 'max:500'],
+                'password'    => [$requiredFor('password', 'password_encrypted'), 'nullable', 'string', 'max:500'],
             ],
             'sftp' => [
                 'auth_method' => 'nullable|string',

@@ -4,6 +4,8 @@ namespace App\Services\CustomerDeletion\Stages;
 
 use App\Services\CustomerDeletion\Dto\DeleteContext;
 use App\Services\CustomerDeletion\Dto\DeleteStageResult;
+use App\Services\CustomerDeletion\Guards\DatabaseNameGuard;
+use App\Services\CustomerDeletion\Guards\PurgeGuardViolation;
 use App\Services\CustomerInstallation\Provisioning\DatabaseProvisionerFactory;
 
 /**
@@ -41,6 +43,12 @@ class RemoveDatabaseStage extends AbstractDeleteStage
                     $this->name(),
                     'نام پایگاه داده در متادیتای نصب موجود نیست — احتمالاً پایگاه داده‌ای ایجاد نشده'
                 );
+            }
+
+            try {
+                DatabaseNameGuard::assertDatabase($ctx->dbName);
+            } catch (PurgeGuardViolation $e) {
+                return DeleteStageResult::manual($this->name(), 'پایگاه داده خودکار حذف نشد — ' . $e->getMessage());
             }
 
             if (!$ctx->connection->capabilities()->supportsDatabaseDeletion) {

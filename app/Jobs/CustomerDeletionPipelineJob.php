@@ -5,18 +5,31 @@ namespace App\Jobs;
 use App\Models\CustomerDeletion;
 use App\Services\CustomerDeletion\CustomerDeleteOrchestrator;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 
-class CustomerDeletionPipelineJob implements ShouldQueue
+/**
+ * ADR-090 — unique per deletion while queued (a double-clicked Retry cannot
+ * enqueue a second copy); CustomerDeleteOrchestrator additionally holds a
+ * cache lock while it runs.
+ */
+class CustomerDeletionPipelineJob implements ShouldQueue, ShouldBeUnique
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $timeout = 1800;
     public int $tries   = 3;
+
+    public int $uniqueFor = 1800;
+
+    public function uniqueId(): string
+    {
+        return 'customer-deletion-' . $this->deletionId;
+    }
 
     public function backoff(): array
     {

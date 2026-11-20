@@ -4,38 +4,41 @@ namespace App\Services\CustomerDeletion\Stages;
 
 use App\Models\Infrastructure\LocalRecoveryLog;
 use App\Services\CustomerDeletion\Dto\DeleteContext;
-use App\Services\CustomerDeletion\Dto\DeletePolicy;
 use App\Services\CustomerDeletion\Dto\DeleteStageResult;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
+use App\Services\CustomerDeletion\Guards\ObjectPrefixGuard;
+use App\Services\CustomerDeletion\Purge\TenantObjectPurger;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 
 /**
- * STAGE 13: REMOVE_RECOVERY_METADATA
+ * STAGE: REMOVE_RECOVERY_METADATA
  *
  * Policy-controlled cleanup of backup artifacts:
  *
- * NEVER_DELETE_BACKUP:
- *   → Keep all LocalRecoveryLog records and all Arvan objects.
+ * NEVER_DELETE_BACKUP   → keep everything (local + Arvan).
+ * DELETE_LOCAL_BACKUPS  → local recovery files + LocalRecoveryLog rows + local
+ *                         site archives; Arvan kept.
+ * DELETE_REMOTE_BACKUPS → every Arvan backup prefix of the site; local kept.
+ * DELETE_EVERYTHING     → both.
  *
- * DELETE_LOCAL_BACKUPS:
- *   → Delete LocalRecoveryLog records for this site.
- *   → Delete the local backup files from RECOVERY_LOCAL_PATH.
- *   → Keep Arvan objects.
+ * ADR-090 — the Arvan side covers ALL backup prefixes of the site
+ * (ObjectPrefixGuard::backupPrefixes): tenants/site-{id}/ (db:backup-sites,
+ * previously never deleted), customers/site-{id}/, customer-sites/tenant-{id}/
+ * and saas-platform/archives/site_{id}_. Deletion goes through
+ * TenantObjectPurger (paginated, every key re-checked, versioning-aware,
+ * verified empty afterwards).
  *
- * DELETE_REMOTE_BACKUPS:
- *   → Delete Arvan backup objects for this installation.
- *   → Keep local recovery logs.
- *
- * DELETE_EVERYTHING:
- *   → Delete both local and remote backup artifacts.
+ * Critical: a backup that should be gone but is not stops the pipeline
+ * BEFORE the platform records are removed, so Retry can finish the job.
  */
 class RemoveRecoveryMetadataStage extends AbstractDeleteStage
 {
+    public function __construct(private readonly TenantObjectPurger $purger) {}
+
     public function name(): string { return 'REMOVE_RECOVERY_METADATA'; }
-    public function label(): string { return 'حذف متادیتای بازیابی'; }
+    public function label(): string { return 'حذف پشتیبان‌ها و متادیتای بازیابی'; }
     public function isCritical(): bool { return true; }
-    public function estimatedSeconds(): int { return 10; }
+    public function estimatedSeconds(): int { return 30; }
 
     public function execute(DeleteContext $ctx): DeleteStageResult
     {
@@ -43,64 +46,49 @@ class RemoveRecoveryMetadataStage extends AbstractDeleteStage
             $policy  = $ctx->policy;
             $removed = [];
 
-            // Local backup artifacts
-            if ($policy->shouldDeleteLocalBackups() && $ctx->siteId) {
-                $logs = LocalRecoveryLog::where('site_id', $ctx->siteId)->get();
+            if (!$policy->shouldDeleteLocalBackups() && !$policy->shouldDeleteRemoteBackups()) {
+                return DeleteStageResult::skipped($this->name(), "سیاست {$policy->value} — پشتیبان‌ها حفظ می‌شوند");
+            }
+            if (!$ctx->siteId) {
+                return DeleteStageResult::skipped($this->name(), 'شناسهٔ سایت معلوم نیست — پشتیبانی برای حذف یافت نشد');
+            }
 
-                foreach ($logs as $log) {
+            if ($policy->shouldDeleteLocalBackups()) {
+                foreach (LocalRecoveryLog::where('site_id', $ctx->siteId)->get() as $log) {
                     if ($log->local_path && is_dir($log->local_path)) {
                         File::deleteDirectory($log->local_path);
                     } elseif ($log->local_path && file_exists($log->local_path)) {
                         File::delete($log->local_path);
                     }
-
                     if ($log->local_path && file_exists($log->local_path)) {
-                        return DeleteStageResult::failure(
-                            $this->name(),
-                            "حذف فایل پشتیبان محلی ناموفق بود: {$log->local_path}"
-                        );
+                        return DeleteStageResult::failure($this->name(), "حذف فایل پشتیبان محلی ناموفق بود: {$log->local_path}");
                     }
-
                     $log->delete();
-                    $removed[] = "LocalRecoveryLog #{$log->id} deleted";
+                    $removed['local'][] = "LocalRecoveryLog #{$log->id}";
+                }
+
+                // SiteArchiveService zips: storage/app/archives/site_{id}_*.zip
+                // (the trailing "_" keeps site 1 from matching site 10).
+                foreach (glob(storage_path('app/archives/site_' . (int) $ctx->siteId . '_*.zip')) ?: [] as $archive) {
+                    File::delete($archive);
+                    $removed['local'][] = basename($archive);
                 }
             }
 
-            // Remote (Arvan) backup artifacts
-            if ($policy->shouldDeleteRemoteBackups() && $ctx->siteId) {
-                try {
-                    $disk = Storage::disk('arvan_backup');
-                    $prefixes = [
-                        "customers/site-{$ctx->siteId}",
-                        "customer-sites/tenant-{$ctx->siteId}",
-                    ];
+            if ($policy->shouldDeleteRemoteBackups()) {
+                foreach (ObjectPrefixGuard::backupPrefixes((int) $ctx->siteId) as $prefix) {
+                    try {
+                        $result = $this->purger->purge(
+                            TenantObjectPurger::TARGET_BACKUPS,
+                            ObjectPrefixGuard::assertBackupPrefix($prefix, (int) $ctx->siteId),
+                        );
+                    } catch (\Throwable $e) {
+                        Log::warning("CDE: backup prefix purge failed for site {$ctx->siteId}", ['prefix' => $prefix, 'error' => $e->getMessage()]);
 
-                    foreach ($prefixes as $prefix) {
-                        $disk->deleteDirectory($prefix);
-
-                        if (!empty($disk->allFiles($prefix))) {
-                            return DeleteStageResult::failure(
-                                $this->name(),
-                                "حذف کامل prefix پشتیبان remote ناموفق بود: {$prefix}"
-                            );
-                        }
-
-                        $removed[] = "Arvan prefix deleted: {$prefix}";
+                        return DeleteStageResult::failure($this->name(), "حذف پشتیبان‌های آروان زیر «{$prefix}» ناموفق بود: " . $e->getMessage());
                     }
-                } catch (\Throwable $e) {
-                    Log::warning("CDE: Arvan backup prefix deletion failed for site {$ctx->siteId}: {$e->getMessage()}");
-                    return DeleteStageResult::failure($this->name(), 'حذف پشتیبان‌های remote ناموفق بود: ' . $e->getMessage());
+                    $removed['remote'][] = $result;
                 }
-            }
-
-            if (empty($removed)) {
-                $reason = match(true) {
-                    !$policy->shouldDeleteLocalBackups() && !$policy->shouldDeleteRemoteBackups()
-                        => "سیاست {$policy->value} — پشتیبان‌ها حفظ می‌شوند",
-                    default
-                        => "هیچ متادیتای قابل حذفی یافت نشد (site_id یا arvan_key وجود ندارد)",
-                };
-                return DeleteStageResult::skipped($this->name(), $reason);
             }
 
             return DeleteStageResult::success($this->name(), ['removed' => $removed]);
@@ -109,38 +97,26 @@ class RemoveRecoveryMetadataStage extends AbstractDeleteStage
 
     public function verify(DeleteContext $ctx): array
     {
-        $checks = [];
-
-        if ($ctx->siteId) {
-            if ($ctx->policy->shouldDeleteLocalBackups()) {
-                $remaining = LocalRecoveryLog::where('site_id', $ctx->siteId)->count();
-                $checks[] = [
-                    'check' => 'Local recovery logs cleared',
-                    'passed' => $remaining === 0,
-                    'detail' => "{$remaining} records remaining",
-                ];
-            } else {
-                $checks[] = ['check' => 'Local backups preserved (policy)', 'passed' => true, 'detail' => $ctx->policy->value];
-            }
-
-            if ($ctx->policy->shouldDeleteRemoteBackups()) {
-                $disk = Storage::disk('arvan_backup');
-                $remoteRemaining = array_merge(
-                    $disk->allFiles("customers/site-{$ctx->siteId}"),
-                    $disk->allFiles("customer-sites/tenant-{$ctx->siteId}")
-                );
-                $checks[] = [
-                    'check' => 'Remote recovery prefixes cleared',
-                    'passed' => empty($remoteRemaining),
-                    'detail' => count($remoteRemaining) . ' objects remaining',
-                ];
-            } else {
-                $checks[] = ['check' => 'Remote backups preserved (policy)', 'passed' => true, 'detail' => $ctx->policy->value];
-            }
-
-            return $checks;
+        if (!$ctx->siteId) {
+            return [['check' => 'Recovery metadata removed', 'passed' => true, 'detail' => 'no site_id to verify']];
         }
 
-        return [['check' => 'Recovery metadata removed', 'passed' => true, 'detail' => 'no site_id to verify']];
+        $checks = [];
+        if ($ctx->policy->shouldDeleteLocalBackups()) {
+            $remaining = LocalRecoveryLog::where('site_id', $ctx->siteId)->count();
+            $checks[] = ['check' => 'Local recovery logs cleared', 'passed' => $remaining === 0, 'detail' => "{$remaining} records remaining"];
+        }
+        if ($ctx->policy->shouldDeleteRemoteBackups()) {
+            foreach (ObjectPrefixGuard::backupPrefixes((int) $ctx->siteId) as $prefix) {
+                try {
+                    $left = $this->purger->inventory(TenantObjectPurger::TARGET_BACKUPS, $prefix)['objects'];
+                    $checks[] = ['check' => "Arvan backups cleared: {$prefix}", 'passed' => $left === 0, 'detail' => "{$left} objects remaining"];
+                } catch (\Throwable $e) {
+                    $checks[] = ['check' => "Arvan backups cleared: {$prefix}", 'passed' => false, 'detail' => 'unverifiable: ' . $e->getMessage()];
+                }
+            }
+        }
+
+        return $checks ?: [['check' => 'Backups preserved (policy)', 'passed' => true, 'detail' => $ctx->policy->value]];
     }
 }

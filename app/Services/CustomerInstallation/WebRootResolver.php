@@ -41,11 +41,21 @@ class WebRootResolver
 
     public function resolve(DeploymentDriverInterface $connection, string $slug, ?CustomerRemoteServer $server): string
     {
+        return $this->resolveForDriverType($connection->driverType(), $slug, $server);
+    }
+
+    /**
+     * ADR-090 — the same resolution without a live connection (the site purge
+     * plan is built before any SSH session exists). resolve() delegates here,
+     * so both always agree.
+     */
+    public function resolveForDriverType(DriverType $driverType, string $slug, ?CustomerRemoteServer $server): string
+    {
         if ($server && !empty($server->path)) {
             return rtrim($server->path, '/');
         }
 
-        return match ($connection->driverType()) {
+        return match ($driverType) {
             DriverType::CPANEL, DriverType::DIRECTADMIN => $this->sharedHostingDefault($server, $slug),
             default => "/var/www/{$slug}",
         };

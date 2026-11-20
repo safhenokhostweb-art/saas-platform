@@ -20,6 +20,11 @@ abstract class AbstractDeleteStage implements DeleteStageInterface
         return 5;
     }
 
+    public function requiresCleanRun(): bool
+    {
+        return false;
+    }
+
     public function buildPreSnapshot(DeleteContext $ctx): array
     {
         return [];

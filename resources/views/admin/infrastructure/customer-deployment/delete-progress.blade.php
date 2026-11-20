@@ -10,6 +10,8 @@
 .status-running{background:#dbeafe;color:#1e40af}
 .status-complete{background:#d1fae5;color:#065f46}
 .status-failed{background:#fee2e2;color:#991b1b}
+.status-complete_with_warnings{background:#fef3c7;color:#92400e}
+.event-manual{background:#f59e0b}
 .prog-bar-wrap{background:#f3f4f6;border-radius:999px;height:8px;overflow:hidden}
 .prog-bar{height:100%;border-radius:999px;background:linear-gradient(90deg,#ef4444,#8b5cf6);transition:width .5s ease}
 .log-entry{display:flex;gap:.75rem;padding:.5rem 0;border-bottom:1px solid #f8fafc}
@@ -37,11 +39,14 @@
         تاریخچه
       </a>
       <h1 style="font-size:1.4rem;font-weight:700;color:#0f172a;margin:0">
-        حذف: {{ $deletion->installation->customer_domain ?? '—' }}
+        حذف: {{ $deletion->plan['site']['domain'] ?? $deletion->installation->customer_domain ?? '—' }}
       </h1>
     </div>
+    @php
+      $statusLabels = ['pending' => 'در صف', 'running' => 'در حال اجرا', 'complete' => 'کامل شد', 'complete_with_warnings' => 'کامل شد — اقدام دستی لازم', 'failed' => 'ناموفق / ناقص'];
+    @endphp
     <span class="status-badge status-{{ $deletion->status }}" id="statusBadge">
-      {{ $deletion->status }}
+      {{ $statusLabels[$deletion->status] ?? $deletion->status }}
     </span>
   </div>
 
@@ -52,6 +57,17 @@
         تلاش مجدد و ادامه از آخرین مرحله
       </button>
     </form>
+  @endif
+
+  @if($deletion->hasManualActions())
+  <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:.75rem;padding:1rem 1.25rem;margin-bottom:1rem">
+    <div style="font-weight:700;color:#92400e;margin-bottom:.4rem">موارد نیازمند اقدام دستی</div>
+    <ul style="font-size:.85rem;color:#78350f;margin:0;padding-right:1.1rem;list-style:disc">
+      @foreach($deletion->manual_actions as $stage => $action)
+        <li><span style="font-weight:600" dir="ltr">{{ $stage }}</span>: {{ $action }}</li>
+      @endforeach
+    </ul>
+  </div>
   @endif
 
   {{-- Summary --}}
@@ -77,7 +93,7 @@
   </div>
 
   {{-- Progress Bar --}}
-  @php $totalStages = 14; $doneStages = count($deletion->completedStagesList()); @endphp
+  @php $totalStages = 16; $doneStages = count($deletion->completedStagesList()); @endphp
   <div class="del-card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
       <span style="font-size:.85rem;color:#64748b">پیشرفت</span>
@@ -160,7 +176,7 @@
   var stageLbl = document.getElementById('currentStage');
   var badge    = document.getElementById('statusBadge');
   var done     = {{ count($deletion->completedStagesList()) }};
-  var total    = 14;
+  var total    = 16;
 
   es.onmessage = function(e) {
     try {
@@ -170,7 +186,7 @@
         es.close();
         badge.className = 'status-badge status-' + data.status;
         badge.textContent = data.status;
-        if (data.status === 'complete') {
+        if (data.status === 'complete' || data.status === 'complete_with_warnings' || data.status === 'failed') {
           setTimeout(function() { location.reload(); }, 800);
         }
         return;
