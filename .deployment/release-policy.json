@@ -57,6 +57,13 @@
     ],
     "reviewed": [
       {
+        "path": "database/migrations/2026_11_20_120000_add_is_platform_managed_to_customer_remote_servers.php",
+        "sha256": "5f89bca12529ceef9c04ac852734364bcf5d07bf65109fb66d6866ea941a2841",
+        "reviewed_by": "Claude Opus 5.5 (agent review for the owner-requested 2026-11-20 Phase 2/4 release; not an owner sign-off)",
+        "reviewed_at": "2026-11-20",
+        "reason": "Additive-only migration (Phase 4 tenant media): up() adds the boolean customer_remote_servers.is_platform_managed (default false); down() drops only that column. No existing data is altered."
+      },
+      {
         "path": "database/migrations/2026_11_20_100000_create_site_domains_table.php",
         "sha256": "edf1338fdba7db9a74159dabc0e7daf71a47345f3287765ab4fa87a1c1bdede0",
         "reviewed_by": "Claude Opus 5.5 (agent review for the owner-requested 2026-11-20 Phase 3 release; not an owner sign-off)",

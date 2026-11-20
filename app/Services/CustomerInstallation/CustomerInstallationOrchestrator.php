@@ -268,6 +268,9 @@ class CustomerInstallationOrchestrator
             app(ConfigureWebServerStage::class),
             app(IssueSslStage::class),
             app(ProvisionLicenseStage::class),
+            // Phase 4 — needs the site id for the sites/{id}/media prefix;
+            // platform-managed servers only (TenantMediaEnvironment).
+            app(\App\Services\CustomerInstallation\Stages\ConfigureMediaStorageStage::class),
             // ADR-088 — needs the site PROVISION_LICENSE creates; applies the
             // onboarding vertical and kit licenses (no-op without them).
             app(ApplySiteEntitlementsStage::class),

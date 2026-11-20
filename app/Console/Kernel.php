@@ -153,6 +153,14 @@ class Kernel extends ConsoleKernel
             ->dailyAt('02:30')
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/tenant-backup.log'));
+
+        // Phase 2: pull each site's OWN database over SSH → private bucket
+        // tenants/site-{id}/db/ (retention: TENANT_BACKUP_RETENTION). The
+        // customer site holds no bucket key.
+        $schedule->command('db:backup-sites')
+            ->dailyAt('03:15')
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/site-backup.log'));
     }
 
     /**
