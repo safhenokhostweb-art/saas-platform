@@ -3,7 +3,6 @@
 namespace App\Services\CustomerDeletion\Stages;
 
 use App\Models\CustomerInstallation;
-use App\Models\PlatformLicense;
 use App\Models\Site;
 use App\Services\CustomerDeletion\Dto\DeleteContext;
 use App\Services\CustomerDeletion\Dto\DeleteStageResult;
@@ -218,12 +217,15 @@ class VerifyDeleteStage extends AbstractDeleteStage
             ];
         }
 
-        if ($ctx->licenseKey) {
-            $licenseGone = !PlatformLicense::where('license_key', $ctx->licenseKey)->exists();
+        // platform_licenses has no plaintext key column (prefix + hash only);
+        // a site's licences are identified by site_id. Revoked by
+        // REMOVE_LICENSE, then removed with the site by the FK cascade.
+        if ($ctx->siteId) {
+            $active = RemoveLicenseStage::activeLicenseCount($ctx->siteId);
             $checks[] = [
-                'check'    => 'PlatformLicense record deleted',
-                'passed'   => $licenseGone,
-                'detail'   => substr($ctx->licenseKey, 0, 8) . '...',
+                'check'    => 'No active PlatformLicense left for the site',
+                'passed'   => $active === 0,
+                'detail'   => "{$active} active, site_id={$ctx->siteId}",
                 'critical' => true,
             ];
         }

@@ -122,7 +122,8 @@ class PurgePlanBuilder
                 'prefixes' => $siteId ? ObjectPrefixGuard::mediaPrefixes((int) $siteId) : [],
             ],
             'platform'     => [
-                'licenses'     => $site?->license_key ? PlatformLicense::where('license_key', $site->license_key)->count() : 0,
+                // platform_licenses keeps only license_key_prefix/hash; rows belong to the site via site_id.
+                'licenses'     => $siteId ? PlatformLicense::where('site_id', $siteId)->count() : 0,
                 'site_domains' => $siteId ? SiteDomain::where('site_id', $siteId)->count() : 0,
                 'customer'     => 'retained',
             ],

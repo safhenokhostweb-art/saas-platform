@@ -9,6 +9,7 @@ use App\Models\CustomerDeletion;
 use App\Models\CustomerInstallation;
 use App\Models\CustomerInstallationLog;
 use App\Models\CustomerRemoteServer;
+use App\Models\PlatformLicense;
 use App\Models\Role;
 use App\Models\Site;
 use App\Models\SiteDomain;
@@ -19,6 +20,7 @@ use App\Services\CustomerDeletion\Purge\PurgePlanBuilder;
 use App\Services\CustomerDeletion\Purge\TenantObjectPurger;
 use App\Services\CustomerInstallation\Contracts\RemoteConnectionInterface;
 use App\Services\CustomerInstallation\RemoteConnectionService;
+use App\Services\LicenseServerService;
 use Illuminate\Bus\UniqueLock;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -374,6 +376,80 @@ class SitePurgeFlowTest extends TestCase
         $log = $this->log();
         $this->assertSame(1, substr_count($log, 'rm -rf --one-file-system'), 'completed stages are not re-run');
         $this->assertSame(2, substr_count($log, ' delete --cert-name '), 'two lineages, each deleted once');
+    }
+
+    // ── licences (regression: SQLSTATE 42S22 `license_key` on platform_licenses) ──
+
+    /**
+     * A site with a REAL licence, issued exactly as production does
+     * (LicenseServerService::issue: prefix + HMAC hash, no plaintext key),
+     * plus a neighbour site whose licence must survive.
+     *
+     * @return array{0: Site, 1: string, 2: Site, 3: string} site, key, neighbour, neighbour key
+     */
+    private function licensedSite(): array
+    {
+        [$site] = $this->installedSite();
+        $licenses = app(LicenseServerService::class);
+
+        $key = $licenses->issue($site, 'shop.example.ir');
+        $site->update(['license_key' => $key]);
+
+        $neighbour = Site::create(['customer_id' => Customer::create(['name' => 'همسایه', 'mobile' => '09120000002'])->id,
+            'title' => 'همسایه', 'domain' => 'neighbour.ir']);
+        $neighbourKey = $licenses->issue($neighbour, 'neighbour.ir');
+        $neighbour->update(['license_key' => $neighbourKey]);
+
+        return [$site->fresh(), $key, $neighbour, $neighbourKey];
+    }
+
+    public function test_a_site_with_a_real_platform_licence_previews_and_purges_completely(): void
+    {
+        Queue::fake();
+        [$site, $key, $neighbour, $neighbourKey] = $this->licensedSite();
+        $this->assertNotNull(app(LicenseServerService::class)->findByKey($key), 'fixture licence is valid');
+        $this->actingAs($this->superAdmin());
+
+        // The exact production failure: GET /admin/sites/{site}/purge → 500.
+        $this->get(route('admin.sites.purge.show', ['site' => $site, 'delete_backups' => 1, 'delete_media' => 1]))
+            ->assertOk()
+            ->assertSee('لایسنس‌ها (1)');
+
+        $this->submit($site)->assertRedirect();
+        $deletion = $this->runPipeline();
+
+        $this->assertSame('complete', $deletion->status, (string) $deletion->failure_reason);
+        $this->assertSame(0, PlatformLicense::where('site_id', $site->id)->count(), 'site licences are gone');
+        $this->assertNull(app(LicenseServerService::class)->findByKey($key));
+
+        $checks = collect($deletion->verify_report['checks'] ?? []);
+        $this->assertTrue($checks->firstWhere('check', 'No active PlatformLicense left for the site')['passed'] ?? false);
+        $this->assertSame(1, $deletion->logs()->where('stage', 'REMOVE_LICENSE')->where('event', 'completed')->count());
+
+        // The neighbour's licence is untouched and still validates.
+        $theirs = app(LicenseServerService::class)->findByKey($neighbourKey);
+        $this->assertNotNull($theirs);
+        $this->assertFalse($theirs->isRevoked());
+        $this->assertSame($neighbourKey, $neighbour->fresh()->license_key);
+    }
+
+    public function test_a_purge_that_fails_later_has_already_revoked_only_this_sites_licence(): void
+    {
+        Queue::fake();
+        [$site, $key, , $neighbourKey] = $this->licensedSite();
+        $this->objects->failNext['media'] = 'Arvan unreachable';
+        $this->actingAs($this->superAdmin());
+
+        $this->submit($site)->assertRedirect();
+        $deletion = $this->runPipeline();
+
+        $this->assertSame('failed', $deletion->status);
+        $this->assertNotNull(Site::find($site->id), 'site row kept for Retry');
+        $mine = app(LicenseServerService::class)->findByKey($key);
+        $this->assertNotNull($mine, 'licence row kept for audit until the site row goes');
+        $this->assertTrue($mine->isRevoked(), 'but it no longer validates');
+        $this->assertNull($site->fresh()->license_key);
+        $this->assertFalse(app(LicenseServerService::class)->findByKey($neighbourKey)->isRevoked());
     }
 
     // ── guard outcomes ───────────────────────────────────────────────────
