@@ -111,16 +111,23 @@ class VpsDatabaseProvisioner implements DatabaseProvisionerInterface
      */
     private function runSql(InstallationContext $ctx, string $sql, string $context): void
     {
+        // First try socket access with empty password env
         $result = $ctx->connection->execute(
-            'mysql -u root 2>/dev/null -e ' . escapeshellarg($sql),
+            'mysql -u root -e ' . escapeshellarg($sql),
             ['MYSQL_PWD' => '']
         );
 
         // If root has no password access via socket, try without password env
         if ($result->failed()) {
+            $firstOutput = $result->output();
             $result = $ctx->connection->execute('mysql -u root -e ' . escapeshellarg($sql));
             if ($result->failed()) {
-                throw new RuntimeException("MySQL command failed ({$context}): " . $result->output());
+                $err = trim($result->output()) ?: trim($firstOutput);
+                \Illuminate\Support\Facades\Log::error("MySQL command failed ({$context})", [
+                    'context' => $context,
+                    'error'   => $err,
+                ]);
+                throw new RuntimeException("MySQL command failed ({$context}): " . $err);
             }
         }
     }

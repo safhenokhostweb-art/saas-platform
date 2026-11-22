@@ -141,4 +141,83 @@ class ConfigureDnsStageTest extends TestCase
         $this->assertTrue($result->output['dns_propagated']);
         $this->assertSame([15], $sleeps);
     }
+
+    public function test_existing_record_with_same_ip_is_idempotent_and_does_not_call_post_or_put(): void
+    {
+        Http::fake([
+            '*/dns-records?*' => Http::response([
+                'data' => [
+                    [
+                        'id' => 'rec-existing-1',
+                        'type' => 'A',
+                        'name' => 'solar',
+                        'value' => [['ip' => self::SERVER_IP]],
+                    ],
+                ],
+            ]),
+        ]);
+
+        $dns = (new FakeDnsResolver(DnsLookup::notFound()))->set(self::FQDN, DnsLookup::resolved([self::SERVER_IP]));
+        $result = $this->stage($dns)->execute($this->context(new FakeRemoteDriver()));
+
+        $this->assertTrue($result->success, (string) $result->error);
+        $this->assertSame('rec-existing-1', $result->output['record_id']);
+        Http::assertNotSent(fn (Request $r) => $r->method() === 'POST' && str_contains($r->url(), 'dns-records'));
+        Http::assertNotSent(fn (Request $r) => $r->method() === 'PUT' && str_contains($r->url(), 'dns-records'));
+    }
+
+    public function test_existing_record_with_different_ip_triggers_update(): void
+    {
+        Http::fake([
+            '*/dns-records?*' => Http::response([
+                'data' => [
+                    [
+                        'id' => 'rec-existing-2',
+                        'type' => 'A',
+                        'name' => 'solar',
+                        'value' => [['ip' => '1.2.3.4']],
+                    ],
+                ],
+            ]),
+            '*/dns-records/rec-existing-2' => Http::response(['data' => ['id' => 'rec-existing-2']], 200),
+        ]);
+
+        $dns = (new FakeDnsResolver(DnsLookup::notFound()))->set(self::FQDN, DnsLookup::resolved([self::SERVER_IP]));
+        $result = $this->stage($dns)->execute($this->context(new FakeRemoteDriver()));
+
+        $this->assertTrue($result->success, (string) $result->error);
+        $this->assertSame('rec-existing-2', $result->output['record_id']);
+        Http::assertSent(fn (Request $r) => $r->method() === 'PUT'
+            && str_ends_with($r->url(), '/dns-records/rec-existing-2')
+            && $r['value'][0]['ip'] === self::SERVER_IP);
+    }
+
+    public function test_create_collision_422_recovers_gracefully_and_updates_or_accepts(): void
+    {
+        // First GET returns empty, POST returns 422 "The provided data is invalid"
+        // Then fallback findRecordDetails GET returns the existing record
+        Http::fake([
+            '*/dns-records?*page=1*' => Http::sequence()
+                ->push(['data' => []]) // Initial check: nothing found
+                ->push([               // Recovery check: found!
+                    'data' => [
+                        [
+                            'id' => 'rec-collided-1',
+                            'type' => 'A',
+                            'name' => 'solar',
+                            'value' => [['ip' => '1.2.3.4']],
+                        ],
+                    ],
+                ]),
+            '*/dns-records' => Http::response(['message' => 'The provided data is invalid'], 422),
+            '*/dns-records/rec-collided-1' => Http::response(['data' => ['id' => 'rec-collided-1']], 200),
+        ]);
+
+        $dns = (new FakeDnsResolver(DnsLookup::notFound()))->set(self::FQDN, DnsLookup::resolved([self::SERVER_IP]));
+        $result = $this->stage($dns)->execute($this->context(new FakeRemoteDriver()));
+
+        $this->assertTrue($result->success, (string) $result->error);
+        $this->assertSame('rec-collided-1', $result->output['record_id']);
+        Http::assertSent(fn (Request $r) => $r->method() === 'PUT' && str_ends_with($r->url(), '/dns-records/rec-collided-1'));
+    }
 }

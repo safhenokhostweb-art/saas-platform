@@ -40,7 +40,30 @@ class ArvanDnsProvider implements DnsProviderInterface
         ])->timeout(30);
     }
 
-    /** Endpoint for records on the configured root domain. */
+    /**
+     * Normalize subdomain relative to root domain:
+     * - empty, "@", or identical to root domain => "@"
+     * - trim trailing/leading dots and lower-case
+     */
+    public function normalizeRecordName(string $subdomain): string
+    {
+        $name = strtolower(trim($subdomain, " \t\n\r\0\x0B."));
+        $root = strtolower(trim($this->rootDomain, " \t\n\r\0\x0B."));
+
+        if ($name === '' || $name === '@' || $name === $root) {
+            return '@';
+        }
+
+        if (str_ends_with($name, '.' . $root)) {
+            $name = substr($name, 0, -strlen('.' . $root));
+        }
+
+        return trim($name, '.');
+    }
+
+    /**
+     * Endpoint for records on the configured root domain.
+     */
     private function recordsUrl(): string
     {
         return "{$this->baseUrl}/{$this->rootDomain}/dns-records";
@@ -48,13 +71,14 @@ class ArvanDnsProvider implements DnsProviderInterface
 
     public function createARecord(string $subdomain, string $ip, int $ttl = 120): array
     {
+        $normalizedName = $this->normalizeRecordName($subdomain);
         $ttl = $ttl ?: $this->defaultTtl;
 
         $payload = [
             'type'  => 'A',
-            'name'  => $subdomain,
+            'name'  => $normalizedName,
             'value' => [
-                ['ip' => $ip, 'port' => null, 'weight' => 100, 'country' => ''],
+                ['ip' => trim($ip)],
             ],
             'ttl'   => $ttl,
             'cloud' => $this->cloudProxy,
@@ -68,17 +92,61 @@ class ArvanDnsProvider implements DnsProviderInterface
                 $recordId = $data['data']['id'] ?? null;
 
                 Log::info('ArvanDNS: A record created', [
-                    'subdomain' => $subdomain,
+                    'subdomain' => $normalizedName,
                     'ip'        => $ip,
                     'record_id' => $recordId,
                     'domain'    => $this->rootDomain,
                 ]);
 
-                return ['success' => true, 'record_id' => $recordId, 'message' => "A record created for {$subdomain}.{$this->rootDomain}"];
+                return ['success' => true, 'record_id' => $recordId, 'message' => "A record created for {$normalizedName}.{$this->rootDomain}"];
             }
 
             $error = $this->extractError($response);
-            Log::error('ArvanDNS: Failed to create A record', ['subdomain' => $subdomain, 'error' => $error, 'status' => $response->status()]);
+
+            // If creation failed due to duplicate/already existing record or validation error on duplicate name
+            if ($response->status() === 422 || $response->status() === 409 || str_contains(strtolower($error), 'already') || str_contains(strtolower($error), 'exist') || str_contains(strtolower($error), 'invalid')) {
+                Log::warning('ArvanDNS: Record creation indicated collision or invalid state, looking up existing record', [
+                    'subdomain' => $normalizedName,
+                    'status'    => $response->status(),
+                    'error'     => $error,
+                ]);
+
+                $existing = $this->findRecordDetails($normalizedName, 'A');
+                if ($existing && !empty($existing['id'])) {
+                    $existingId = (string) $existing['id'];
+                    $currentIp = $this->extractIpFromRecord($existing);
+
+                    if ($currentIp === trim($ip)) {
+                        Log::info('ArvanDNS: Existing A record already points to target IP, accepting as idempotent', [
+                            'record_id' => $existingId,
+                            'subdomain' => $normalizedName,
+                            'ip'        => $ip,
+                        ]);
+                        return [
+                            'success'   => true,
+                            'record_id' => $existingId,
+                            'message'   => "A record already exists and points to {$ip}",
+                        ];
+                    }
+
+                    Log::info('ArvanDNS: Existing A record points to different IP, updating', [
+                        'record_id'  => $existingId,
+                        'subdomain'  => $normalizedName,
+                        'current_ip' => $currentIp,
+                        'target_ip'  => $ip,
+                    ]);
+                    $updateRes = $this->updateARecord($existingId, $normalizedName, $ip, $ttl);
+                    if ($updateRes['success']) {
+                        return [
+                            'success'   => true,
+                            'record_id' => $existingId,
+                            'message'   => $updateRes['message'],
+                        ];
+                    }
+                }
+            }
+
+            Log::error('ArvanDNS: Failed to create A record', ['subdomain' => $normalizedName, 'error' => $error, 'status' => $response->status()]);
             return ['success' => false, 'record_id' => null, 'message' => $error];
 
         } catch (\Throwable $e) {
@@ -89,13 +157,14 @@ class ArvanDnsProvider implements DnsProviderInterface
 
     public function updateARecord(string $recordId, string $subdomain, string $ip, int $ttl = 120): array
     {
+        $normalizedName = $this->normalizeRecordName($subdomain);
         $ttl = $ttl ?: $this->defaultTtl;
 
         $payload = [
             'type'  => 'A',
-            'name'  => $subdomain,
+            'name'  => $normalizedName,
             'value' => [
-                ['ip' => $ip, 'port' => null, 'weight' => 100, 'country' => ''],
+                ['ip' => trim($ip)],
             ],
             'ttl'   => $ttl,
             'cloud' => $this->cloudProxy,
@@ -105,8 +174,8 @@ class ArvanDnsProvider implements DnsProviderInterface
             $response = $this->http()->put("{$this->recordsUrl()}/{$recordId}", $payload);
 
             if ($response->successful()) {
-                Log::info('ArvanDNS: A record updated', ['record_id' => $recordId, 'subdomain' => $subdomain, 'ip' => $ip]);
-                return ['success' => true, 'message' => "A record updated for {$subdomain}.{$this->rootDomain}"];
+                Log::info('ArvanDNS: A record updated', ['record_id' => $recordId, 'subdomain' => $normalizedName, 'ip' => $ip]);
+                return ['success' => true, 'message' => "A record updated for {$normalizedName}.{$this->rootDomain}"];
             }
 
             $error = $this->extractError($response);
@@ -147,30 +216,81 @@ class ArvanDnsProvider implements DnsProviderInterface
 
     public function findARecord(string $subdomain): ?string
     {
+        $record = $this->findRecordDetails($subdomain, 'A');
+        return $record && !empty($record['id']) ? (string) $record['id'] : null;
+    }
+
+    /**
+     * Find full details of a record by normalized name and type, handling pagination.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findRecordDetails(string $subdomain, string $type = 'A'): ?array
+    {
+        $normalizedName = $this->normalizeRecordName($subdomain);
+
         try {
-            $response = $this->http()->get($this->recordsUrl(), ['search' => $subdomain]);
+            $page = 1;
+            do {
+                $response = $this->http()->get($this->recordsUrl(), [
+                    'search'   => $normalizedName === '@' ? '' : $normalizedName,
+                    'page'     => $page,
+                    'per_page' => 100,
+                ]);
 
-            if (!$response->successful()) {
-                return null;
-            }
-
-            $records = $response->json('data', []);
-
-            foreach ($records as $record) {
-                if (
-                    ($record['type'] ?? '') === 'A'
-                    && ($record['name'] ?? '') === $subdomain
-                ) {
-                    return (string) $record['id'];
+                if (!$response->successful()) {
+                    Log::warning('ArvanDNS: Failed to fetch records list', [
+                        'status' => $response->status(),
+                        'name'   => $normalizedName,
+                    ]);
+                    return null;
                 }
-            }
+
+                $records = $response->json('data', []);
+                if (!is_array($records) || empty($records)) {
+                    break;
+                }
+
+                foreach ($records as $record) {
+                    $recordType = strtoupper((string) ($record['type'] ?? ''));
+                    $recordName = $this->normalizeRecordName((string) ($record['name'] ?? ''));
+
+                    if ($recordType === strtoupper($type) && $recordName === $normalizedName) {
+                        return $record;
+                    }
+                }
+
+                $meta = $response->json('meta', []);
+                $lastPage = (int) ($meta['last_page'] ?? ($response->json('links.next') ? $page + 1 : $page));
+                $page++;
+            } while ($page <= $lastPage);
 
             return null;
 
         } catch (\Throwable $e) {
-            Log::warning('ArvanDNS: findARecord exception', ['subdomain' => $subdomain, 'error' => $e->getMessage()]);
+            Log::warning('ArvanDNS: findRecordDetails exception', ['subdomain' => $normalizedName, 'error' => $e->getMessage()]);
             return null;
         }
+    }
+
+    /**
+     * Helper to extract target IP from Arvan record object.
+     */
+    public function extractIpFromRecord(array $record): ?string
+    {
+        $val = $record['value'] ?? null;
+        if (is_array($val)) {
+            if (isset($val['ip'])) {
+                return trim((string) $val['ip']);
+            }
+            if (isset($val[0]['ip'])) {
+                return trim((string) $val[0]['ip']);
+            }
+        } elseif (is_string($val)) {
+            return trim($val);
+        }
+
+        return null;
     }
 
     public function waitForPropagation(string $fqdn, string $expectedIp, int $maxWaitSec = 300, int $pollIntervalSec = 15): bool

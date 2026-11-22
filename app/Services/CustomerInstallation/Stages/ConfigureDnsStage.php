@@ -86,15 +86,29 @@ class ConfigureDnsStage extends AbstractStage
             $provider = new ArvanDnsProvider($setting);
 
             // Check if record already exists (idempotent — allow resume after partial failure).
-            $existingId = $provider->findARecord($subdomain);
+            $existingRecord = $provider->findRecordDetails($subdomain, 'A');
+            $existingId = $existingRecord && !empty($existingRecord['id']) ? (string) $existingRecord['id'] : null;
+
             if ($existingId) {
-                Log::info('CIE/DNS: A record already exists, updating.', [
-                    'subdomain' => $subdomain,
-                    'record_id' => $existingId,
-                    'new_ip'    => $serverIp,
-                ]);
-                $result = $provider->updateARecord($existingId, $subdomain, $serverIp, $setting->default_ttl);
-                $recordId = $existingId;
+                $currentIp = $provider->extractIpFromRecord($existingRecord);
+                if ($currentIp === $serverIp) {
+                    Log::info('CIE/DNS: A record already exists and points to target IP, accepting as idempotent.', [
+                        'subdomain' => $subdomain,
+                        'record_id' => $existingId,
+                        'server_ip' => $serverIp,
+                    ]);
+                    $result = ['success' => true, 'record_id' => $existingId, 'message' => "Record already points to {$serverIp}"];
+                    $recordId = $existingId;
+                } else {
+                    Log::info('CIE/DNS: A record already exists with different IP, updating.', [
+                        'subdomain'  => $subdomain,
+                        'record_id'  => $existingId,
+                        'current_ip' => $currentIp,
+                        'new_ip'     => $serverIp,
+                    ]);
+                    $result = $provider->updateARecord($existingId, $subdomain, $serverIp, $setting->default_ttl);
+                    $recordId = $existingId;
+                }
             } else {
                 $result   = $provider->createARecord($subdomain, $serverIp, $setting->default_ttl);
                 $recordId = $result['record_id'] ?? null;

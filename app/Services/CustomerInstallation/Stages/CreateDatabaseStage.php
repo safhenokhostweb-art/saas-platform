@@ -51,25 +51,52 @@ class CreateDatabaseStage extends AbstractStage
 
             $provisioner = $this->provisioners->forDriverType($ctx->connection->driverType());
 
-            // P0 safety (2026-11-19): reviewed/custom names (the wizard now
-            // always sends them) can collide with another tenant on the same
-            // server. The provisioners are idempotent (CREATE ... IF NOT
-            // EXISTS, ALTER USER ... IDENTIFIED BY), so a collision silently
-            // reset the other site's password and granted it to this one, and
-            // rollback() then DROPPED the other site's database. Refuse any
-            // name that already exists; fail closed when a custom name cannot
-            // be checked. Random generated names keep the old behaviour when
-            // the driver cannot answer (null).
+            // P0 safety (2026-11-19): reviewed/custom names can collide with
+            // another tenant on the same server. Refuse any name that already
+            // exists, EXCEPT in MODE_FRESH when the database/user belongs to
+            // a previous deleted/failed installation of THIS EXACT domain.
             $customNames = !empty($ctx->request->dbName) || !empty($ctx->request->dbUser);
             $dbExists = $provisioner->databaseExists($ctx, $dbName);
             $userExists = $provisioner->databaseUserExists($ctx, $dbUser);
-            if ($dbExists === true || $userExists === true) {
-                return StageResult::failure($this->name(), sprintf(
-                    'نام %s از قبل روی این سرور وجود دارد و ممکن است متعلق به سایت دیگری باشد؛ برای جلوگیری از آسیب به آن، پایگاه داده ساخته نشد. نام دیگری انتخاب کنید.',
-                    $dbExists === true ? "پایگاه داده «{$dbName}»" : "کاربر «{$dbUser}»",
-                ), $this->elapsed());
+
+            $isReinstallForSameDomain = false;
+            if (($dbExists === true || $userExists === true) && $ctx->request->installMode === 'MODE_FRESH') {
+                $domain = $ctx->request->domain;
+                $matchingSite = \App\Models\Site::where('domain', $domain)->first();
+                if ($matchingSite) {
+                    $siteIsInactiveOrDeleted = in_array($matchingSite->lifecycle_status, [\App\Models\Site::LIFECYCLE_DELETED, \App\Models\Site::LIFECYCLE_ARCHIVED], true)
+                        || !$matchingSite->is_active;
+
+                    $namesBelongToSite = ($matchingSite->db_name === $dbName || $matchingSite->db_user === $dbUser);
+
+                    if ($siteIsInactiveOrDeleted || $namesBelongToSite) {
+                        $isReinstallForSameDomain = true;
+                    }
+                }
             }
-            if ($customNames && ($dbExists === null || $userExists === null)) {
+
+            if ($dbExists === true || $userExists === true) {
+                if ($isReinstallForSameDomain) {
+                    \Illuminate\Support\Facades\Log::info("CIE/Database: Reinstall in MODE_FRESH for domain {$ctx->request->domain}. Resetting existing database/user safely.", [
+                        'db_name' => $dbName,
+                        'db_user' => $dbUser,
+                    ]);
+                    // Safely drop leftover database/user for this exact site before re-creating
+                    if ($dbExists === true) {
+                        $provisioner->dropDatabase($ctx, $dbName);
+                    }
+                    if ($userExists === true) {
+                        $provisioner->dropUser($ctx, $dbUser);
+                    }
+                } else {
+                    return StageResult::failure($this->name(), sprintf(
+                        'نام %s از قبل روی این سرور وجود دارد و ممکن است متعلق به سایت دیگری باشد؛ برای جلوگیری از آسیب به آن، پایگاه داده ساخته نشد. نام دیگری انتخاب کنید.',
+                        $dbExists === true ? "پایگاه داده «{$dbName}»" : "کاربر «{$dbUser}»",
+                    ), $this->elapsed());
+                }
+            }
+
+            if ($customNames && !$isReinstallForSameDomain && ($dbExists === null || $userExists === null)) {
                 return StageResult::failure(
                     $this->name(),
                     'وجود پایگاه داده/کاربر روی سرور قابل بررسی نبود؛ نام‌های سفارشی بدون این بررسی استفاده نمی‌شوند.',

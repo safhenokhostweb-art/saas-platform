@@ -18,7 +18,13 @@ class RunMigrationsStage extends AbstractStage
 
             $result = $ctx->connection->execute("cd {$webRoot} && php artisan migrate --force 2>&1");
             if ($result->failed()) {
-                return StageResult::failure($this->name(), 'Migrations failed: ' . $result->output(), $this->elapsed());
+                $output = trim($result->output());
+                \Illuminate\Support\Facades\Log::error('CIE/Migrations failed', [
+                    'installation_id' => $ctx->installation->id,
+                    'domain'          => $ctx->request->domain,
+                    'error_output'    => $output,
+                ]);
+                return StageResult::failure($this->name(), 'Migrations failed: ' . $output, $this->elapsed());
             }
 
             $statusResult = $ctx->connection->execute("cd {$webRoot} && php artisan migrate:status 2>&1 | tail -5");
