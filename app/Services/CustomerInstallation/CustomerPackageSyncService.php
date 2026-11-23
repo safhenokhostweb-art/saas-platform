@@ -38,6 +38,8 @@ class CustomerPackageSyncService
         '.clinerules',
         '.env',
         '.env.backup',
+        'bootstrap/cache/*.php',
+        'public/storage',
         'storage/logs',
         'storage/framework/cache/data',
         'storage/framework/sessions',
@@ -294,6 +296,10 @@ class CustomerPackageSyncService
             "-x 'storage/app/public/uploads/*'",
             "-x 'public/uploads/*'",
             "-x 'public/uploads'",
+            "-x 'public/storage'",
+            "-x 'public/storage/*'",
+            "-x 'public/storage/**'",
+            "-x 'bootstrap/cache/*.php'",
             "-x 'installed.lock'",
             "-x '*/installed.lock'",
             "-x 'storage/installed.lock'",
@@ -394,6 +400,17 @@ class CustomerPackageSyncService
             return true;
         }
 
+        // Compiled bootstrap cache files (config.php, routes-v7.php, services.php, events.php, packages.php)
+        // Must preserve the bootstrap/cache folder skeleton and its .gitignore
+        if (str_starts_with($relativePath, 'bootstrap/cache/') && str_ends_with($relativePath, '.php')) {
+            return true;
+        }
+
+        // Storage symlink or physical public/storage directory
+        if ($relativePath === 'public/storage' || str_starts_with($relativePath, 'public/storage/')) {
+            return true;
+        }
+
         // Runtime storage caches and logs
         if (str_starts_with($relativePath, 'storage/logs/') && !str_ends_with($relativePath, '.gitignore')) {
             return true;
@@ -446,11 +463,13 @@ class CustomerPackageSyncService
             throw new RuntimeException("Failed to open generated package zip (code {$res}): {$zipPath}");
         }
 
-        // Check required files
+        // Check required and forbidden files
         $artisanFound = false;
         $themeServiceFound = false;
         $envFound = false;
         $lockFound = false;
+        $bootstrapCacheFound = false;
+        $publicStorageFound = false;
 
         for ($i = 0; $i < $zip->numFiles; $i++) {
             $name = str_replace('\\', '/', $zip->getNameIndex($i));
@@ -465,6 +484,12 @@ class CustomerPackageSyncService
             }
             if ($name === 'installed.lock') {
                 $lockFound = true;
+            }
+            if (str_starts_with($name, 'bootstrap/cache/') && str_ends_with($name, '.php')) {
+                $bootstrapCacheFound = true;
+            }
+            if ($name === 'public/storage' || str_starts_with($name, 'public/storage/')) {
+                $publicStorageFound = true;
             }
         }
 
@@ -484,6 +509,14 @@ class CustomerPackageSyncService
 
         if ($lockFound) {
             throw new RuntimeException("Generated package zip contains 'installed.lock'! Must be excluded: {$zipPath}");
+        }
+
+        if ($bootstrapCacheFound) {
+            throw new RuntimeException("Generated package zip contains compiled 'bootstrap/cache/*.php'! Must be excluded: {$zipPath}");
+        }
+
+        if ($publicStorageFound) {
+            throw new RuntimeException("Generated package zip contains 'public/storage'! Must be excluded: {$zipPath}");
         }
     }
 }

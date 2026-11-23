@@ -40,15 +40,17 @@ class ConfigureStorageStage extends AbstractStage
             $webRoot     = $ctx->webRoot();
             $safeWebRoot = escapeshellarg($webRoot);
 
-            // Ensure all required storage directories exist before linking
+            // Ensure all required storage directories exist before linking, cleaning any stale cache or previous link
             $ctx->connection->execute(
-                "mkdir -p {$safeWebRoot}/storage/app/public {$safeWebRoot}/storage/logs "
+                "rm -f {$safeWebRoot}/bootstrap/cache/*.php 2>/dev/null || true; "
+                . "rm -rf {$safeWebRoot}/public/storage 2>/dev/null || true; "
+                . "mkdir -p {$safeWebRoot}/storage/app/public {$safeWebRoot}/storage/logs "
                 . "{$safeWebRoot}/storage/framework/cache {$safeWebRoot}/storage/framework/sessions "
                 . "{$safeWebRoot}/storage/framework/views {$safeWebRoot}/bootstrap/cache"
             );
 
-            // Create the public/storage symlink via artisan
-            $linkResult = $ctx->connection->execute("cd {$safeWebRoot} && php artisan storage:link 2>&1");
+            // Create the public/storage symlink via artisan (using --force for idempotency)
+            $linkResult = $ctx->connection->execute("cd {$safeWebRoot} && php artisan storage:link --force 2>&1");
 
             // Verify the symlink actually exists — artisan may succeed but symlink could be missing
             $verifyResult = $ctx->connection->execute(
@@ -57,7 +59,8 @@ class ConfigureStorageStage extends AbstractStage
             if (str_contains($verifyResult->stdout, 'missing')) {
                 // Artisan failed or storage dir doesn't exist — create symlink manually
                 $ctx->connection->execute(
-                    "ln -sf {$safeWebRoot}/storage/app/public {$safeWebRoot}/public/storage 2>&1"
+                    "rm -rf {$safeWebRoot}/public/storage 2>/dev/null || true; "
+                    . "ln -sf {$safeWebRoot}/storage/app/public {$safeWebRoot}/public/storage 2>&1"
                 );
                 $reCheck = $ctx->connection->execute(
                     "test -L {$safeWebRoot}/public/storage && echo linked || echo missing"

@@ -70,8 +70,12 @@ class ConfigureStorageStageTest extends TestCase
         $this->assertTrue($result->output['storage_configured']);
 
         $log = $driver->getCommandLog();
+        $this->assertStringContainsString('rm -f', $log[0]);
+        $this->assertStringContainsString('bootstrap/cache/*.php', $log[0]);
+        $this->assertStringContainsString('rm -rf', $log[0]);
+        $this->assertStringContainsString('public/storage', $log[0]);
         $this->assertStringContainsString('mkdir -p', $log[0]);
-        $this->assertStringContainsString('artisan storage:link', $log[1]);
+        $this->assertStringContainsString('artisan storage:link --force', $log[1]);
     }
 
     /**

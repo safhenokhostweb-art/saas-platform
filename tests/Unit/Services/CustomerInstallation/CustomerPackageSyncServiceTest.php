@@ -49,9 +49,15 @@ class CustomerPackageSyncServiceTest extends TestCase
         File::makeDirectory($themeServiceDir, 0777, true, true);
         File::put($themeServiceDir . DIRECTORY_SEPARATOR . 'ThemeInstanceRevisionService.php', '<?php class ThemeInstanceRevisionService {}');
 
-        // Extra files including sensitive and logs that should be excluded
+        // Extra files including sensitive, compiled cache and logs that should be excluded
         File::put($this->fixtureDir . DIRECTORY_SEPARATOR . '.env', 'DB_PASSWORD=secret');
         File::put($this->fixtureDir . DIRECTORY_SEPARATOR . 'installed.lock', 'lock');
+        File::makeDirectory($this->fixtureDir . DIRECTORY_SEPARATOR . 'bootstrap' . DIRECTORY_SEPARATOR . 'cache', 0777, true, true);
+        File::put($this->fixtureDir . DIRECTORY_SEPARATOR . 'bootstrap' . DIRECTORY_SEPARATOR . 'cache' . DIRECTORY_SEPARATOR . 'config.php', '<?php return [];');
+        File::put($this->fixtureDir . DIRECTORY_SEPARATOR . 'bootstrap' . DIRECTORY_SEPARATOR . 'cache' . DIRECTORY_SEPARATOR . 'routes-v7.php', '<?php return [];');
+        File::put($this->fixtureDir . DIRECTORY_SEPARATOR . 'bootstrap' . DIRECTORY_SEPARATOR . 'cache' . DIRECTORY_SEPARATOR . '.gitignore', "*\n!.gitignore\n");
+        File::makeDirectory($this->fixtureDir . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'storage', 0777, true, true);
+        File::put($this->fixtureDir . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'stale.txt', 'stale');
         File::makeDirectory($this->fixtureDir . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'logs', 0777, true, true);
         File::put($this->fixtureDir . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'logs' . DIRECTORY_SEPARATOR . 'laravel.log', 'log entry');
 
@@ -111,6 +117,14 @@ class CustomerPackageSyncServiceTest extends TestCase
         $this->assertTrue($service->shouldExcludePath('installed.lock'));
         $this->assertTrue($service->shouldExcludePath('.git/HEAD'));
         $this->assertTrue($service->shouldExcludePath('.github/workflows/ci.yml'));
+        $this->assertTrue($service->shouldExcludePath('bootstrap/cache/config.php'));
+        $this->assertTrue($service->shouldExcludePath('bootstrap/cache/routes-v7.php'));
+        $this->assertTrue($service->shouldExcludePath('bootstrap/cache/services.php'));
+        $this->assertTrue($service->shouldExcludePath('bootstrap/cache/events.php'));
+        $this->assertTrue($service->shouldExcludePath('bootstrap/cache/packages.php'));
+        $this->assertFalse($service->shouldExcludePath('bootstrap/cache/.gitignore'));
+        $this->assertTrue($service->shouldExcludePath('public/storage'));
+        $this->assertTrue($service->shouldExcludePath('public/storage/somefile.png'));
         $this->assertTrue($service->shouldExcludePath('storage/logs/laravel.log'));
         $this->assertTrue($service->shouldExcludePath('storage/framework/cache/data/abc'));
         $this->assertTrue($service->shouldExcludePath('public/uploads/file.png'));
@@ -163,10 +177,50 @@ class CustomerPackageSyncServiceTest extends TestCase
         $this->assertNotFalse($zip->locateName('artisan'));
         $this->assertNotFalse($zip->locateName('app/Services/ThemeCanvas/ThemeInstanceRevisionService.php'));
         $this->assertNotFalse($zip->locateName('storage/app/public/solar-assets/demo.jpg'));
-        // Sensitive files must NOT be present
+        // Sensitive and cached files must NOT be present
         $this->assertFalse($zip->locateName('.env'));
         $this->assertFalse($zip->locateName('installed.lock'));
+        $this->assertFalse($zip->locateName('bootstrap/cache/config.php'));
+        $this->assertFalse($zip->locateName('bootstrap/cache/routes-v7.php'));
+        $this->assertFalse($zip->locateName('public/storage'));
+        $this->assertFalse($zip->locateName('public/storage/stale.txt'));
         $zip->close();
+    }
+
+    public function test_verify_archive_integrity_rejects_bootstrap_cache_and_public_storage(): void
+    {
+        $service = new CustomerPackageSyncService();
+        $invalidZipPath = $this->storagePackagesDir . DIRECTORY_SEPARATOR . 'invalid-test.zip';
+
+        // 1. Test rejection of bootstrap/cache/*.php
+        $zip = new ZipArchive();
+        $zip->open($invalidZipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+        $zip->addFromString('artisan', str_repeat('a', 1500));
+        $zip->addFromString('app/Services/ThemeCanvas/ThemeInstanceRevisionService.php', '<?php');
+        $zip->addFromString('bootstrap/cache/config.php', '<?php return [];');
+        $zip->close();
+
+        try {
+            $service->verifyArchiveIntegrity($invalidZipPath, minSizeBytes: 100);
+            $this->fail('Expected RuntimeException for bootstrap/cache/*.php was not thrown');
+        } catch (\RuntimeException $e) {
+            $this->assertStringContainsString('bootstrap/cache/*.php', $e->getMessage());
+        }
+
+        // 2. Test rejection of public/storage
+        $zip = new ZipArchive();
+        $zip->open($invalidZipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+        $zip->addFromString('artisan', '#!/usr/bin/env php');
+        $zip->addFromString('app/Services/ThemeCanvas/ThemeInstanceRevisionService.php', '<?php');
+        $zip->addFromString('public/storage/leak.png', 'binary data');
+        $zip->close();
+
+        try {
+            $service->verifyArchiveIntegrity($invalidZipPath, minSizeBytes: 100);
+            $this->fail('Expected RuntimeException for public/storage was not thrown');
+        } catch (\RuntimeException $e) {
+            $this->assertStringContainsString('public/storage', $e->getMessage());
+        }
     }
 
     public function test_sync_from_deployed_site_is_idempotent_for_same_commit(): void
