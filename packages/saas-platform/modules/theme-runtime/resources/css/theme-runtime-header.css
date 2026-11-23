@@ -192,6 +192,268 @@
 .tb-nav-header-root :is(a,button):not(.tb-btn):focus-visible{outline:2px solid var(--tb-hdr-focus, currentColor);outline-offset:2px;}
 .tb-nav-header[data-tb-hdr-set~="focus"] .tb-nav-header-root .tb-btn:focus-visible{outline-color:var(--tb-hdr-focus);}
 
+/* ══════════════════════════════════════════════════════════════════
+   Safhe Nokhost — Architectural Iranian-Islamic Luxury Variant
+   ══════════════════════════════════════════════════════════════════ */
+.theme-header--safhe-architectural,
+#tb-safhe-header-nav,
+.tb-nav-header[data-tb-block-id="safhe-header-nav"] {
+   --safhe-navy: rgba(7, 16, 38, 0.92);
+   --safhe-navy-solid: rgba(7, 16, 38, 0.98);
+   --safhe-turquoise: rgba(20, 184, 166, 1);
+   --safhe-turquoise-glow: rgba(20, 184, 166, 0.35);
+   --safhe-amber: rgba(245, 158, 11, 1);
+   --safhe-amber-glow: rgba(245, 158, 11, 0.45);
+   --safhe-gold: rgba(200, 162, 83, 1);
+   --safhe-gold-muted: rgba(200, 162, 83, 0.35);
+   --safhe-gold-line: rgba(200, 162, 83, 0.6);
+   --safhe-ice-blue: rgba(186, 230, 253, 0.25);
+   --safhe-white: rgba(248, 250, 252, 1);
+   --safhe-silver: rgba(203, 213, 225, 1);
+   background: var(--safhe-navy) !important;
+   position: relative;
+   border-bottom: 1px solid transparent !important;
+   border-image: linear-gradient(90deg, transparent, var(--safhe-gold-line) 20%, var(--safhe-turquoise) 50%, var(--safhe-gold-line) 80%, transparent) 1 !important;
+}
+
+/* Subtle background architectural watermark (Gereh-chini tile) + blur layer */
+.theme-header--safhe-architectural::before,
+#tb-safhe-header-nav::before,
+.tb-nav-header[data-tb-block-id="safhe-header-nav"]::before {
+   content: "";
+   position: absolute;
+   inset: 0;
+   background-image: url('/theme-assets/safhenokhost/safhe-pattern.svg');
+   background-repeat: repeat;
+   background-size: 72px 72px;
+   opacity: 0.05;
+   pointer-events: none;
+   z-index: 0;
+   -webkit-backdrop-filter: blur(16px);
+   backdrop-filter: blur(16px);
+}
+
+.theme-header--safhe-architectural .tb-nav-header-inner,
+#tb-safhe-header-nav .tb-nav-header-inner,
+.tb-nav-header[data-tb-block-id="safhe-header-nav"] .tb-nav-header-inner {
+   position: relative;
+   z-index: 1;
+}
+
+@media (min-width: 1024px) {
+   .theme-header--safhe-architectural .tb-nav-header-inner,
+   #tb-safhe-header-nav .tb-nav-header-inner,
+   .tb-nav-header[data-tb-block-id="safhe-header-nav"] .tb-nav-header-inner {
+      display: flex !important;
+      flex-direction: row !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      flex-wrap: nowrap !important;
+      gap: 1.5rem !important;
+   }
+
+   .theme-header--safhe-architectural .tb-nav-header-logo-slot,
+   #tb-safhe-header-nav .tb-nav-header-logo-slot,
+   .tb-nav-header[data-tb-block-id="safhe-header-nav"] .tb-nav-header-logo-slot {
+      flex: 0 0 auto !important;
+      white-space: nowrap !important;
+      margin-inline-end: 1rem !important;
+   }
+
+   .theme-header--safhe-architectural .tb-nav-header-logo,
+   #tb-safhe-header-nav .tb-nav-header-logo,
+   .tb-nav-header[data-tb-block-id="safhe-header-nav"] .tb-nav-header-logo {
+      white-space: nowrap !important;
+   }
+
+   .theme-header--safhe-architectural .tb-nav-header-links,
+   #tb-safhe-header-nav .tb-nav-header-links,
+   .tb-nav-header[data-tb-block-id="safhe-header-nav"] .tb-nav-header-links {
+      flex: 1 1 auto !important;
+      min-width: 0 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      white-space: nowrap !important;
+   }
+
+   .theme-header--safhe-architectural .tb-nav-header-menu-panel,
+   #tb-safhe-header-nav .tb-nav-header-menu-panel,
+   .tb-nav-header[data-tb-block-id="safhe-header-nav"] .tb-nav-header-menu-panel {
+      display: flex !important;
+      align-items: center !important;
+      flex-wrap: nowrap !important;
+      gap: 1.25rem !important;
+      white-space: nowrap !important;
+   }
+
+   .theme-header--safhe-architectural .tb-nav-header-link,
+   .theme-header--safhe-architectural .tb-mega-menu-trigger,
+   #tb-safhe-header-nav .tb-nav-header-link,
+   #tb-safhe-header-nav .tb-mega-menu-trigger,
+   .tb-nav-header[data-tb-block-id="safhe-header-nav"] .tb-nav-header-link,
+   .tb-nav-header[data-tb-block-id="safhe-header-nav"] .tb-mega-menu-trigger {
+      white-space: nowrap !important;
+      flex-shrink: 0 !important;
+   }
+
+   .theme-header--safhe-architectural .tb-nav-header-actions,
+   #tb-safhe-header-nav .tb-nav-header-actions,
+   .tb-nav-header[data-tb-block-id="safhe-header-nav"] .tb-nav-header-actions {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: flex-end !important;
+      flex-wrap: nowrap !important;
+      flex: 0 0 auto !important;
+      gap: 0.75rem !important;
+      white-space: nowrap !important;
+   }
+
+   .theme-header--safhe-architectural .tb-nav-header-actions > *,
+   #tb-safhe-header-nav .tb-nav-header-actions > *,
+   .tb-nav-header[data-tb-block-id="safhe-header-nav"] .tb-nav-header-actions > * {
+      white-space: nowrap !important;
+      flex-shrink: 0 !important;
+   }
+}
+
+/* Hide duplicate icons next to main menu links (Services, Portfolio, Blog, About, Contact) */
+.theme-header--safhe-architectural .tb-nav-header-menu-panel > .tb-nav-header-link .tb-nav-header-link-icon,
+.theme-header--safhe-architectural .tb-mega-menu-trigger .tb-nav-header-link-icon,
+#tb-safhe-header-nav .tb-nav-header-menu-panel > .tb-nav-header-link .tb-nav-header-link-icon,
+#tb-safhe-header-nav .tb-mega-menu-trigger .tb-nav-header-link-icon,
+.tb-nav-header[data-tb-block-id="safhe-header-nav"] .tb-nav-header-menu-panel > .tb-nav-header-link .tb-nav-header-link-icon,
+.tb-nav-header[data-tb-block-id="safhe-header-nav"] .tb-mega-menu-trigger .tb-nav-header-link-icon {
+   display: none !important;
+}
+
+/* Nav links styling & architectural diamond pointer on Hover/Active */
+@media (min-width: 768px) {
+   .theme-header--safhe-architectural .tb-nav-header-menu-panel .tb-nav-header-link,
+   #tb-safhe-header-nav .tb-nav-header-menu-panel .tb-nav-header-link,
+   .tb-nav-header[data-tb-block-id="safhe-header-nav"] .tb-nav-header-menu-panel .tb-nav-header-link {
+      position: relative !important;
+      color: rgba(248, 250, 252, 0.92) !important;
+      font-weight: 500 !important;
+      transition: color 0.25s ease, background-color 0.25s ease !important;
+      border: 1px solid transparent !important;
+   }
+   .theme-header--safhe-architectural .tb-nav-header-menu-panel .tb-nav-header-link:hover,
+   .theme-header--safhe-architectural .tb-nav-header-menu-panel .tb-nav-header-link[aria-current="page"],
+   #tb-safhe-header-nav .tb-nav-header-menu-panel .tb-nav-header-link:hover,
+   #tb-safhe-header-nav .tb-nav-header-menu-panel .tb-nav-header-link[aria-current="page"],
+   .tb-nav-header[data-tb-block-id="safhe-header-nav"] .tb-nav-header-menu-panel .tb-nav-header-link:hover,
+   .tb-nav-header[data-tb-block-id="safhe-header-nav"] .tb-nav-header-menu-panel .tb-nav-header-link[aria-current="page"] {
+      color: rgba(20, 184, 166, 1) !important;
+      background: rgba(20, 184, 166, 0.08) !important;
+      border-color: rgba(186, 230, 253, 0.25) !important;
+   }
+   /* Architectural diamond indicator beneath link: Amber jewel + turquoise border */
+   .theme-header--safhe-architectural .tb-nav-header-menu-panel .tb-nav-header-link::after,
+   #tb-safhe-header-nav .tb-nav-header-menu-panel .tb-nav-header-link::after,
+   .tb-nav-header[data-tb-block-id="safhe-header-nav"] .tb-nav-header-menu-panel .tb-nav-header-link::after {
+      content: "" !important;
+      position: absolute !important;
+      bottom: -6px !important;
+      left: 50% !important;
+      width: 6px !important;
+      height: 6px !important;
+      background: var(--safhe-amber) !important;
+      border: 1px solid var(--safhe-turquoise) !important;
+      box-shadow: 0 0 6px var(--safhe-amber-glow) !important;
+      transform: translateX(-50%) rotate(45deg) scale(0) !important;
+      opacity: 0 !important;
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease !important;
+      pointer-events: none !important;
+   }
+   .theme-header--safhe-architectural .tb-nav-header-menu-panel .tb-nav-header-link:hover::after,
+   .theme-header--safhe-architectural .tb-nav-header-menu-panel .tb-nav-header-link[aria-current="page"]::after,
+   .theme-header--safhe-architectural .tb-mega-menu-item.tb-mega-open > .tb-mega-menu-trigger::after,
+   #tb-safhe-header-nav .tb-nav-header-menu-panel .tb-nav-header-link:hover::after,
+   #tb-safhe-header-nav .tb-nav-header-menu-panel .tb-nav-header-link[aria-current="page"]::after,
+   #tb-safhe-header-nav .tb-mega-menu-item.tb-mega-open > .tb-mega-menu-trigger::after,
+   .tb-nav-header[data-tb-block-id="safhe-header-nav"] .tb-nav-header-menu-panel .tb-nav-header-link:hover::after,
+   .tb-nav-header[data-tb-block-id="safhe-header-nav"] .tb-nav-header-menu-panel .tb-nav-header-link[aria-current="page"]::after,
+   .tb-nav-header[data-tb-block-id="safhe-header-nav"] .tb-mega-menu-item.tb-mega-open > .tb-mega-menu-trigger::after {
+      transform: translateX(-50%) rotate(45deg) scale(1) !important;
+      opacity: 1 !important;
+   }
+}
+
+/* Mega-menu panel styling & Eslimi Corner Ornament (لچک اسلیمی) */
+@media (min-width: 1024px) {
+   .theme-header--safhe-architectural:not(.tb-nav-header-root--drawer) .tb-mega-menu-panel,
+   #tb-safhe-header-nav:not(.tb-nav-header-root--drawer) .tb-mega-menu-panel,
+   .tb-nav-header[data-tb-block-id="safhe-header-nav"]:not(.tb-nav-header-root--drawer) .tb-mega-menu-panel {
+      position: absolute !important;
+      top: 100% !important;
+      inset-inline: 0 !important;
+      margin-inline: auto !important;
+      width: min(var(--tb-hdr-mega-max-w, 57.5rem), calc(100vw - 2rem)) !important;
+      z-index: 1000 !important;
+      background: var(--safhe-navy-solid) !important;
+      -webkit-backdrop-filter: blur(20px);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(20, 184, 166, 0.3) !important;
+      border-radius: var(--tb-hdr-mega-radius, 1rem) !important;
+      box-shadow: 0 24px 64px rgba(3, 8, 20, 0.8) !important;
+      overflow: hidden !important;
+   }
+   /* Eslimi corner ornament (Lachak) on top corner of the card */
+   .theme-header--safhe-architectural:not(.tb-nav-header-root--drawer) .tb-mega-menu-panel::after,
+   #tb-safhe-header-nav:not(.tb-nav-header-root--drawer) .tb-mega-menu-panel::after,
+   .tb-nav-header[data-tb-block-id="safhe-header-nav"]:not(.tb-nav-header-root--drawer) .tb-mega-menu-panel::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      inset-inline-end: 0;
+      width: 140px;
+      height: 140px;
+      background-image: url('/theme-assets/safhenokhost/safhe-pattern.svg');
+      background-repeat: no-repeat;
+      background-size: cover;
+      opacity: 0.08;
+      pointer-events: none;
+      mask-image: radial-gradient(circle at top right, black 40%, transparent 80%);
+      -webkit-mask-image: radial-gradient(circle at top right, black 40%, transparent 80%);
+   }
+}
+
+/* Commercial CTAs: "درخواست مشاوره" (navy-teal gradient + amber border) & "ورود" (ice glass) */
+.theme-header--safhe-architectural .tb-nav-header-cta:not(.tb-nav-header-cta--second),
+#tb-safhe-header-nav .tb-nav-header-cta:not(.tb-nav-header-cta--second),
+.tb-nav-header[data-tb-block-id="safhe-header-nav"] .tb-nav-header-cta:not(.tb-nav-header-cta--second) {
+   background: linear-gradient(135deg, rgba(20, 184, 166, 1) 0%, rgba(7, 16, 38, 1) 100%) !important;
+   border: 1px solid rgba(245, 158, 11, 0.8) !important;
+   color: rgba(248, 250, 252, 1) !important;
+   box-shadow: 0 4px 14px rgba(20, 184, 166, 0.25) !important;
+   transition: transform 0.2s ease, box-shadow 0.25s ease, border-color 0.25s ease !important;
+}
+.theme-header--safhe-architectural .tb-nav-header-cta:not(.tb-nav-header-cta--second):hover,
+#tb-safhe-header-nav .tb-nav-header-cta:not(.tb-nav-header-cta--second):hover,
+.tb-nav-header[data-tb-block-id="safhe-header-nav"] .tb-nav-header-cta:not(.tb-nav-header-cta--second):hover {
+   box-shadow: 0 0 20px rgba(20, 184, 166, 0.5), 0 0 10px rgba(245, 158, 11, 0.4) !important;
+   border-color: rgba(245, 158, 11, 1) !important;
+   transform: translateY(-1px);
+}
+
+.theme-header--safhe-architectural .tb-nav-header-cta--second,
+#tb-safhe-header-nav .tb-nav-header-cta--second,
+.tb-nav-header[data-tb-block-id="safhe-header-nav"] .tb-nav-header-cta--second {
+   background: rgba(255, 255, 255, 0.05) !important;
+   border: 1px solid rgba(186, 230, 253, 0.35) !important;
+   color: rgba(248, 250, 252, 0.95) !important;
+   backdrop-filter: blur(8px);
+   transition: background-color 0.2s ease, border-color 0.25s ease, color 0.2s ease !important;
+}
+.theme-header--safhe-architectural .tb-nav-header-cta--second:hover,
+#tb-safhe-header-nav .tb-nav-header-cta--second:hover,
+.tb-nav-header[data-tb-block-id="safhe-header-nav"] .tb-nav-header-cta--second:hover {
+   background: rgba(20, 184, 166, 0.15) !important;
+   border-color: rgba(20, 184, 166, 0.8) !important;
+   color: rgba(20, 184, 166, 1) !important;
+}
+
 /*
  * ADR-084 — capability props (logo lockup, item icons, pill pointer, mega
  * card, boxed sub-item icons, badges, promo cards, outline and second

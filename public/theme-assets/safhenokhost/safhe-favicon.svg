@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" fill="none">
+  <!-- Architectural Safhe Nokhost High-Res Favicon -->
+  <defs>
+    <linearGradient id="favBg" x1="0" y1="0" x2="128" y2="128" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0B162C"/>
+      <stop offset="100%" stop-color="#060C18"/>
+    </linearGradient>
+    <linearGradient id="favGold" x1="20" y1="20" x2="108" y2="108" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#DFBA6B"/>
+      <stop offset="100%" stop-color="#C8A253"/>
+    </linearGradient>
+    <linearGradient id="favTurq" x1="20" y1="20" x2="108" y2="108" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#2DD4BF"/>
+      <stop offset="100%" stop-color="#0D9488"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Luxury Deep Navy Backplate with 28px rounded corners -->
+  <rect width="128" height="128" rx="28" fill="url(#favBg)"/>
+  <rect x="2" y="2" width="124" height="124" rx="26" stroke="url(#favGold)" stroke-width="1.5" opacity="0.4"/>
+
+  <!-- Iranian Pointed Arch (طاق جناغی) -->
+  <path d="M 64 16 
+           C 51 32, 28 50, 28 80 
+           L 28 106 
+           L 100 106 
+           L 100 80 
+           C 100 50, 77 32, 64 16 Z" 
+        stroke="url(#favGold)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Inner Arch Ring -->
+  <path d="M 64 25 
+           C 54 38, 35 54, 35 78 
+           L 35 100 
+           L 93 100 
+           L 93 78 
+           C 93 54, 74 38, 64 25 Z" 
+        stroke="url(#favTurq)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>
+
+  <!-- 8-Pointed Star / Shamseh centered at (64, 68) -->
+  <rect x="46" y="50" width="36" height="36" rx="1" transform="rotate(0 64 68)" 
+        stroke="url(#favGold)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <rect x="46" y="50" width="36" height="36" rx="1" transform="rotate(45 64 68)" 
+        stroke="url(#favTurq)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+
+  <!-- Center Jewel -->
+  <rect x="58" y="62" width="12" height="12" rx="1" transform="rotate(45 64 68)" fill="url(#favGold)"/>
+
+  <!-- Apex Jewel -->
+  <circle cx="64" cy="16" r="3.5" fill="#14B8A6"/>
+  <circle cx="64" cy="37" r="2.5" fill="#C8A253"/>
+</svg>

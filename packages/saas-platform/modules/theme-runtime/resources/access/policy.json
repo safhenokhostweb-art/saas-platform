@@ -18,6 +18,14 @@
                 "solar_calculator"
             ],
             "locked_display": "hidden"
+        },
+        "safhenokhost": {
+            "label": "صفحه نخست (اختصاصی)",
+            "visibility": "restricted",
+            "entitlement_keys": [
+                "safhenokhost_exclusive"
+            ],
+            "locked_display": "hidden"
         }
     },
     "templates": {
@@ -44,6 +52,7 @@
         "pricing-plans": "public",
         "products-promo-grid": "public",
         "products-showcase": "public",
+        "safhe-header": "safhenokhost",
         "solar-footer": "solar-industry",
         "solar-header": "solar-industry",
         "solar-page-about": "solar-industry",

@@ -3765,7 +3765,7 @@ function themeCanvas() {
         },
 
         // Handle messages from iframe
-        handleIframeMessage(e) {
+        async handleIframeMessage(e) {
             if (!ThemeCanvasRuntime.sameOrigin(e.origin) || e.source !== this.getIframe()?.contentWindow) return;
             const d = e.data;
             if (!ThemeCanvasRuntime.valid(d, 'to-editor')) return;
@@ -3796,6 +3796,30 @@ function themeCanvas() {
                         this.showLeftSidebar = true;
                         this.selectBlockById(d.blockId);
                         this.selectedTab = 'content';
+                    } else if (CanvasIdentity.findById(this.headerBlocks, d.blockId) || (this.headerBlocks.length > 0 && (d.blockId === 'header' || this.headerBlocks.some(b => b.id === d.blockId)))) {
+                        this.showLeftSidebar = true;
+                        if (this.activeTarget !== 'header') {
+                            await this.switchTarget('header');
+                        }
+                        this.$nextTick(() => {
+                            const target = CanvasIdentity.findById(this.blocks, d.blockId) || this.blocks[0];
+                            if (target) {
+                                this.selectBlockById(target.id);
+                                this.selectedTab = 'content';
+                            }
+                        });
+                    } else if (CanvasIdentity.findById(this.footerBlocks, d.blockId) || (this.footerBlocks.length > 0 && (d.blockId === 'footer' || this.footerBlocks.some(b => b.id === d.blockId)))) {
+                        this.showLeftSidebar = true;
+                        if (this.activeTarget !== 'footer') {
+                            await this.switchTarget('footer');
+                        }
+                        this.$nextTick(() => {
+                            const target = CanvasIdentity.findById(this.blocks, d.blockId) || this.blocks[0];
+                            if (target) {
+                                this.selectBlockById(target.id);
+                                this.selectedTab = 'content';
+                            }
+                        });
                     }
                     break;
                 }

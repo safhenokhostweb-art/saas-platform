@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 56" width="260" height="56" fill="none" dir="rtl">
+  <!-- Architectural Safhe Nokhost Brand Lockup (طاق جناغی + شمسه هشت‌پر + تایپوگرافی معماری) -->
+  <defs>
+    <linearGradient id="logoGoldGrad" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#DFBA6B"/>
+      <stop offset="100%" stop-color="#C8A253"/>
+    </linearGradient>
+    <linearGradient id="logoTurqGrad" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#14B8A6"/>
+      <stop offset="100%" stop-color="#0D9488"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Right: Geometric Emblem Lockup (44x44 at x=208, y=6) -->
+  <g transform="translate(208, 6)">
+    <!-- Pointed Arch (طاق جناغی) -->
+    <path d="M 22 4 
+             C 17 11, 8 19, 8 30 
+             L 8 40 
+             L 36 40 
+             L 36 30 
+             C 36 19, 27 11, 22 4 Z" 
+          stroke="url(#logoGoldGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Inner Arch Contour -->
+    <path d="M 22 8 
+             C 18 13, 11 19, 11 29 
+             L 11 37 
+             L 33 37 
+             L 33 29 
+             C 33 19, 26 13, 22 8 Z" 
+          stroke="#14B8A6" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>
+
+    <!-- Shamseh: 8-Pointed Star (Dual overlapping squares) centered at (22, 25) -->
+    <rect x="15" y="18" width="14" height="14" rx="0.5" transform="rotate(0 22 25)" 
+          stroke="url(#logoGoldGrad)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <rect x="15" y="18" width="14" height="14" rx="0.5" transform="rotate(45 22 25)" 
+          stroke="#14B8A6" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+
+    <!-- Center Jewel (نگین مرکزی شمسه) -->
+    <rect x="20" y="23" width="4" height="4" rx="0.5" transform="rotate(45 22 25)" fill="url(#logoGoldGrad)"/>
+
+    <!-- Arch Apex Accent -->
+    <circle cx="22" cy="4" r="1.2" fill="#14B8A6"/>
+    <!-- Base Line -->
+    <line x1="5" y1="43" x2="39" y2="43" stroke="url(#logoGoldGrad)" stroke-width="1.2" stroke-linecap="round" opacity="0.6"/>
+  </g>
+
+  <!-- Left/Center: Persian Typography (Vazirmatn) -->
+  <!-- Main Brand Name: صفحه نخست -->
+  <text x="198" y="27" text-anchor="end" font-family="Vazirmatn, system-ui, -apple-system, sans-serif" font-weight="900" font-size="20" fill="#F8FAFC">
+    صفحه <tspan fill="#14B8A6">نخست</tspan>
+  </text>
+
+  <!-- Tagline: زیرساخت ابری و آژانس توسعه وب -->
+  <text x="198" y="44" text-anchor="end" font-family="Vazirmatn, system-ui, -apple-system, sans-serif" font-weight="500" font-size="9.5" fill="#CBD5E1" letter-spacing="-0.2px">
+    زیرساخت ابری و آژانس توسعه وب
+  </text>
+</svg>

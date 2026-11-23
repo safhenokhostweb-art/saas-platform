@@ -379,6 +379,12 @@ body.tb-drag-active .tb-drop-zone {
                 || blockEl.getAttribute('data-canvas-block-id')
                 || (blockEl.closest('[data-tb-block-id]') ? blockEl.closest('[data-tb-block-id]').getAttribute('data-tb-block-id') : null)
                 || (blockEl.querySelector('[data-tb-block-id]') ? blockEl.querySelector('[data-tb-block-id]').getAttribute('data-tb-block-id') : null);
+            if (!blockId && (blockEl.classList.contains('tb-nav-header') || blockEl.getAttribute('data-layout-slot') === 'header')) {
+                blockId = 'header';
+            }
+            if (!blockId && (blockEl.classList.contains('tb-nav-footer') || blockEl.getAttribute('data-layout-slot') === 'footer')) {
+                blockId = 'footer';
+            }
             if (blockId) {
                 selectBlock(blockId);
                 notifyParent({ action: 'blockSelected', blockId: state.selectedBlockId || blockId });

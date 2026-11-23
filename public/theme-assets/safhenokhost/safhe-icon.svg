@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" fill="none">
+  <!-- Architectural Safhe Nokhost Emblem: Pointed Arch (طاق جناغی) + 8-Pointed Star / Shamseh (شمسه هشت‌پر) -->
+  <defs>
+    <!-- Deep Navy to Turquoise linear gradient -->
+    <linearGradient id="safheArchGrad" x1="50" y1="8" x2="50" y2="88" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#14B8A6"/>
+      <stop offset="50%" stop-color="#0D9488"/>
+      <stop offset="100%" stop-color="#0B162C"/>
+    </linearGradient>
+    <linearGradient id="safheGoldGrad" x1="25" y1="25" x2="75" y2="75" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#DFBA6B"/>
+      <stop offset="100%" stop-color="#C8A253"/>
+    </linearGradient>
+    <linearGradient id="safheGlow" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#14B8A6" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#C8A253" stop-opacity="0.05"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Soft Ambient Glow Backplate -->
+  <circle cx="50" cy="50" r="44" fill="url(#safheGlow)"/>
+
+  <!-- Iranian Pointed Arch (طاق جناغی ایرانی اصیل) with consistent stroke-width: 2.5 -->
+  <!-- Outer Arch Contour -->
+  <path d="M 50 10 
+           C 40 24, 20 40, 20 64 
+           L 20 86 
+           C 20 87, 21 88, 22 88 
+           L 78 88 
+           C 79 88, 80 87, 80 86 
+           L 80 64 
+           C 80 40, 60 24, 50 10 Z" 
+        stroke="url(#safheGoldGrad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Inner Sacred Arch Keystones & Outline -->
+  <path d="M 50 17 
+           C 42 28, 26 42, 26 63 
+           L 26 82 
+           L 74 82 
+           L 74 63 
+           C 74 42, 58 28, 50 17 Z" 
+        stroke="#14B8A6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+
+  <!-- Geometric 8-Pointed Star / Shamseh (شمسه هندسی هشت‌پر معماری ایرانی) -->
+  <!-- First Square: Centered at (50, 52), radius 14 -->
+  <rect x="36" y="38" width="28" height="28" rx="1" transform="rotate(0 50 52)" 
+        stroke="url(#safheGoldGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- Second Square: Rotated 45 degrees -->
+  <rect x="36" y="38" width="28" height="28" rx="1" transform="rotate(45 50 52)" 
+        stroke="#14B8A6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+
+  <!-- Center Diamond / Origin Point (مرکز نورانی گره‌چینی) -->
+  <rect x="46" y="48" width="8" height="8" rx="0.5" transform="rotate(45 50 52)" fill="url(#safheGoldGrad)"/>
+
+  <!-- Keystone Arch Apex Finial Accent (تاج طاق) -->
+  <circle cx="50" cy="10" r="2" fill="#14B8A6"/>
+  <circle cx="50" cy="27" r="1.5" fill="#C8A253"/>
+
+  <!-- Horizontal Ground / Foundation Line with subtle gradient fade -->
+  <line x1="14" y1="92" x2="86" y2="92" stroke="url(#safheGoldGrad)" stroke-width="1.5" stroke-linecap="round" opacity="0.7"/>
+</svg>

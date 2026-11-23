@@ -4956,6 +4956,10 @@ class BlockRenderer
 
         $rootClass = 'tb-nav-header-root' . ($mobileLogo !== '' ? ' tb-nav-header-root--has-mobile-logo' : '');
         $headerClass = 'tb-nav-header' . $menuAlignment . $drawerClasses . $iconsAnimClass;
+        $variantClass = trim($this->stringify($props['variant'] ?? $props['custom_class'] ?? ''));
+        if ($variantClass !== '') {
+            $headerClass .= ' ' . $this->escapeAttr($variantClass);
+        }
         // ADR-082 step 3: the Style tab (menu, states, spacing, shadow, blur)
         // as the header's own --tb-hdr-* values; nothing when nothing is set.
         $headerStyle = Widget\HeaderStyleVars::forHeader($rootId, $props);

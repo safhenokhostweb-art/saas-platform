@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60" width="60" height="60" fill="none">
+  <!-- Persian Architectural Gereh-Chini & Shamseh Pattern (گره‌چینی شمسه هشت و چهار) -->
+  <defs>
+    <pattern id="safheArchGereh" width="60" height="60" patternUnits="userSpaceOnUse">
+      <!-- Central 8-Pointed Star (Shamseh) in architectural gold/turquoise tones -->
+      <path d="M 30 16 L 34.5 25.5 L 44 25.5 L 36.5 31.5 L 39.5 40.5 L 30 35 L 20.5 40.5 L 23.5 31.5 L 16 25.5 L 25.5 25.5 Z" 
+            stroke="#14B8A6" stroke-width="0.8" fill="none"/>
+      
+      <!-- Orthogonal and Diagonal Strapwork Lines connecting vertices -->
+      <path d="M 30 0 L 30 16 M 30 44 L 30 60 M 0 30 L 16 30 M 44 30 L 60 30" 
+            stroke="#C8A253" stroke-width="0.75" stroke-linecap="round"/>
+      <path d="M 0 0 L 18 18 M 42 18 L 60 0 M 0 60 L 18 42 M 42 42 L 60 60" 
+            stroke="#14B8A6" stroke-width="0.7" stroke-linecap="round"/>
+      
+      <!-- Corner Interlocking Geometric Knots -->
+      <path d="M 0 14 L 8 14 L 14 8 L 14 0" stroke="#C8A253" stroke-width="0.75"/>
+      <path d="M 60 14 L 52 14 L 46 8 L 46 0" stroke="#C8A253" stroke-width="0.75"/>
+      <path d="M 0 46 L 8 46 L 14 52 L 14 60" stroke="#C8A253" stroke-width="0.75"/>
+      <path d="M 60 46 L 52 46 L 46 52 L 46 60" stroke="#C8A253" stroke-width="0.75"/>
+      
+      <!-- Central Rosette Node -->
+      <circle cx="30" cy="30" r="1.5" fill="#C8A253"/>
+    </pattern>
+  </defs>
+  <rect width="60" height="60" fill="url(#safheArchGereh)"/>
+</svg>

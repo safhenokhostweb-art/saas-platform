@@ -1,0 +1,232 @@
+{
+    "order": 110,
+    "name": "هدر اختصاصی صفحه نخست با مگامنو",
+    "description": "هدر چسبان مدرن با هویت معماری قزوین (طاق عالی‌قاپو و کلاه‌فرنگی)، مگامنوی کارتی ۳ ستونه، فونت وزیرمتن و پالت لاجوردی و فیروزه‌ای، کارت‌های پروموشن و کشوی موبایل کامل.",
+    "type": "header",
+    "category": "corporate",
+    "spec": "SAFHENOKHOST-v1",
+    "tags": [
+        "هدر",
+        "مگامنو",
+        "صفحه نخست",
+        "قزوین",
+        "معماری ایرانی",
+        "شرکتی",
+        "طراحی سایت"
+    ],
+    "blocks": [
+        {
+            "id": "safhe-header-nav",
+            "type": "nav_header",
+            "layout_slot": "header",
+            "props": {
+                "logo_text": "صفحه",
+                "logo_text_accent": "نخست",
+                "logo_tagline": "زیرساخت ابری و آژانس توسعه وب",
+                "logo_image": "/theme-assets/safhenokhost/safhe-icon.svg",
+                "mobile_logo": "/theme-assets/safhenokhost/safhe-icon.svg",
+                "logo_url": "@link:home",
+                "logo_alt": "صفحه نخست — توسعه وب و زیرساخت ابری",
+                "logo_height": 42,
+                "logo_height_mobile": 34,
+                "menu_align": "start",
+                "nav_source": "custom",
+                "custom_class": "theme-header--safhe-architectural",
+                "variant": "theme-header--safhe-architectural",
+                "nav_links": [
+                    {
+                        "label": "خدمات",
+                        "url": "@link:about",
+                        "mega_columns": [
+                            {
+                                "title": "طراحی و توسعه وب",
+                                "items": [
+                                    {
+                                        "label": "وب‌سایت شرکتی و سازمانی",
+                                        "url": "@link:about",
+                                        "icon": "globe",
+                                        "badge": "ویژه",
+                                        "badge_variant": "primary"
+                                    },
+                                    {
+                                        "label": "پلتفرم ابری و مقیاس‌پذیر",
+                                        "url": "@link:about",
+                                        "icon": "cloud"
+                                    },
+                                    {
+                                        "label": "فروشگاه آنلاین اختصاصی",
+                                        "url": "@link:shop",
+                                        "icon": "shopping-bag"
+                                    }
+                                ]
+                            },
+                            {
+                                "title": "سئو و رشد دیجیتال",
+                                "items": [
+                                    {
+                                        "label": "سئو تکنیکال و Core Web Vitals",
+                                        "url": "@link:about",
+                                        "icon": "zap",
+                                        "badge": "سرعت",
+                                        "badge_variant": "accent"
+                                    },
+                                    {
+                                        "label": "بهینه‌سازی نرخ تبدیل (CRO)",
+                                        "url": "@link:about",
+                                        "icon": "trending-up"
+                                    },
+                                    {
+                                        "label": "استراتژی محتوا و بازاریابی",
+                                        "url": "@link:blog",
+                                        "icon": "file-text"
+                                    }
+                                ]
+                            },
+                            {
+                                "title": "زیرساخت و امنیت",
+                                "items": [
+                                    {
+                                        "label": "هاستینگ و سرور ابری",
+                                        "url": "@link:about",
+                                        "icon": "server"
+                                    },
+                                    {
+                                        "label": "امنیت وب و گواهی SSL",
+                                        "url": "@link:about",
+                                        "icon": "shield-check"
+                                    },
+                                    {
+                                        "label": "پشتیبانی و مانیتورینگ ۲۴/۷",
+                                        "url": "@link:contact",
+                                        "icon": "headphones"
+                                    }
+                                ]
+                            }
+                        ],
+                        "mega_promo_cards": [
+                            {
+                                "eyebrow": "مشاوره تخصصی",
+                                "title": "محاسبه آنلاین زمان و هزینه پروژه شما",
+                                "url": "@link:contact",
+                                "icon": "arrow-left"
+                            },
+                            {
+                                "eyebrow": "معماری نوین",
+                                "title": "بررسی نمونه پروژه‌های برتر صفحه نخست",
+                                "url": "@link:projects",
+                                "icon": "arrow-left"
+                            }
+                        ],
+                        "mega_show_desktop": true,
+                        "mega_mobile_behavior": "accordion"
+                    },
+                    {
+                        "label": "نمونه‌کارها",
+                        "url": "@link:projects"
+                    },
+                    {
+                        "label": "وبلاگ",
+                        "url": "@link:blog"
+                    },
+                    {
+                        "label": "درباره ما",
+                        "url": "@link:about"
+                    },
+                    {
+                        "label": "تماس با ما",
+                        "url": "@link:contact"
+                    }
+                ],
+                "show_search": true,
+                "search_mode": "icon",
+                "search_placeholder": "جستجو در خدمات و مقالات...",
+                "show_dark_toggle": false,
+                "show_cart": false,
+                "show_account": false,
+                "cta_text": "درخواست مشاوره",
+                "cta_url": "@link:contact",
+                "cta_icon": "calendar",
+                "cta_style": "primary",
+                "cta_glow_color": "rgba(20, 184, 166, 0.45)",
+                "cta2_text": "ورود",
+                "cta2_url": "@link:login",
+                "cta2_icon": "user",
+                "cta2_style": "outline",
+                "burger_breakpoint": "mobile",
+                "drawer_show_logo": true,
+                "drawer_show_search": true,
+                "drawer_show_ctas": true,
+                "drawer_action_text": "تماس فوری با کارشناسان",
+                "drawer_action_url": "@link:contact",
+                "drawer_action_icon": "phone",
+                "drawer_action_style": "outline",
+                "pointer": "pill",
+                "sticky": true,
+                "bg_color": "rgba(7, 16, 38, 0.92)",
+                "text_color": "#F8FAFC",
+                "border_bottom_width": 1,
+                "border_bottom_color": "rgba(200, 162, 83, 0.35)",
+                "backdrop_blur": 16,
+                "menu_typography": {
+                    "size": 14,
+                    "weight": 600
+                },
+                "menu_gap": 6,
+                "menu_item_padding_x": 12,
+                "menu_item_padding_y": 8,
+                "menu_color": "#F8FAFC",
+                "menu_color_hover": "#14B8A6",
+                "menu_color_active": "#14B8A6",
+                "menu_bg_hover": "rgba(20, 184, 166, 0.08)",
+                "menu_item_radius": 8,
+                "menu_border_hover": "rgba(186, 230, 253, 0.25)",
+                "menu_icon_size": 16,
+                "menu_icon_color": "#14B8A6",
+                "mega_layout": "card",
+                "mega_max_width": 960,
+                "mega_radius": 16,
+                "mega_offset": 8,
+                "mega_padding": 24,
+                "mega_bg": "rgba(7, 16, 38, 0.98)",
+                "mega_border_color": "rgba(20, 184, 166, 0.3)",
+                "mega_shadow": {
+                    "x": 0,
+                    "y": 20,
+                    "blur": 48,
+                    "spread": 0,
+                    "color": "rgba(3, 8, 20, 0.75)"
+                },
+                "mega_col_title_color": "#14B8A6",
+                "mega_col_title_divider": true,
+                "mega_link_color": "#F8FAFC",
+                "mega_link_bg_hover": "rgba(20, 184, 166, 0.08)",
+                "mega_icon_style": "boxed",
+                "mega_icon_box_size": 40,
+                "mega_icon_box_radius": 10,
+                "mega_icon_box_bg": "rgba(20, 184, 166, 0.08)",
+                "mega_icon_box_border": "rgba(186, 230, 253, 0.25)",
+                "mega_icon_color": "#14B8A6",
+                "logo_icon_size": 36,
+                "logo_icon_color": "#14B8A6",
+                "logo_accent_color": "#14B8A6",
+                "logo_tagline_color": "#CBD5E1",
+                "action_icon_bg": "rgba(255, 255, 255, 0.05)",
+                "action_icon_bg_hover": "rgba(20, 184, 166, 0.15)",
+                "action_icon_border": "rgba(186, 230, 253, 0.3)",
+                "action_icon_color": "#14B8A6",
+                "action_icon_radius": 10,
+                "cta_radius": 10,
+                "cta_font_size": 13.5,
+                "drawer_bg": "rgba(7, 16, 38, 0.98)",
+                "drawer_text": "#F8FAFC",
+                "drawer_divider_color": "rgba(200, 162, 83, 0.2)",
+                "drawer_width": {
+                    "size": 330,
+                    "unit": "px"
+                },
+                "drawer_overlay_color": "rgba(5, 12, 24, 0.75)",
+                "burger_color": "#F8FAFC"
+            }
+        }
+    ]
+}
