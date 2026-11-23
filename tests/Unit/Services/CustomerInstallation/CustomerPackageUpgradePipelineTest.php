@@ -434,4 +434,70 @@ class CustomerPackageUpgradePipelineTest extends TestCase
         $this->assertSame($targetUpdate->id, $rollbackUpdate->rollback_from_update_id);
         $this->assertSame('1.1.0', CustomerInstallation::where('site_id', $site->id)->first()->package_version);
     }
+
+    public function test_command_result_aliases_and_methods_work_as_expected(): void
+    {
+        $success = new CommandResult(0, "Output line 1\n", "", 12);
+        $this->assertTrue($success->succeeded());
+        $this->assertTrue($success->successful());
+        $this->assertTrue($success->isSuccessful());
+        $this->assertFalse($success->failed());
+        $this->assertSame("Output line 1", $success->output());
+        $this->assertSame(0, $success->toArray()['exit_code']);
+
+        $failure = new CommandResult(127, "", "command not found\n", 8);
+        $this->assertFalse($failure->succeeded());
+        $this->assertFalse($failure->successful());
+        $this->assertFalse($failure->isSuccessful());
+        $this->assertTrue($failure->failed());
+        $this->assertSame("command not found", $failure->output());
+    }
+
+    public function test_upgrade_site_without_customer_installation_record_resolves_webroot_via_server_discovery(): void
+    {
+        // Site like safhenokhost.ir that has no row in customer_installations
+        $customer = Customer::create(['name' => 'Primary Cust', 'mobile' => '09120000005']);
+        $site = Site::create([
+            'customer_id' => $customer->id,
+            'title'       => 'Safhe Nokhost Main Site',
+            'domain'      => 'safhenokhost.ir',
+            'db_name'     => 'safhenokhost_db',
+        ]);
+
+        $server = CustomerRemoteServer::create([
+            'label'               => 'VPS Platform Managed',
+            'type'                => 'ssh',
+            'is_platform_managed' => true,
+            'host'                => '127.0.0.1',
+            'port'                => 22,
+            'username'            => 'root',
+        ]);
+
+        $pkg = CustomerInstallationPackage::create([
+            'version'     => '1.1.2',
+            'arvan_key'   => '',
+            'local_path'  => $this->packageZip,
+            'sha256'      => $this->packageSha,
+            'size_bytes'  => filesize($this->packageZip),
+            'released_at' => now(),
+            'is_active'   => true,
+        ]);
+
+        // Fake connection with real CommandResult instances
+        $fakeConn = $this->makeFakeConnection($this->fixtureDir . '/site_root', $this->packageSha);
+
+        $mockConnService = $this->createMock(RemoteConnectionService::class);
+        $mockConnService->method('buildDriver')->willReturn($fakeConn);
+        $this->app->instance(RemoteConnectionService::class, $mockConnService);
+
+        $pipeline = app(CustomerPackageUpgradePipeline::class);
+        $fleetUpdate = $pipeline->upgradeSite($site, $pkg, null);
+
+        $this->assertSame(ThemeFleetUpdate::STATUS_COMPLETED, $fleetUpdate->status);
+        $this->assertSame('1.1.2', $fleetUpdate->component_versions['customer_core']['to']);
+
+        // Verify discovery commands were executed using CommandResult methods
+        $executed = implode("\n", $fakeConn->executedCommands);
+        $this->assertStringContainsString('ls -d /var/www/cust_site_*', $executed);
+    }
 }

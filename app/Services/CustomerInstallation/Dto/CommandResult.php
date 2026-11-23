@@ -16,6 +16,16 @@ class CommandResult
         return $this->exitCode === 0;
     }
 
+    public function successful(): bool
+    {
+        return $this->exitCode === 0;
+    }
+
+    public function isSuccessful(): bool
+    {
+        return $this->exitCode === 0;
+    }
+
     public function failed(): bool
     {
         return $this->exitCode !== 0;

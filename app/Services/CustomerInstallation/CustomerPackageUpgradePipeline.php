@@ -482,7 +482,7 @@ class CustomerPackageUpgradePipeline
 
         // Find from wildcard cust_site_*
         $globRes = $connection->execute("ls -d /var/www/cust_site_* 2>/dev/null");
-        if ($globRes->successful() && !empty(trim($globRes->stdout))) {
+        if ($globRes->succeeded() && !empty(trim($globRes->stdout))) {
             $dirs = array_filter(array_map('trim', explode("\n", trim($globRes->stdout))));
             $candidates = array_merge($candidates, $dirs);
         }
@@ -494,7 +494,7 @@ class CustomerPackageUpgradePipeline
             if (str_contains($testRes->stdout, 'exists')) {
                 // If .env matches domain or db_name
                 $envRes = $connection->execute("grep -E 'APP_URL|DB_DATABASE' {$safe}/.env 2>/dev/null");
-                if ($envRes->successful()) {
+                if ($envRes->succeeded()) {
                     if ($domain && str_contains($envRes->stdout, $domain)) {
                         return $cand;
                     }
