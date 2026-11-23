@@ -16,8 +16,9 @@ return [
     ],
 
     'package' => [
-        'arvan_prefix'     => env('CI_PACKAGE_ARVAN_PREFIX', 'saas-platform/releases/customer-site'),
-        'local_temp_path'  => storage_path('app/install-packages'),
+        'arvan_prefix'              => env('CI_PACKAGE_ARVAN_PREFIX', 'saas-platform/releases/customer-site'),
+        'local_temp_path'           => storage_path('app/install-packages'),
+        'customer_site_source_path' => env('CI_CUSTOMER_SITE_SOURCE_PATH', '/var/www/customer-site'),
     ],
 
     'encryption' => [
