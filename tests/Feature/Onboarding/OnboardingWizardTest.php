@@ -304,18 +304,30 @@ class OnboardingWizardTest extends TestCase
             'released_at'   => now(),
         ]);
 
+        $mockPipeline = $this->createMock(\App\Services\CustomerInstallation\CustomerPackageUpgradePipeline::class);
+        $mockPipeline->expects($this->once())
+            ->method('upgradeSite')
+            ->willReturn(\App\Models\ThemeFleetUpdate::create([
+                'site_id'            => $site->id,
+                'update_type'        => \App\Models\ThemeFleetUpdate::TYPE_PACKAGE,
+                'status'             => \App\Models\ThemeFleetUpdate::STATUS_COMPLETED,
+                'component_versions' => ['customer_core' => ['from' => '1.1.0', 'to' => '1.3.0']],
+                'started_at'         => now(),
+                'completed_at'       => now(),
+            ]));
+        $this->app->instance(\App\Services\CustomerInstallation\CustomerPackageUpgradePipeline::class, $mockPipeline);
+
         $response = $this->actingAs($this->admin())
             ->post(route('admin.onboarding.fleet-updates.apply-package'), [
                 'site_ids' => [$site->id],
             ]);
 
-        // P0 safety (2026-11-19): the request is refused and audited, never "successful".
         $response->assertRedirect(route('admin.onboarding.create', ['tab' => 'fleet-updates']));
-        $response->assertSessionHas('error');
+        $response->assertSessionHas('success');
 
         $this->assertTrue(\App\Models\ThemeFleetUpdate::where('site_id', $site->id)
             ->where('update_type', \App\Models\ThemeFleetUpdate::TYPE_PACKAGE)
-            ->where('status', \App\Models\ThemeFleetUpdate::STATUS_FAILED)
+            ->where('status', \App\Models\ThemeFleetUpdate::STATUS_COMPLETED)
             ->exists());
     }
 
@@ -335,13 +347,35 @@ class OnboardingWizardTest extends TestCase
         $this->assertSame(0, \App\Models\ThemeFleetUpdate::count());
     }
 
-    public function test_fleet_tab_shows_package_upgrade_as_disabled_without_an_apply_form(): void
+    public function test_fleet_tab_shows_package_upgrade_with_apply_button(): void
     {
+        $cust = $this->customer('09121112246');
+        $site = $this->site($cust, 'pkg-table.example.com');
+        \App\Models\CustomerInstallation::create([
+            'site_id'           => $site->id,
+            'remote_server_id'  => 1,
+            'installer_user_id' => 1,
+            'customer_company'  => 'Test Co',
+            'customer_email'    => 'test@example.com',
+            'customer_domain'   => 'pkg-table.example.com',
+            'status'            => 'complete',
+            'package_version'   => '1.1.0',
+        ]);
+
+        \App\Models\CustomerInstallationPackage::create([
+            'version'       => '1.2.0',
+            'arvan_key'     => 'pkg/1.2.0',
+            'sha256'        => str_repeat('d', 64),
+            'size_bytes'    => 1024,
+            'is_active'     => true,
+            'release_notes' => 'نسخه آزمایشی',
+            'released_at'   => now(),
+        ]);
+
         $this->actingAs($this->admin())
             ->get(route('admin.onboarding.create', ['tab' => 'fleet-updates']))
             ->assertOk()
-            ->assertSee('data-fleet-package-upgrade="disabled"', false)
-            ->assertDontSee(route('admin.onboarding.fleet-updates.apply-package'), false);
+            ->assertSee(route('admin.onboarding.fleet-updates.apply-package'), false);
     }
 
     public function test_rollback_fleet_update_dispatches_one_click_rollback(): void

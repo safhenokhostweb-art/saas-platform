@@ -310,14 +310,7 @@
 
             {{-- 2. Core Package Updates Table --}}
             <h3 style="font-size:.95rem;font-weight:700;margin:2rem 0 .5rem">۲. پکیج‌های هسته، ویجت‌ها و موتور کانواس (Customer Installation Packages):</h3>
-            
-            {{-- P0 safety (2026-11-19): package upgrade is disabled until it runs through
-                 the canonical upgrade pipeline (see ThemeFleetUpgradeService::dispatchPackageUpgrade).
-                 Pending versions are listed read-only; there is no apply form. --}}
-            <div class="ob-panel ob-panel-warn" role="status" data-fleet-package-upgrade="disabled" style="border:1px solid #fde68a;background:#fffbeb;border-radius:var(--ob-radius);padding:.85rem 1rem;margin-bottom:1rem;font-size:.85rem;color:#92400e">
-                <strong>ارتقای پکیج موقتاً غیرفعال است.</strong>
-                {{ \App\Services\ThemeBuilder\ThemeFleetUpgradeService::PACKAGE_UPGRADE_DISABLED_REASON }}
-            </div>
+
             @if(!empty($fleetUpdates['packages']))
                 <div style="overflow-x:auto">
                     <table style="width:100%;border-collapse:collapse;font-size:.85rem;text-align:right">
@@ -327,7 +320,7 @@
                                 <th style="padding:.65rem">نسخه فعلی</th>
                                 <th style="padding:.65rem">نسخه فعال پکیج</th>
                                 <th style="padding:.65rem">حجم</th>
-                                <th style="padding:.65rem">وضعیت</th>
+                                <th style="padding:.65rem;text-align:center">عملیات ارتقا</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -338,9 +331,17 @@
                                         <div style="font-size:.75rem;color:var(--ob-muted);direction:ltr;text-align:right">{{ $pkg['domain'] }}</div>
                                     </td>
                                     <td style="padding:.75rem"><span style="font-family:monospace">v{{ $pkg['current_version'] }}</span></td>
-                                    <td style="padding:.75rem"><span style="font-family:monospace;font-weight:700">v{{ $pkg['available_version'] }}</span></td>
+                                    <td style="padding:.75rem"><span style="font-family:monospace;font-weight:700;color:#059669">v{{ $pkg['available_version'] }}</span></td>
                                     <td style="padding:.75rem"><span class="ob-badge ob-badge-outline">{{ $pkg['size_human'] ?? '—' }}</span></td>
-                                    <td style="padding:.75rem;color:var(--ob-muted)">در انتظار پایپلاین استاندارد ارتقا</td>
+                                    <td style="padding:.75rem;text-align:center">
+                                        <form method="POST" action="{{ route('admin.onboarding.fleet-updates.apply-package') }}" onsubmit="return confirm('آیا از ارتقای پکیج هسته و ویجت‌های سایت «{{ $pkg['site_title'] }}» به نسخه {{ $pkg['available_version'] }} اطمینان دارید؟ پایپلاین اتمیک ارتقا (شامل قفل، بکاپ، استخراج امن و مایگریشن) اجرا خواهد شد.');">
+                                            @csrf
+                                            <input type="hidden" name="site_id" value="{{ $pkg['site_id'] }}">
+                                            <button type="submit" class="ob-btn ob-btn-primary" style="font-size:.75rem;padding:.35rem .75rem">
+                                                ⚡ ارتقا به نسخه {{ $pkg['available_version'] }}
+                                            </button>
+                                        </form>
+                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -427,8 +428,8 @@
                                         @endif
                                     </td>
                                     <td style="padding:.75rem;text-align:center">
-                                        @if($log->status === 'completed' && !$log->is_rollback && $log->revision_number)
-                                            <form method="POST" action="{{ route('admin.onboarding.fleet-updates.rollback') }}" onsubmit="return confirm('آیا از بازگشت به نسخه قبل (Rollback) برای سایت «{{ $log->site?->title }}» اطمینان دارید؟ تمام تنظیمات به اسنپ‌شات قبلی بازگردانده خواهد شد.');">
+                                        @if($log->status === 'completed' && !$log->is_rollback && ($log->revision_number || ($log->update_type === 'package' && !empty($log->reconciliation_summary['backup_dir']))))
+                                            <form method="POST" action="{{ route('admin.onboarding.fleet-updates.rollback') }}" onsubmit="return confirm('آیا از بازگشت به نسخه قبل (Rollback) برای سایت «{{ $log->site?->title }}» اطمینان دارید؟ تمام فایل‌ها و تنظیمات به اسنپ‌شات قبلی بازگردانده خواهد شد.');">
                                                 @csrf
                                                 <input type="hidden" name="update_id" value="{{ $log->id }}">
                                                 <button type="submit" class="ob-btn ob-btn-ghost" style="font-size:.75rem;padding:.3rem .6rem;color:#b45309;border:1px solid #fde68a;background:#fffbeb">

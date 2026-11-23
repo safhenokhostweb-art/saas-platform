@@ -207,16 +207,16 @@ class ThemeFleetUpgradeService
 
                 if (version_compare($currentVer, $activePackage->version, '<')) {
                     $packageUpdates[] = [
-                        'site_id'           => $site->id,
-                        'site_title'        => $site->title,
-                        'domain'            => $site->domain,
-                        'current_version'   => $currentVer,
-                        'available_version' => $activePackage->version,
-                        'release_notes'     => $activePackage->release_notes ?: 'ارتقای کتابخانه ویجت‌ها، ماژول‌های هسته، تمپلیت‌های احراز هویت و پایداری موتور کانواس',
-                        'size_human'        => $activePackage->sizeHuman(),
-                        'sha256'            => $activePackage->sha256 ?? '',
-                        'eligible'          => false,
-                        'eligibility_reason' => self::PACKAGE_UPGRADE_DISABLED_REASON,
+                        'site_id'            => $site->id,
+                        'site_title'         => $site->title,
+                        'domain'             => $site->domain,
+                        'current_version'    => $currentVer,
+                        'available_version'  => $activePackage->version,
+                        'release_notes'      => $activePackage->release_notes ?: 'ارتقای کتابخانه ویجت‌ها، ماژول‌های هسته، تمپلیت‌های احراز هویت و پایداری موتور کانواس',
+                        'size_human'         => $activePackage->sizeHuman(),
+                        'sha256'             => $activePackage->sha256 ?? '',
+                        'eligible'           => true,
+                        'eligibility_reason' => null,
                     ];
                 }
             }
@@ -434,30 +434,10 @@ class ThemeFleetUpgradeService
     {
         $this->assertNotPlatformScope($package->version);
 
-        $inst = CustomerInstallation::where('site_id', $site->id)->latest('id')->first();
-        $currentVer = $inst?->package_version ?? null;
+        /** @var \App\Services\CustomerInstallation\CustomerPackageUpgradePipeline $pipeline */
+        $pipeline = app(\App\Services\CustomerInstallation\CustomerPackageUpgradePipeline::class);
 
-        $fleetUpdate = ThemeFleetUpdate::create([
-            'site_id'            => $site->id,
-            'update_type'        => ThemeFleetUpdate::TYPE_PACKAGE,
-            'theme_id'           => $site->theme_id,
-            'from_release_id'    => null,
-            'to_release_id'      => null,
-            'component_versions' => ['customer_core' => ['from' => $currentVer, 'to' => $package->version]],
-            'status'             => ThemeFleetUpdate::STATUS_FAILED,
-            'changelog_summary'  => 'درخواست ارتقای پکیج رد شد (مسیر ارتقای پکیج غیرفعال است).',
-            'failure_reason'     => self::PACKAGE_UPGRADE_DISABLED_REASON,
-            'dispatched_by'      => $userId,
-            'started_at'         => now(),
-            'completed_at'       => now(),
-        ]);
-
-        ActivityLogger::log('fleet.package_upgrade_refused', "درخواست ارتقای پکیج به نسخه {$package->version} برای سایت {$site->domain} رد شد (مسیر غیرفعال)", $site, [
-            'update_id'       => $fleetUpdate->id,
-            'package_version' => $package->version,
-        ]);
-
-        return $fleetUpdate;
+        return $pipeline->upgradeSite($site, $package, $userId);
     }
 
     /**
@@ -629,7 +609,10 @@ class ThemeFleetUpgradeService
         // customer's PAGES while the package files stayed as they were.
         // Package rollback must come from the upgrade pipeline's own backup.
         if ($targetUpdate->update_type === ThemeFleetUpdate::TYPE_PACKAGE) {
-            throw new \InvalidArgumentException('بازگشت به نسخه قبل برای به‌روزرسانی پکیج پشتیبانی نمی‌شود؛ این کار محتوای قالب مشتری را برمی‌گرداند نه فایل‌های پکیج را.');
+            /** @var \App\Services\CustomerInstallation\CustomerPackageUpgradePipeline $pipeline */
+            $pipeline = app(\App\Services\CustomerInstallation\CustomerPackageUpgradePipeline::class);
+
+            return $pipeline->rollbackPackageUpdate($targetUpdate, $userId);
         }
         if ($targetUpdate->status !== ThemeFleetUpdate::STATUS_COMPLETED || $targetUpdate->is_rollback) {
             throw new \InvalidArgumentException('فقط یک به‌روزرسانی موفق (و نه خودِ یک بازگشت) قابل بازگشت است.');

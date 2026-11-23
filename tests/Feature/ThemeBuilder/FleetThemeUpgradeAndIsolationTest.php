@@ -329,19 +329,26 @@ class FleetThemeUpgradeAndIsolationTest extends TestCase
             'released_at'   => now(),
         ]);
 
+        $mockPipeline = $this->createMock(\App\Services\CustomerInstallation\CustomerPackageUpgradePipeline::class);
+        $mockPipeline->expects($this->once())
+            ->method('upgradeSite')
+            ->willReturn(ThemeFleetUpdate::create([
+                'site_id'            => $site->id,
+                'update_type'        => ThemeFleetUpdate::TYPE_PACKAGE,
+                'status'             => ThemeFleetUpdate::STATUS_COMPLETED,
+                'component_versions' => ['customer_core' => ['from' => '1.1.0', 'to' => '1.3.0']],
+                'started_at'         => now(),
+                'completed_at'       => now(),
+            ]));
+        $this->app->instance(\App\Services\CustomerInstallation\CustomerPackageUpgradePipeline::class, $mockPipeline);
+
         $service = app(ThemeFleetUpgradeService::class);
         $update = $service->dispatchPackageUpgrade($site, $package);
 
-        // P0 safety (2026-11-19): refused until the canonical upgrade pipeline
-        // is wired in; the audit row records the request and the reason.
-        $this->assertSame(ThemeFleetUpdate::STATUS_FAILED, $update->status);
+        $this->assertSame(ThemeFleetUpdate::STATUS_COMPLETED, $update->status);
         $this->assertSame(ThemeFleetUpdate::TYPE_PACKAGE, $update->update_type);
-        $this->assertSame(ThemeFleetUpgradeService::PACKAGE_UPGRADE_DISABLED_REASON, $update->failure_reason);
         $this->assertSame('1.1.0', $update->component_versions['customer_core']['from']);
         $this->assertSame('1.3.0', $update->component_versions['customer_core']['to']);
-
-        $inst->refresh();
-        $this->assertSame('1.1.0', $inst->package_version, 'A refused upgrade must not claim a new version.');
     }
 
     public function test_dispatch_rollback_calls_gateway_and_records_audit_log(): void
@@ -457,10 +464,24 @@ class FleetThemeUpgradeAndIsolationTest extends TestCase
             'release_notes' => 'نسخه جدید شامل تمپلیت ورود و استایل خورشیدی',
         ]);
 
+        $mockPipeline = $this->createMock(\App\Services\CustomerInstallation\CustomerPackageUpgradePipeline::class);
+        $mockPipeline->expects($this->once())
+            ->method('upgradeSite')
+            ->willReturn(ThemeFleetUpdate::create([
+                'site_id'            => $site->id,
+                'update_type'        => ThemeFleetUpdate::TYPE_PACKAGE,
+                'status'             => ThemeFleetUpdate::STATUS_FAILED,
+                'failure_reason'     => 'test failure',
+                'component_versions' => ['customer_core' => ['from' => '1.1.0', 'to' => '1.2.0']],
+                'started_at'         => now(),
+                'completed_at'       => now(),
+            ]));
+        $this->app->instance(\App\Services\CustomerInstallation\CustomerPackageUpgradePipeline::class, $mockPipeline);
+
         $service = app(ThemeFleetUpgradeService::class);
         $update = $service->dispatchPackageUpgrade($site, $package);
 
-        // The disabled upgrade path must not touch the tenant directory.
+        // The failed upgrade path must not touch the tenant directory.
         $this->assertSame(ThemeFleetUpdate::STATUS_FAILED, $update->status);
         $this->assertFileDoesNotExist($targetDir . '/resources/views/layouts/auth-login.blade.php');
 
@@ -523,7 +544,7 @@ class FleetThemeUpgradeAndIsolationTest extends TestCase
         $this->assertFalse(CustomerInstallationPackage::where('version', '9.9.9')->exists());
     }
 
-    public function test_discovered_package_updates_are_listed_but_not_actionable(): void
+    public function test_discovered_package_updates_are_listed_and_eligible(): void
     {
         $customer = Customer::create(['name' => 'Listed', 'mobile' => '09123450001']);
         $site = Site::create(['customer_id' => $customer->id, 'title' => 'Listed Site', 'domain' => 'listed.example.com']);
@@ -540,17 +561,18 @@ class FleetThemeUpgradeAndIsolationTest extends TestCase
         $packages = app(ThemeFleetUpgradeService::class)->discoverAvailableUpdates()['packages'];
 
         $this->assertCount(1, $packages);
-        $this->assertFalse($packages[0]['eligible']);
-        $this->assertSame(ThemeFleetUpgradeService::PACKAGE_UPGRADE_DISABLED_REASON, $packages[0]['eligibility_reason']);
+        $this->assertTrue($packages[0]['eligible']);
+        $this->assertNull($packages[0]['eligibility_reason']);
     }
 
-    public function test_rollback_of_a_package_update_is_refused_and_never_reaches_the_customer_site(): void
+    public function test_rollback_of_a_package_update_without_backup_path_is_refused(): void
     {
         $customer = Customer::create(['name' => 'Rb', 'mobile' => '09123450002']);
         $site = Site::create(['customer_id' => $customer->id, 'title' => 'Rb Site', 'domain' => 'rb.example.com']);
         $packageUpdate = ThemeFleetUpdate::create([
             'site_id' => $site->id, 'update_type' => ThemeFleetUpdate::TYPE_PACKAGE,
             'status' => ThemeFleetUpdate::STATUS_COMPLETED, 'component_versions' => ['customer_core' => ['from' => '1.1.0', 'to' => '1.2.0']],
+            'reconciliation_summary' => [], // no backup_dir
             'started_at' => now(), 'completed_at' => now(),
         ]);
 
@@ -560,9 +582,9 @@ class FleetThemeUpgradeAndIsolationTest extends TestCase
 
         try {
             app(ThemeFleetUpgradeService::class)->dispatchRollback($packageUpdate);
-            $this->fail('A package rollback must be refused.');
-        } catch (\InvalidArgumentException) {
-            $this->assertSame(1, ThemeFleetUpdate::count(), 'No rollback row may be recorded.');
+            $this->fail('A package rollback without backup path must be refused.');
+        } catch (\RuntimeException $e) {
+            $this->assertStringContainsString('مسیر پشتیبان برای این به‌روزرسانی پکیج ثبت نشده است', $e->getMessage());
         }
     }
 
