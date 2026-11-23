@@ -1,6 +1,20 @@
 # PROJECT STATE
 > Primary checkpoint. Read this first at the start of every session.
-> Last Updated: 2026-11-19
+> Last Updated: 2026-11-23
+
+---
+
+## Safhe Nokhost Architectural Header Template & Canvas Integration
+
+**IMPLEMENTED, VALIDATED & DELIVERED — 2026-11-23.**
+- Safhe Nokhost architectural Persian luxury header variant (`safhe-header`) with Gereh-chini backdrop, gold-line borders, and 3-column megamenu card structure.
+- Public SVG assets (`safhe-favicon.svg`, `safhe-icon.svg`, `safhe-logo.svg`, `safhe-pattern.svg`) synced to `public/theme-assets/safhenokhost/` across both repositories with 0 404s.
+- `policy.json` access governance (ADR-087) with `safhenokhost` family, fail-closed isolation, and explicit grant unlocking.
+- Canvas editor postMessage bridge and deep navigation: direct block selection on iframe click and auto-switch to `__header__` / `__footer__` virtual pages.
+- Persistence roundtrip and live preview parity verified with 100% passing tests (`SafheHeaderPersistenceAndPreviewTest`, `TemplateLibraryInsertTest`, `SafheHeaderAccessTest`, `SafheHeaderRenderingTest`, `CommercialWidgetResilienceTest`, `ThemeRuntimeCanonicalParityTest`).
+- Delivered per `WORK_UNIT_DELIVERY_WORKFLOW.md`:
+  - `saas-platform`: `ebe0e21b3abdce47c6148e516daa6388f5d676cb`
+  - `customer-site`: `d49d353e5e4712f6c833e90e547ebfe97b74ca9f`
 
 ---
 
