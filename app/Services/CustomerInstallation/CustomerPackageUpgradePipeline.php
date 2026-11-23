@@ -142,11 +142,14 @@ class CustomerPackageUpgradePipeline
                 "-x '.env*' 'installed.lock' '*/installed.lock' 'storage/*' 2>&1",
                 // Remove remote zip
                 "rm -f " . escapeshellarg($remoteZipPath),
-                // Normalize file and dir permissions defensively (no 777)
-                "chown -R www-data:www-data {$safeWebRoot} 2>/dev/null || true",
+                // Normalize file and dir permissions defensively (preserve deployment-agent ownership if present)
+                "TARGET_OWNER=\$(id -u deployment-agent >/dev/null 2>&1 && [ -d /var/www/deployment-system ] && echo 'deployment-agent:www-data' || echo 'www-data:www-data'); " .
+                "chown -R \$TARGET_OWNER {$safeWebRoot} 2>/dev/null || true",
                 "find {$safeWebRoot} -type f ! -name '.cie_installing' -exec chmod 644 {} + 2>/dev/null || true",
                 "find {$safeWebRoot} -type d -exec chmod 755 {} + 2>/dev/null || true",
-                "chmod -R 775 {$safeWebRoot}/bootstrap/cache {$safeWebRoot}/storage 2>/dev/null || true",
+                "chmod 755 {$safeWebRoot}/storage 2>/dev/null || true",
+                "chmod 755 {$safeWebRoot}/storage/framework 2>/dev/null || true",
+                "chmod -R 775 {$safeWebRoot}/bootstrap/cache {$safeWebRoot}/storage/logs {$safeWebRoot}/storage/framework/cache {$safeWebRoot}/storage/framework/sessions {$safeWebRoot}/storage/framework/views 2>/dev/null || true",
             ];
 
             foreach ($extractSteps as $step) {
@@ -220,7 +223,11 @@ class CustomerPackageUpgradePipeline
                     // Restore files from backup directory, preserving .env and storage
                     $restoreSteps = [
                         "cp -a {$safeBackupDir}/. {$safeWebRoot}/ 2>/dev/null || true",
-                        "chown -R www-data:www-data {$safeWebRoot} 2>/dev/null || true",
+                        "TARGET_OWNER=\$(id -u deployment-agent >/dev/null 2>&1 && [ -d /var/www/deployment-system ] && echo 'deployment-agent:www-data' || echo 'www-data:www-data'); " .
+                        "chown -R \$TARGET_OWNER {$safeWebRoot} 2>/dev/null || true",
+                        "chmod 755 {$safeWebRoot}/storage 2>/dev/null || true",
+                        "chmod 755 {$safeWebRoot}/storage/framework 2>/dev/null || true",
+                        "chmod -R 775 {$safeWebRoot}/bootstrap/cache {$safeWebRoot}/storage/logs {$safeWebRoot}/storage/framework/cache {$safeWebRoot}/storage/framework/sessions {$safeWebRoot}/storage/framework/views 2>/dev/null || true",
                         "cd {$safeWebRoot} && php artisan optimize:clear 2>&1 || true",
                     ];
 
@@ -345,7 +352,11 @@ class CustomerPackageUpgradePipeline
             // Restore files from backup directory
             $restoreSteps = [
                 "cp -a {$safeBackupDir}/. {$safeWebRoot}/ 2>/dev/null || true",
-                "chown -R www-data:www-data {$safeWebRoot} 2>/dev/null || true",
+                "TARGET_OWNER=\$(id -u deployment-agent >/dev/null 2>&1 && [ -d /var/www/deployment-system ] && echo 'deployment-agent:www-data' || echo 'www-data:www-data'); " .
+                "chown -R \$TARGET_OWNER {$safeWebRoot} 2>/dev/null || true",
+                "chmod 755 {$safeWebRoot}/storage 2>/dev/null || true",
+                "chmod 755 {$safeWebRoot}/storage/framework 2>/dev/null || true",
+                "chmod -R 775 {$safeWebRoot}/bootstrap/cache {$safeWebRoot}/storage/logs {$safeWebRoot}/storage/framework/cache {$safeWebRoot}/storage/framework/sessions {$safeWebRoot}/storage/framework/views 2>/dev/null || true",
                 "cd {$safeWebRoot} && php artisan optimize:clear 2>&1 || true",
                 "cd {$safeWebRoot} && php artisan view:clear 2>&1 || true",
                 "cd {$safeWebRoot} && php artisan up 2>&1 || true",
