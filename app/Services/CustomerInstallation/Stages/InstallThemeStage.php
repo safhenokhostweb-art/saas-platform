@@ -43,7 +43,7 @@ class InstallThemeStage extends AbstractStage
         return $this->run($ctx, function (InstallationContext $ctx) {
             $req = $ctx->request;
 
-            if ($req->themeId === null && $req->themeSlug === '') {
+            if (empty($req->themeId) && (empty($req->themeSlug) || trim((string) $req->themeSlug) === '')) {
                 return StageResult::skipped($this->name(), 'No theme selected');
             }
 

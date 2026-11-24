@@ -239,6 +239,20 @@ class OnboardingPipelineTest extends TestCase
         $this->assertNull($this->siteOf($installation)->theme_id);
     }
 
+    public function test_when_no_theme_is_selected_stage_is_cleanly_skipped_with_no_pending_push_or_warning(): void
+    {
+        $installation = $this->installation(['theme_id' => null, 'theme_slug' => '']);
+        $this->runStage(ProvisionLicenseStage::class, $installation);
+
+        $result = $this->runStage(InstallThemeStage::class, $installation);
+
+        $this->assertTrue($result->success);
+        $this->assertTrue($result->skipped);
+        $this->assertSame('No theme selected', $result->output['reason']);
+        $this->assertNull($installation->fresh()->metadata['template_binding'] ?? null);
+        $this->assertNull($this->siteOf($installation)->theme_id);
+    }
+
     // ── CLEAR_APPLICATION_CACHE ────────────────────────────────────────
 
     public function test_caches_are_cleared_in_the_web_root_then_www_data_ownership_is_restored(): void
