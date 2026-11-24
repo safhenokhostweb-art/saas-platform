@@ -342,6 +342,17 @@
                 "show_form": true
             },
             "id": "solar-home-8-contact-split"
+        },
+        {
+            "id": "solar-home-9-motion",
+            "type": "module:motion",
+            "props": {
+                "motion_asset_id": "",
+                "placement": "section",
+                "enabled": true,
+                "fallback_image": "/storage/solar-assets/hero-industrial-slide1.jpg",
+                "motion_params": []
+            }
         }
     ]
 }

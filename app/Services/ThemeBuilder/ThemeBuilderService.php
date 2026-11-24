@@ -203,11 +203,15 @@ class ThemeBuilderService
     {
         if ($siteId) {
             $site = Site::find($siteId);
-            if ($site && $site->theme_id) {
+            if ($site) {
+                if (!$site->theme_id) {
+                    return null;
+                }
                 $theme = Theme::find($site->theme_id);
                 if ($theme && $theme->isCommerciallyEligible()) {
                     return $theme;
                 }
+                return Theme::templates()->get()->first(fn (Theme $t) => $t->isCommerciallyEligible());
             }
         }
         return Theme::templates()->get()->first(fn (Theme $t) => $t->isCommerciallyEligible());
@@ -228,7 +232,7 @@ class ThemeBuilderService
                 'meta' => [
                     // Fallback metadata when no explicit theme is assigned.
                     'id' => 'default',
-                    'name' => 'تم پیش‌فرض',
+                    'name' => 'بدون قالب (تم پیش‌فرض پایه)',
                     'version' => '1.0.0',
                     'release_date' => null,
                     'changelog' => [],

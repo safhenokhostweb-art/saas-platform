@@ -228,7 +228,7 @@ class ThemeBuilderController extends Controller
         ]);
 
         try {
-            $this->themeService->publish(
+            $publishedTheme = $this->themeService->publish(
                 $theme_builder,
                 $data['version'] ?? null,
                 $data['changelog'] ?? null,
@@ -254,10 +254,16 @@ class ThemeBuilderController extends Controller
                 ->with('error', 'انتشار انجام نشد — دروازه کیفیت تجاری رد شد: ' . implode('، ', array_column($failures, 'message')));
         }
 
+        $release = $publishedTheme->currentRelease;
         if ($request->expectsJson()) {
-            return response()->json(['success' => true, 'message' => 'قالب منتشر شد.']);
+            return response()->json([
+                'success' => true,
+                'message' => 'نسخه جدید تم منتشر شد' . ($release ? ' (v' . $release->version . ')' : '') . '.',
+                'release_id' => $release?->id,
+                'version' => $release?->version,
+            ]);
         }
-        return redirect()->route('admin.theme-builder.edit', $theme_builder)->with('success', 'تم منتشر شد.');
+        return redirect()->route('admin.theme-builder.edit', $theme_builder)->with('success', 'نسخه جدید تم منتشر شد.');
     }
 
     public function unpublish(Request $request, Theme $theme_builder)

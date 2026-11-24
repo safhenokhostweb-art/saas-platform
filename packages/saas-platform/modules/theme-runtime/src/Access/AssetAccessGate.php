@@ -35,6 +35,24 @@ final class AssetAccessGate
     }
 
     /**
+     * Theme scopes unlocked by site entitlements or explicit site_asset_grants.
+     *
+     * @return list<string>
+     */
+    public static function unlockedThemeScopes(SiteAssetEntitlements $site): array
+    {
+        $scopes = [];
+        $solarCalcAllowed = self::decideWidget('solar_calculator', $site)?->allowed() ?? false;
+        $solarCycleAllowed = self::decideWidget('solar-energy-cycle', $site)?->allowed() ?? false;
+
+        if ($solarCalcAllowed || $solarCycleAllowed) {
+            $scopes[] = 'solar-industry';
+        }
+
+        return $scopes;
+    }
+
+    /**
      * Template-modal cards: hidden library cards are dropped, every other
      * library card gains `access` (AssetAccessDecision::toArray()).
      *

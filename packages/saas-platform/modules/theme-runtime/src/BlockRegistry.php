@@ -1420,7 +1420,7 @@ class BlockRegistry
                     'cta2_style'         => ['type' => 'select', 'ui' => 'segmented', 'label' => 'ظاهر دکمهٔ دوم', 'options' => ['primary' => 'توپر', 'outline' => 'خطی'], 'default' => 'outline', 'group' => 'دسترسی سریع و اکشن‌ها', 'condition' => ['cta2_text!' => '']],
                     'show_login_btn'     => ['type' => 'boolean', 'label' => 'نمایش دکمه ورود', 'default' => false, 'group' => 'دسترسی سریع و اکشن‌ها'],
                     'show_register_btn'  => ['type' => 'boolean', 'label' => 'نمایش دکمه ثبت‌نام', 'default' => false, 'group' => 'دسترسی سریع و اکشن‌ها'],
-                    'show_calc_btn'      => ['type' => 'boolean', 'label' => 'نمایش دکمه ماشین‌حساب خورشیدی', 'default' => false, 'group' => 'دسترسی سریع و اکشن‌ها'],
+                    'show_calc_btn'      => ['type' => 'boolean', 'label' => 'نمایش دکمه ماشین‌حساب خورشیدی', 'default' => false, 'group' => 'دسترسی سریع و اکشن‌ها', 'theme_scope' => 'solar-industry', 'requires_asset' => 'widget:solar_calculator'],
                     'show_search'       => ['type' => 'boolean', 'label' => 'نمایش جستجو', 'default' => false, 'group' => 'دسترسی سریع و اکشن‌ها'],
                     'search_mode'        => ['type' => 'select', 'label' => 'حالت جستجو', 'options' => ['input' => 'فیلد جستجوی ثابت', 'icon' => 'آیکون با پنجره بازشو'], 'default' => 'input', 'group' => 'دسترسی سریع و اکشن‌ها', 'condition' => ['show_search' => true]],
                     'search_placeholder' => ['type' => 'string', 'label' => 'متن جای‌گزین جستجو', 'default' => 'جستجو...', 'group' => 'دسترسی سریع و اکشن‌ها', 'condition' => ['show_search' => true]],
@@ -1467,7 +1467,7 @@ class BlockRegistry
                     'drawer_show_logo'      => ['type' => 'boolean', 'label' => 'نمایش لوگو در بالای منوی بازشو', 'default' => false, 'panel' => 'advanced', 'group' => 'منوی موبایل', 'condition' => ['burger_breakpoint!' => 'never']],
                     'drawer_show_search'    => ['type' => 'boolean', 'label' => 'جستجو داخل منوی بازشو (در موبایل از نوار هدر برداشته می‌شود)', 'default' => false, 'panel' => 'advanced', 'group' => 'منوی موبایل', 'condition' => ['burger_breakpoint!' => 'never', 'show_search' => true]],
                     'drawer_show_ctas'      => ['type' => 'boolean', 'label' => 'دکمه‌ها در پایین منوی بازشو (در موبایل از نوار هدر برداشته می‌شوند)', 'default' => false, 'panel' => 'advanced', 'group' => 'منوی موبایل', 'condition' => ['burger_breakpoint!' => 'never']],
-                    'drawer_action_text'    => ['type' => 'string', 'label' => 'متن دکمه ویژه کشوی موبایل (مثلا ماشین‌حساب خورشیدی)', 'default' => '', 'panel' => 'advanced', 'group' => 'منوی موبایل', 'condition' => ['burger_breakpoint!' => 'never']],
+                    'drawer_action_text'    => ['type' => 'string', 'label' => 'متن دکمه ویژه کشوی موبایل', 'default' => '', 'panel' => 'advanced', 'group' => 'منوی موبایل', 'condition' => ['burger_breakpoint!' => 'never']],
                     'drawer_action_url'     => ['type' => 'link', 'label' => 'لینک دکمه ویژه کشوی موبایل', 'default' => '', 'panel' => 'advanced', 'group' => 'منوی موبایل', 'condition' => ['burger_breakpoint!' => 'never']],
                     'drawer_action_icon'    => ['type' => 'icon', 'label' => 'آیکون دکمه ویژه کشوی موبایل', 'default' => '', 'panel' => 'advanced', 'group' => 'منوی موبایل', 'condition' => ['burger_breakpoint!' => 'never']],
                     'drawer_action_style'   => ['type' => 'select', 'label' => 'سبک دکمه ویژه کشوی موبایل', 'options' => ['primary' => 'اصلی (پررنگ)', 'outline' => 'خط دور'], 'default' => 'primary', 'panel' => 'advanced', 'group' => 'منوی موبایل', 'condition' => ['burger_breakpoint!' => 'never']],
@@ -2868,23 +2868,54 @@ class BlockRegistry
      *
      * @return array<string, array<string, mixed>>
      */
-    public static function forTheme(?string $themeSlug = null): array
+    /**
+     * Filters blocks and their schema fields by theme scope.
+     * Blocks or schema fields declaring a 'theme_scope' are only returned when
+     * $themeSlug matches or the scope is explicitly unlocked.
+     *
+     * @param list<string> $unlockedScopes
+     * @return array<string, array<string, mixed>>
+     */
+    public static function forTheme(?string $themeSlug = null, array $unlockedScopes = []): array
     {
         $all = self::all();
-        return array_filter($all, function (array $def) use ($themeSlug) {
+        $filtered = [];
+
+        foreach ($all as $type => $def) {
             $scope = $def['theme_scope'] ?? null;
-            if ($scope === null || $scope === '') {
-                return true;
+            if ($scope !== null && $scope !== '') {
+                $allowed = ($themeSlug !== null && $scope === $themeSlug)
+                    || in_array($scope, $unlockedScopes, true);
+                if (!$allowed) {
+                    continue;
+                }
             }
-            return $themeSlug !== null && $scope === $themeSlug;
-        });
+
+            if (isset($def['schema']) && is_array($def['schema'])) {
+                $def['schema'] = array_filter($def['schema'], function ($field) use ($themeSlug, $unlockedScopes) {
+                    if (!is_array($field)) {
+                        return true;
+                    }
+                    $fieldScope = $field['theme_scope'] ?? null;
+                    if ($fieldScope === null || $fieldScope === '') {
+                        return true;
+                    }
+                    return ($themeSlug !== null && $fieldScope === $themeSlug)
+                        || in_array($fieldScope, $unlockedScopes, true);
+                });
+            }
+
+            $filtered[$type] = $def;
+        }
+
+        return $filtered;
     }
 
     /** For editor: list by category, optionally scoped to an active theme. */
-    public static function byCategory(?string $themeSlug = null): array
+    public static function byCategory(?string $themeSlug = null, array $unlockedScopes = []): array
     {
         $byCat = [];
-        $blocks = self::forTheme($themeSlug);
+        $blocks = self::forTheme($themeSlug, $unlockedScopes);
         foreach ($blocks as $type => $def) {
             $cat = $def['category'] ?? 'content';
             if (!isset($byCat[$cat])) {

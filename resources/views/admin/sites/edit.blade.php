@@ -106,6 +106,31 @@
         </div>
         @endif
 
+        @php
+            $assignedTheme = $site->theme_id ? \App\Models\Theme::with('currentRelease')->find($site->theme_id) : null;
+            $latestRelease = $assignedTheme?->currentRelease;
+            $siteInstalledReleaseId = null;
+            if ($assignedTheme && \Illuminate\Support\Facades\Schema::hasTable('theme_assignments')) {
+                $siteInstalledReleaseId = \App\Models\ThemeAssignment::where('site_id', $site->id)
+                    ->where('theme_id', $assignedTheme->id)
+                    ->where('status', \App\Models\ThemeAssignment::STATUS_ASSIGNED)
+                    ->orderByDesc('id')
+                    ->value('theme_release_id');
+            }
+            $hasNewerThemeRelease = $latestRelease && $site->domain && (!$siteInstalledReleaseId || $siteInstalledReleaseId !== $latestRelease->id);
+        @endphp
+        @if($hasNewerThemeRelease)
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4 flex items-center justify-between flex-wrap gap-3" data-testid="site-theme-upgrade-banner">
+            <div>
+                <h6 class="font-bold text-amber-900 mb-1">نسخه جدید قالب آماده به‌روزرسانی است (v{{ $latestRelease->version }})</h6>
+                <p class="text-sm text-amber-800 m-0">به‌روزرسانی مستقل تم با موتور تطبیق ۳طرفه اعمال می‌شود و محتوای سفارشیشده مشتری را حفظ می‌کند.</p>
+            </div>
+            <button type="submit" form="upgrade-theme-form" class="btn btn-warning btn-sm font-bold">
+                به‌روزرسانی تم
+            </button>
+        </div>
+        @endif
+
         <hr>
 
         <div id="site-access" class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
@@ -266,6 +291,14 @@
             <a href="{{ route('admin.access.index') }}" class="btn btn-outline-secondary">دسترسی و منو (ماژول‌های پلتفرم)</a>
         </div>
     </form>
+
+    @if(isset($hasNewerThemeRelease) && $hasNewerThemeRelease)
+    <form id="upgrade-theme-form" method="POST" action="{{ route('admin.onboarding.fleet-update') }}" class="hidden">
+        @csrf
+        <input type="hidden" name="site_id" value="{{ $site->id }}">
+        <input type="hidden" name="release_id" value="{{ $latestRelease->id }}">
+    </form>
+    @endif
 </div>
 
 @push('head')

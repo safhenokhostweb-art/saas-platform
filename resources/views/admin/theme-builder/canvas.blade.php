@@ -264,14 +264,15 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
             <span class="sr-only" role="status" aria-live="polite"
                 x-text="saveWaiting ? 'ذخیره در صف است' : (saving || quickSaving ? 'در حال ذخیره' : '')"></span>
 
-            {{-- Publish --}}
+            {{-- Publish Release --}}
             <button
                 @click="publishTheme()"
                 :disabled="publishing"
+                data-testid="tb-action-publish-release"
                 class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium transition disabled:opacity-60"
             >
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
-                <span x-text="publishing ? 'انتشار...' : 'انتشار'"></span>
+                <span x-text="publishing ? 'در حال انتشار نسخه...' : 'انتشار نسخه جدید تم (Publish Release)'"></span>
             </button>
 
             {{-- UI-C2D/C2E: checkpoint history, unpublish, clone, export,
@@ -3536,7 +3537,7 @@ function themeCanvas() {
                 const d = await r.json();
                 if (d.success ?? r.ok) {
                     this.themeStatus = 'published';
-                    this.showToast('قالب منتشر شد ✓', 'success');
+                    this.showToast((d.message ?? 'نسخه جدید تم منتشر شد') + ' ✓', 'success');
                 }
                 else this.showToast(d.message ?? 'خطا', 'error');
             } catch { this.showToast('خطای شبکه', 'error'); }

@@ -82,6 +82,10 @@ final class SolarIndustryThemeSeeder extends Seeder
     {
         $theme = Theme::firstOrNew(['slug' => self::SLUG, 'site_id' => null]);
 
+        if ($theme->exists && $theme->current_release_id !== null) {
+            return;
+        }
+
         $theme->fill([
             'name' => self::NAME,
             // themes.description is a 255-character column.

@@ -48,6 +48,18 @@ class ThemeInstallGateway
         $secret   = config('services.customer_provision_secret', '');
 
         $currentRelease = $theme->currentRelease;
+        $snapshot = is_array($currentRelease?->snapshot) ? $currentRelease->snapshot : null;
+
+        $headerBlocks = $snapshot['header_blocks'] ?? ($theme->header_blocks ?? []);
+        $footerBlocks = $snapshot['footer_blocks'] ?? ($theme->footer_blocks ?? []);
+        $pages = $snapshot['pages'] ?? null;
+        if (!is_array($pages) || empty($pages)) {
+            $pages = $theme->getPageList();
+        }
+        $globalStyles = $snapshot['global_styles'] ?? ($theme->global_styles ?? []);
+        $settings = $snapshot['settings'] ?? ($theme->settings ?? []);
+        $headerVariants = $snapshot['header_variants'] ?? $theme->getHeaderVariants();
+        $footerVariants = $snapshot['footer_variants'] ?? $theme->getFooterVariants();
 
         try {
             $response = Http::withHeaders([
@@ -59,17 +71,17 @@ class ThemeInstallGateway
                 'source_theme_id'      => (string) $theme->id,
                 'source_theme_version' => $currentRelease?->version,
                 'source_release_id'    => $currentRelease?->id,
-                'header_blocks'        => $theme->header_blocks ?? [],
-                'footer_blocks'        => $theme->footer_blocks ?? [],
+                'header_blocks'        => $headerBlocks,
+                'footer_blocks'        => $footerBlocks,
                 // THEME-03: Theme-owned selectable Header/Footer variants —
                 // additive alongside the flat header_blocks/footer_blocks
                 // above (kept for backward compatibility with any consumer
                 // still reading them directly), always non-empty (see
                 // Theme::getHeaderVariants()'s single-variant synthesis).
-                'header_variants'      => $theme->getHeaderVariants(),
-                'footer_variants'      => $theme->getFooterVariants(),
-                'pages'                => $theme->getPageList(),
-                'global_styles'        => $theme->global_styles ?? [],
+                'header_variants'      => $headerVariants,
+                'footer_variants'      => $footerVariants,
+                'pages'                => $pages,
+                'global_styles'        => $globalStyles,
                 // Manifest-declared Extension CSS/JS, projected to absolute
                 // saas-platform URLs — see ExtensionThemeRuntimeAssetProjector's
                 // own doc comment for why this is an absolute URL, not a copy.
@@ -81,7 +93,7 @@ class ThemeInstallGateway
                 // Theme.settings['theme_assets_manifest']; absent/empty for
                 // every Theme that declares no global assets, so existing
                 // themes are unaffected.
-                'theme_assets'         => $theme->settings['theme_assets_manifest'] ?? [],
+                'theme_assets'         => $settings['theme_assets_manifest'] ?? [],
             ]);
         } catch (\Throwable $e) {
             Log::error('ThemeInstall request failed', [

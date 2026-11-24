@@ -4809,12 +4809,17 @@ class BlockRenderer
         }
         $drawerExtraAction = '';
         $drawerActionText = trim($this->stringify($props['drawer_action_text'] ?? ''));
-        if ($drawerActionText === '' && filter_var($props['show_calc_btn'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
+        $showCalcBtn = filter_var($props['show_calc_btn'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        if ($drawerActionText === '' && $showCalcBtn) {
             $drawerActionText = 'ماشین‌حساب آنلاین خورشیدی';
         }
         if ($drawerActionText !== '') {
-            $drawerActionUrl = $this->linkHref($props['drawer_action_url'] ?? '/page/solar-calculator');
-            $drawerActionIcon = $this->headerButtonIcon($props['drawer_action_icon'] ?? 'calculator');
+            $defaultActionUrl = $showCalcBtn ? '/page/solar-calculator' : '#';
+            $defaultActionIcon = $showCalcBtn ? 'calculator' : '';
+            $rawActionUrl = trim($this->stringify($props['drawer_action_url'] ?? ''));
+            $rawActionIcon = trim($this->stringify($props['drawer_action_icon'] ?? ''));
+            $drawerActionUrl = $this->linkHref($rawActionUrl !== '' ? $props['drawer_action_url'] : $defaultActionUrl);
+            $drawerActionIcon = $this->headerButtonIcon($rawActionIcon !== '' ? $rawActionIcon : $defaultActionIcon);
             $drawerActionStyle = ($props['drawer_action_style'] ?? 'primary') === 'outline' ? ' tb-nav-header-cta--outline' : '';
             $drawerExtraAction = '<a href="' . $this->escapeAttr($drawerActionUrl) . '" class="tb-btn tb-nav-header-cta tb-nav-header-drawer-action-btn tb-nav-header-drawer-calc-btn' . $drawerActionStyle . '">' . $drawerActionIcon . '<span>' . $this->escape($drawerActionText) . '</span></a>';
         }

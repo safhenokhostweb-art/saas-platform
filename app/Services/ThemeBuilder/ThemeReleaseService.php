@@ -110,6 +110,8 @@ class ThemeReleaseService
                 'snapshot' => [
                     'header_blocks' => $theme->header_blocks,
                     'footer_blocks' => $theme->footer_blocks,
+                    'header_variants' => $theme->getHeaderVariants(),
+                    'footer_variants' => $theme->getFooterVariants(),
                     'pages' => $theme->pages,
                     'global_styles' => $theme->global_styles,
                     'settings' => $theme->settings,
