@@ -197,6 +197,10 @@ class OnboardingWizardController extends Controller
     /** Dispatch non-destructive fleet update for a customer site. */
     public function applyFleetUpdate(Request $request): RedirectResponse
     {
+        if ($request->isMethod('GET')) {
+            return redirect()->route('admin.onboarding.create', ['tab' => 'fleet-updates']);
+        }
+
         $data = $request->validate([
             'site_id'    => 'required|integer|exists:sites,id',
             'release_id' => 'required|integer|exists:theme_releases,id',
@@ -223,6 +227,10 @@ class OnboardingWizardController extends Controller
     /** Dispatch customer-site package update for selected site(s). */
     public function applyPackageFleetUpdate(Request $request): RedirectResponse
     {
+        if ($request->isMethod('GET')) {
+            return redirect()->route('admin.onboarding.create', ['tab' => 'fleet-updates']);
+        }
+
         $data = $request->validate([
             'site_ids'   => 'nullable|array',
             'site_ids.*' => 'integer|exists:sites,id',
@@ -281,6 +289,10 @@ class OnboardingWizardController extends Controller
     /** Dispatch one-click rollback to restore the customer site to its previous snapshot. */
     public function rollbackFleetUpdate(Request $request): RedirectResponse
     {
+        if ($request->isMethod('GET')) {
+            return redirect()->route('admin.onboarding.create', ['tab' => 'fleet-updates']);
+        }
+
         $data = $request->validate([
             'update_id' => 'required|integer|exists:theme_fleet_updates,id',
         ]);

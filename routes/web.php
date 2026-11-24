@@ -489,11 +489,11 @@ Route::prefix('admin')
                 Route::post('/', 'store')->middleware('throttle:10,1')->name('store');
                 Route::post('/installations/{installation}/retry-template', 'retryTemplate')
                     ->whereNumber('installation')->middleware('throttle:10,1')->name('retry-template');
-                Route::post('/fleet-updates/apply', 'applyFleetUpdate')
+                Route::match(['get', 'post'], '/fleet-updates/apply', 'applyFleetUpdate')
                     ->middleware('throttle:30,1')->name('fleet-updates.apply');
-                Route::post('/fleet-updates/apply-package', 'applyPackageFleetUpdate')
+                Route::match(['get', 'post'], '/fleet-updates/apply-package', 'applyPackageFleetUpdate')
                     ->middleware('throttle:30,1')->name('fleet-updates.apply-package');
-                Route::post('/fleet-updates/rollback', 'rollbackFleetUpdate')
+                Route::match(['get', 'post'], '/fleet-updates/rollback', 'rollbackFleetUpdate')
                     ->middleware('throttle:30,1')->name('fleet-updates.rollback');
             });
         Route::get('customers', [CustomerController::class, 'index'])->name('customers.index');

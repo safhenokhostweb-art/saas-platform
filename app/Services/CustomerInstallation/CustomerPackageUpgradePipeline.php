@@ -3,6 +3,7 @@
 namespace App\Services\CustomerInstallation;
 
 use App\Models\CustomerInstallation;
+use App\Models\CustomerInstallationLog;
 use App\Models\CustomerInstallationPackage;
 use App\Models\CustomerRemoteServer;
 use App\Models\Site;
@@ -10,6 +11,8 @@ use App\Models\ThemeFleetUpdate;
 use App\Services\ActivityLogger;
 use App\Services\CustomerInstallation\Contracts\RemoteConnectionInterface;
 use App\Services\CustomerInstallation\Dto\CommandResult;
+use App\Services\CustomerInstallation\Enums\DriverType;
+use App\Services\CustomerInstallation\WebRootResolver;
 use App\Services\Domains\SiteDomainService;
 use App\Services\ThemeBuilder\ComponentVersionRegistry;
 use App\Services\ThemeBuilder\ThemeFleetUpgradeService;
@@ -455,25 +458,93 @@ class CustomerPackageUpgradePipeline
 
     private function resolveWebRootForInstallation(CustomerInstallation $installation, CustomerRemoteServer $server, RemoteConnectionInterface $connection, Site $site): string
     {
+        // 1. Highest authority: CustomerInstallationLog (actual recorded path from EXTRACT_PACKAGE or PROVISION_DOMAIN)
+        $logExtract = CustomerInstallationLog::where('installation_id', $installation->id)
+            ->where('stage', 'EXTRACT_PACKAGE')
+            ->where('event', 'completed')
+            ->latest('id')
+            ->first();
+        $recordedRoot = $logExtract?->output['web_root'] ?? null;
+
+        if (!$recordedRoot) {
+            $logDomain = CustomerInstallationLog::where('installation_id', $installation->id)
+                ->where('stage', 'PROVISION_DOMAIN')
+                ->where('event', 'completed')
+                ->latest('id')
+                ->first();
+            $recordedRoot = $logDomain?->output['document_root'] ?? null;
+        }
+
+        if (is_string($recordedRoot) && $recordedRoot !== '') {
+            $cleaned = rtrim(trim($recordedRoot), '/');
+            if ($this->verifyRemoteWebRoot($connection, $cleaned)) {
+                return $cleaned;
+            }
+        }
+
+        // 2. Explicit path in request_payload (e.g. tests or custom configured server root)
+        // NOTE: We reject template fallback paths like /var/www/{domain} if they don't genuinely exist on server
         $explicitPath = $installation->request_payload['web_root_path'] ?? null;
         if ($explicitPath && !empty(trim($explicitPath)) && $explicitPath !== '/var/www/site') {
-            return rtrim(trim($explicitPath), '/');
+            $explicitClean = rtrim(trim($explicitPath), '/');
+            $domainFallback = '/var/www/' . ($site->domain ?? $installation->customer_domain);
+            if ($explicitClean !== $domainFallback) {
+                if ($this->verifyRemoteWebRoot($connection, $explicitClean)) {
+                    return $explicitClean;
+                }
+            } else {
+                $check = $connection->execute("test -d " . escapeshellarg($explicitClean) . " && test -f " . escapeshellarg($explicitClean) . "/artisan && echo exists || echo absent");
+                if (str_contains($check->stdout, 'exists')) {
+                    return $explicitClean;
+                }
+            }
         }
 
-        // If installation id matches cust_site_{id}
-        $custDir = '/var/www/cust_site_' . $installation->id;
-        $check = $connection->execute("test -d " . escapeshellarg($custDir) . " && echo exists || echo absent");
+        // 3. Check /var/www/cust_site_{installation_id}
+        $custInstDir = '/var/www/cust_site_' . $installation->id;
+        $check = $connection->execute("test -d " . escapeshellarg($custInstDir) . " && echo exists || echo absent");
         if (str_contains($check->stdout, 'exists')) {
-            return $custDir;
+            return $custInstDir;
         }
 
-        // Otherwise search on server
+        // 4. Check canonical directory derived from slug and WebRootResolver
+        $slug = $this->deriveInstallationSlug($installation);
+        $driverType = DriverType::tryFrom((string) $server->type) ?? DriverType::SSH;
+        $slugDir = app(WebRootResolver::class)->resolveForDriverType($driverType, $slug, $server);
+        if ($slugDir !== $custInstDir && $this->verifyRemoteWebRoot($connection, $slugDir)) {
+            return $slugDir;
+        }
+
+        // 5. Check /var/www/cust_site_{site_id}
+        $custSiteDir = '/var/www/cust_site_' . $site->id;
+        if ($custSiteDir !== $custInstDir && $this->verifyRemoteWebRoot($connection, $custSiteDir)) {
+            return $custSiteDir;
+        }
+
+        // 6. Otherwise search on server
         $searched = $this->findWebRootOnServer($site, $connection);
         if ($searched) {
             return $searched;
         }
 
-        return $custDir;
+        return $custInstDir;
+    }
+
+    private function verifyRemoteWebRoot(RemoteConnectionInterface $connection, string $path): bool
+    {
+        $safe = escapeshellarg(rtrim($path, '/'));
+        $check = $connection->execute("test -d {$safe} && test -f {$safe}/artisan && echo exists || echo absent");
+        return str_contains($check->stdout, 'exists');
+    }
+
+    private function deriveInstallationSlug(CustomerInstallation $installation): string
+    {
+        $ascii   = preg_replace('/[^\x20-\x7E]/', '', $installation->customer_company ?? '');
+        $clean   = strtolower(preg_replace('/[^a-z0-9]+/', '_', $ascii));
+        $clean   = trim($clean, '_');
+        $segment = ($clean === '') ? 'site' : substr($clean, 0, 20);
+
+        return 'cust_' . $segment . '_' . $installation->id;
     }
 
     private function findWebRootOnServer(Site $site, RemoteConnectionInterface $connection): ?string
@@ -481,9 +552,8 @@ class CustomerPackageUpgradePipeline
         $domain = $site->domain;
         $dbName = $site->db_name;
 
-        // Check /var/www/cust_site_*
+        // Candidate directories
         $candidates = [
-            "/var/www/{$domain}",
             "/var/www/customer-site",
         ];
 
@@ -491,19 +561,24 @@ class CustomerPackageUpgradePipeline
             $candidates[] = "/var/www/{$dbName}";
         }
 
-        // Find from wildcard cust_site_*
+        // Find from wildcard cust_site_* and cust_*
         $globRes = $connection->execute("ls -d /var/www/cust_site_* 2>/dev/null");
         if ($globRes->succeeded() && !empty(trim($globRes->stdout))) {
             $dirs = array_filter(array_map('trim', explode("\n", trim($globRes->stdout))));
             $candidates = array_merge($candidates, $dirs);
         }
 
-        foreach ($candidates as $cand) {
+        $globRes2 = $connection->execute("ls -d /var/www/cust_* 2>/dev/null");
+        if ($globRes2->succeeded() && !empty(trim($globRes2->stdout))) {
+            $dirs2 = array_filter(array_map('trim', explode("\n", trim($globRes2->stdout))));
+            $candidates = array_merge($candidates, $dirs2);
+        }
+
+        foreach (array_unique($candidates) as $cand) {
             if (empty($cand)) continue;
-            $safe = escapeshellarg($cand);
-            $testRes = $connection->execute("test -d {$safe} && test -f {$safe}/artisan && echo exists || echo absent");
-            if (str_contains($testRes->stdout, 'exists')) {
+            if ($this->verifyRemoteWebRoot($connection, $cand)) {
                 // If .env matches domain or db_name
+                $safe = escapeshellarg($cand);
                 $envRes = $connection->execute("grep -E 'APP_URL|DB_DATABASE' {$safe}/.env 2>/dev/null");
                 if ($envRes->succeeded()) {
                     if ($domain && str_contains($envRes->stdout, $domain)) {
@@ -518,8 +593,7 @@ class CustomerPackageUpgradePipeline
 
         // If site is primary domain safhenokhost.ir
         if ($domain === 'safhenokhost.ir' || str_contains($domain, 'safhenokhost.ir')) {
-            $csTest = $connection->execute("test -d /var/www/customer-site && test -f /var/www/customer-site/artisan && echo exists || echo absent");
-            if (str_contains($csTest->stdout, 'exists')) {
+            if ($this->verifyRemoteWebRoot($connection, '/var/www/customer-site')) {
                 return '/var/www/customer-site';
             }
         }
