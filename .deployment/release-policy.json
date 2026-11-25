@@ -58,6 +58,13 @@
     ],
     "reviewed": [
       {
+        "path": "database/migrations/2026_11_25_000001_alter_settings_value_to_longtext.php",
+        "sha256": "fd7d4073c683319a976aeb2c39a67b2ff926d851de905da344f3b166b6de1e73",
+        "reviewed_by": "Owner (approved in session 2026-11-25 for GapGPT encrypted settings)",
+        "reviewed_at": "2026-11-25",
+        "reason": "Non-destructive column widening: up() changes settings.value from VARCHAR(255) to LONGTEXT (nullable) so Crypt::encryptString payloads for GapGPT API key fit without truncation; down() reverts to TEXT (nullable)."
+      },
+      {
         "path": "database/migrations/2026_11_20_200000_add_purge_plan_to_customer_deletions.php",
         "sha256": "a05543840f68853cb05f62066306242d879bba28e88e210dd38327a880b788ad",
         "reviewed_by": "Owner (approved in session 2026-11-20 for ADR-090 site full purge, feat/site-full-purge)",
