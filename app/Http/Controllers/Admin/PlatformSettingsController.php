@@ -115,12 +115,17 @@ class PlatformSettingsController extends Controller
 
         PlatformSettings::save($data);
 
-        PlatformSettings::saveGapGptSettings(
-            $request->input('gapgpt_api_key'),
-            $request->boolean('gapgpt_clear_key'),
-            $request->input('gapgpt_base_url'),
-            $request->input('gapgpt_model')
-        );
+        try {
+            PlatformSettings::saveGapGptSettings(
+                $request->input('gapgpt_api_key'),
+                $request->boolean('gapgpt_clear_key'),
+                $request->input('gapgpt_base_url'),
+                $request->input('gapgpt_model')
+            );
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Failed saving GapGPT settings: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'خطا در ذخیره تنظیمات GapGPT: ' . $e->getMessage());
+        }
 
         return back()->with('success', 'تنظیمات عمومی پلتفرم ذخیره شد.');
     }

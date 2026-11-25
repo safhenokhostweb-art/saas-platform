@@ -173,4 +173,25 @@ class PlatformWorkspaceConsolidationTest extends TestCase
             ->assertJsonPath('ai.api_key', $fakeKey)
             ->assertJsonPath('ai.model', 'gpt-4o-mini');
     }
+
+    public function test_canvas_structure_tree_supports_three_zone_reparenting_drag_and_drop(): void
+    {
+        $this->actingAs($this->superAdmin());
+
+        $theme = \App\Models\Theme::create([
+            'name'          => 'Tree Drag Theme',
+            'slug'          => 'tree-drag-' . uniqid(),
+            'status'        => \App\Models\Theme::STATUS_DRAFT,
+            'header_blocks' => [],
+            'footer_blocks' => [],
+            'pages'         => ['home' => ['title' => 'Home', 'slug' => '', 'blocks' => []]],
+            'settings'      => [],
+        ]);
+
+        $this->get(route('admin.theme-builder.canvas', $theme))
+            ->assertOk()
+            ->assertSee('computeTreeDropPosition', false)
+            ->assertSee('onTreeDrop', false)
+            ->assertSee('زیرمجموعه داخل این ویجت');
+    }
 }

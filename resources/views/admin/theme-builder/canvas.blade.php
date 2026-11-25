@@ -387,16 +387,28 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                             @click="selectBlock(node.path)"
                             @keydown.enter.prevent="selectBlock(node.path)"
                             @keydown.space.prevent="selectBlock(node.path)"
+                            @dragstart="startTreeDrag(node.block.id, node.path); $event.dataTransfer && ($event.dataTransfer.effectAllowed = 'move', $event.dataTransfer.setData('text/plain', String(node.block.id)))"
+                            @dragover.prevent="onTreeDragOver(node.block.id, node.path, computeTreeDropPosition($event, isContainerType(node.block.type)))"
+                            @dragleave="onTreeDragLeave($event)"
+                            @drop.prevent="onTreeDrop(node.block.id, node.path)"
+                            @dragend="endTreeDrag()"
+                            draggable="true"
                             tabindex="0"
                             role="treeitem"
                             :aria-selected="isSelectedPath(node.path) ? 'true' : 'false'"
                             :aria-label="navigatorLabel(node.block)"
+                            :data-testid="'tb-tree-node-' + node.block.id"
                             :data-block-type="node.block.type"
                             :style="{ paddingRight: (node.depth * 14 + 8) + 'px' }"
-                            :class="isSelectedPath(node.path)
-                                ? 'bg-indigo-50 text-indigo-700 font-medium border-r-2 border-indigo-500'
-                                : 'text-slate-600 hover:bg-slate-50 border-r-2 border-transparent'"
-                            class="flex items-center gap-1.5 py-1.5 pl-2 cursor-pointer transition text-xs"
+                            :class="[
+                                isSelectedPath(node.path)
+                                    ? 'bg-indigo-50 text-indigo-700 font-medium border-r-2 border-indigo-500'
+                                    : 'text-slate-600 hover:bg-slate-50 border-r-2 border-transparent',
+                                treeDragState.dragOverBlockId === node.block.id && treeDragState.dropPosition === 'before' ? 'border-t-2 border-indigo-600 bg-indigo-50/40' : '',
+                                treeDragState.dragOverBlockId === node.block.id && treeDragState.dropPosition === 'after' ? 'border-b-2 border-indigo-600 bg-indigo-50/40' : '',
+                                treeDragState.dragOverBlockId === node.block.id && treeDragState.dropPosition === 'inside' ? 'bg-indigo-100 ring-2 ring-indigo-500 ring-inset' : '',
+                            ]"
+                            class="relative flex items-center gap-1.5 py-1.5 pl-2 cursor-pointer transition text-xs"
                         >
                             {{-- Connector indent --}}
                             <span x-show="node.depth > 0" class="text-slate-300 text-xs shrink-0 leading-none">└</span>
@@ -426,6 +438,9 @@ $categoryOrderedKeys = ['layout','content','dynamic','ecommerce','marketing','ut
                             {{-- TB5: responsive override dot --}}
                             <span x-show="node.block.responsive && Object.keys(node.block.responsive).length > 0"
                                 class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" title="دارای override ریسپانسیو"></span>
+                            <span x-show="treeDragState.dragOverBlockId === node.block.id && treeDragState.dropPosition"
+                                  class="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-indigo-600 text-white shrink-0"
+                                  x-text="treeDragState.dropPosition === 'inside' ? 'زیرمجموعه داخل این ویجت' : (treeDragState.dropPosition === 'before' ? 'قبل از این ویجت' : 'بعد از این ویجت')"></span>
                         </div>
                     </template>
 
@@ -2249,6 +2264,7 @@ function themeCanvas() {
         // TB4: nested containers
         leftPanelTab:    'blocks',      // 'blocks' | 'tree' | 'health' (WU-3)
         treeExpanded:    {},            // blockId → bool (default: expanded)
+        treeDragState:   { isDragging: false, draggedBlockId: null, draggedBlockPath: null, dragOverBlockId: null, dragOverPath: null, dropPosition: null },
         showAddChildModal: false,
         // TB5: responsive editor
         activeBreakpoint: 'desktop',   // 'desktop' | 'tablet' | 'mobile'
@@ -2563,6 +2579,83 @@ function themeCanvas() {
             if (to < 0 || to >= this.blocks.length) return;
             const node = this.blocks[from];
             if (node) this.performMove(node.id, 'page', to > from ? to + 1 : to);
+        },
+
+        computeTreeDropPosition(event, isContainer) {
+            const el = event?.currentTarget;
+            if (!el) return 'after';
+            const rect = el.getBoundingClientRect();
+            const ratio = (event.clientY - rect.top) / Math.max(rect.height, 1);
+            if (isContainer) {
+                if (ratio < 0.25) return 'before';
+                if (ratio > 0.75) return 'after';
+                return 'inside';
+            }
+            return ratio < 0.5 ? 'before' : 'after';
+        },
+
+        startTreeDrag(blockId, path) {
+            this.treeDragState = {
+                isDragging: true,
+                draggedBlockId: blockId,
+                draggedBlockPath: path,
+                dragOverBlockId: null,
+                dragOverPath: null,
+                dropPosition: null,
+            };
+        },
+
+        onTreeDragOver(blockId, path, position) {
+            if (!this.treeDragState.isDragging) return;
+            if (blockId === this.treeDragState.draggedBlockId) {
+                this.treeDragState.dragOverBlockId = null;
+                this.treeDragState.dragOverPath = null;
+                this.treeDragState.dropPosition = null;
+                return;
+            }
+            this.treeDragState.dragOverBlockId = blockId;
+            this.treeDragState.dragOverPath = path;
+            this.treeDragState.dropPosition = position;
+        },
+
+        onTreeDragLeave(event) {
+            if (!this.treeDragState.isDragging) return;
+            if (event && event.currentTarget && event.relatedTarget && event.currentTarget.contains(event.relatedTarget)) return;
+            this.treeDragState.dragOverBlockId = null;
+            this.treeDragState.dragOverPath = null;
+            this.treeDragState.dropPosition = null;
+        },
+
+        onTreeDrop(blockId, path) {
+            if (!this.treeDragState.isDragging) return;
+            const { draggedBlockId, dropPosition } = this.treeDragState;
+            this.endTreeDrag();
+            if (!draggedBlockId || !blockId || draggedBlockId === blockId || !dropPosition) return;
+
+            const targetInfo = this.treeOperations.find(this.blocks, blockId);
+            if (!targetInfo) return;
+
+            if (dropPosition === 'inside') {
+                if (!this.isContainerType(targetInfo.node?.type)) return;
+                const childCount = Array.isArray(targetInfo.node.children) ? targetInfo.node.children.length : 0;
+                this.performMove(draggedBlockId, blockId, childCount);
+                this.treeExpanded[blockId] = true;
+            } else {
+                const targetParentId = targetInfo.parentId || 'page';
+                const targetIndex = dropPosition === 'before' ? targetInfo.index : targetInfo.index + 1;
+                this.performMove(draggedBlockId, targetParentId, targetIndex);
+            }
+        },
+
+        endTreeDrag() {
+            this.treeDragState = {
+                isDragging: false,
+                draggedBlockId: null,
+                draggedBlockPath: null,
+                dragOverBlockId: null,
+                dragOverPath: null,
+                dropPosition: null,
+            };
         },
 
         // ── TB3-S2: Undo / Redo ──────────────────────────────────
