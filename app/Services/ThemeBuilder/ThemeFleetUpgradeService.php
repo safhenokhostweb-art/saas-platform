@@ -191,19 +191,7 @@ class ThemeFleetUpgradeService
         // 2. Discover Core Package / Canvas Engine Updates
         if ($activePackage && !$activePackage->isStale()) {
             foreach ($sites as $site) {
-                // Determine current version of this site
-                $latestPackageUpdate = ThemeFleetUpdate::where('site_id', $site->id)
-                    ->where('update_type', ThemeFleetUpdate::TYPE_PACKAGE)
-                    ->where('status', ThemeFleetUpdate::STATUS_COMPLETED)
-                    ->latest('id')
-                    ->first();
-
-                if ($latestPackageUpdate && !empty($latestPackageUpdate->component_versions['customer_core']['to'])) {
-                    $currentVer = $latestPackageUpdate->component_versions['customer_core']['to'];
-                } else {
-                    $inst = CustomerInstallation::where('site_id', $site->id)->latest('id')->first();
-                    $currentVer = $inst?->package_version ?? '1.0.0';
-                }
+                $currentVer = $this->resolveSiteCoreVersion($site, '1.0.0');
 
                 if (version_compare($currentVer, $activePackage->version, '<')) {
                     $packageUpdates[] = [
@@ -328,15 +316,27 @@ class ThemeFleetUpgradeService
             $fromVersion = $fromReleaseId ? ThemeRelease::find($fromReleaseId)?->version : '1.0.0';
         }
 
+        $siteCoreVersion = $this->resolveSiteCoreVersion($site);
+
         $componentVersions = [
             'theme'           => ['from' => $fromVersion ?? '1.0.0', 'to' => $release->version],
             'canvas'          => ['from' => ComponentVersionRegistry::CANVAS_VERSION, 'to' => ComponentVersionRegistry::CANVAS_VERSION],
             'widgets'         => ['from' => ComponentVersionRegistry::WIDGETS_VERSION, 'to' => ComponentVersionRegistry::WIDGETS_VERSION],
-            'customer_core'   => ['from' => ComponentVersionRegistry::CUSTOMER_CORE_VERSION, 'to' => ComponentVersionRegistry::CUSTOMER_CORE_VERSION],
+            'customer_core'   => ['from' => $siteCoreVersion, 'to' => $siteCoreVersion],
             'motion_graphics' => ['from' => ComponentVersionRegistry::MOTION_GRAPHICS_VERSION, 'to' => ComponentVersionRegistry::MOTION_GRAPHICS_VERSION],
         ];
 
-        $changelogSummary = ComponentVersionRegistry::formatChangelogSummary('theme', ['theme' => $fromVersion ?? '1.0.0'], ['theme' => $release->version]);
+        $pages = $release->snapshot['pages'] ?? $theme->pages ?? [];
+        $pageCount = is_array($pages) ? count($pages) : 0;
+        $changelogLines = [
+            "ارتقای قالب «{$theme->name}» از نسخه " . ($fromVersion ?? '1.0.0') . " به {$release->version}:",
+            "• انتشار نسخه {$release->version} قالب «{$theme->name}»" . ($pageCount > 0 ? " شامل {$pageCount} صفحه" : ''),
+        ];
+        if (!empty($release->changelog)) {
+            $changelogLines[] = '• ' . trim((string) $release->changelog);
+        }
+        $changelogLines[] = '• الگوریتم تطبیق ۳-طرفه و حفاظت ۱۰۰٪ از ویرایش‌های کاربران در ارتقای ناوگان';
+        $changelogSummary = implode("\n", $changelogLines);
 
         // Create audit record
         $fleetUpdate = ThemeFleetUpdate::create([
@@ -728,5 +728,29 @@ class ThemeFleetUpgradeService
         }
 
         return $query->get();
+    }
+
+    /**
+     * Resolve the actual customer core package version installed on a site
+     * (from completed package fleet updates first, then CustomerInstallation).
+     */
+    private function resolveSiteCoreVersion(Site $site, ?string $fallback = null): string
+    {
+        $latestPackageUpdate = ThemeFleetUpdate::where('site_id', $site->id)
+            ->where('update_type', ThemeFleetUpdate::TYPE_PACKAGE)
+            ->where('status', ThemeFleetUpdate::STATUS_COMPLETED)
+            ->latest('id')
+            ->first();
+
+        if ($latestPackageUpdate && !empty($latestPackageUpdate->component_versions['customer_core']['to'])) {
+            return (string) $latestPackageUpdate->component_versions['customer_core']['to'];
+        }
+
+        $inst = CustomerInstallation::where('site_id', $site->id)->latest('id')->first();
+        if ($inst && !empty($inst->package_version)) {
+            return (string) $inst->package_version;
+        }
+
+        return $fallback ?? CustomerInstallationPackage::active()?->version ?? ComponentVersionRegistry::CUSTOMER_CORE_VERSION;
     }
 }

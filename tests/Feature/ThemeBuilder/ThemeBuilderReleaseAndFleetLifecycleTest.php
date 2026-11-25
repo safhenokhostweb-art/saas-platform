@@ -88,6 +88,17 @@ class ThemeBuilderReleaseAndFleetLifecycleTest extends TestCase
             'status' => 'active',
         ]);
 
+        \App\Models\CustomerInstallation::create([
+            'site_id' => $site->id,
+            'remote_server_id' => 1,
+            'installer_user_id' => $admin->id,
+            'status' => 'complete',
+            'customer_company' => 'تست',
+            'customer_email' => 'test@tenant-lifecycle.test',
+            'customer_domain' => $site->domain,
+            'package_version' => '1.1.9',
+        ]);
+
         Http::fake([
             'https://tenant-lifecycle.test/builder/api/theme/install' => Http::response([
                 'success' => true,
@@ -152,6 +163,11 @@ class ThemeBuilderReleaseAndFleetLifecycleTest extends TestCase
         $update = $fleetService->dispatchUpgrade($site, $releaseV2, $admin->id);
         $this->assertSame(ThemeFleetUpdate::STATUS_COMPLETED, $update->status);
         $this->assertSame($releaseV2->id, $update->to_release_id);
+        $this->assertSame('1.1.9', $update->component_versions['customer_core']['from'] ?? null);
+        $this->assertSame('1.1.9', $update->component_versions['customer_core']['to'] ?? null);
+        $pageCount = count($releaseV2->snapshot['pages']);
+        $this->assertStringContainsString("انتشار نسخه {$releaseV2->version} قالب «{$theme->name}» شامل {$pageCount} صفحه", (string) $update->changelog_summary);
+        $this->assertStringNotContainsString('پشتیبانی از انتشار ۲۴ صفحه‌ای قالب خورشیدی', (string) $update->changelog_summary);
         $this->assertDatabaseHas('theme_assignments', [
             'site_id' => $site->id,
             'theme_id' => $theme->id,

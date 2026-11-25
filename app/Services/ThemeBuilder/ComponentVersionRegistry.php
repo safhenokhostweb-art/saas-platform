@@ -40,15 +40,29 @@ class ComponentVersionRegistry
         $activePkg = CustomerInstallationPackage::active();
         $pkgVersion = $activePkg?->version ?? self::CUSTOMER_CORE_VERSION;
 
+        $latestRelease = ThemeRelease::with('theme')
+            ->where('status', ThemeRelease::STATUS_PUBLISHED)
+            ->latest('id')
+            ->first();
+
+        $latestThemeBullet = 'انتشار استاندارد قالب‌ها از طریق Theme Builder و اسنپشات نسخه';
+        if ($latestRelease) {
+            $themeName = $latestRelease->theme?->name ?? 'قالب';
+            $pages = $latestRelease->snapshot['pages'] ?? $latestRelease->theme?->pages ?? [];
+            $pageCount = is_array($pages) ? count($pages) : 0;
+            $latestThemeBullet = "انتشار نسخه {$latestRelease->version} قالب «{$themeName}»"
+                . ($pageCount > 0 ? " شامل {$pageCount} صفحه" : '');
+        }
+
         return [
             'theme' => [
                 'name'       => 'قالب‌ها و پوسته‌ها (Themes)',
                 'slug'       => 'theme',
-                'version'    => self::latestThemeVersion(),
+                'version'    => $latestRelease?->version ?? '1.1.0',
                 'type'       => 'semver',
                 'summary'    => 'سیستم طراحی مستقل، چیدمان صفحات، استایل‌های اختصاصی و ایزولاسیون کامل',
                 'changelog'  => [
-                    'پشتیبانی از انتشار ۲۴ صفحه‌ای قالب خورشیدی (Solar Industry v1.1.0)',
+                    $latestThemeBullet,
                     'جداسازی کامل استایل‌های ورود و ثبت‌نام در قالب‌های اختصاصی',
                     'الگوریتم تطبیق ۳-طرفه و حفاظت ۱۰۰٪ از ویرایش‌های کاربران در ارتقای ناوگان',
                 ],
