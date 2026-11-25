@@ -69,12 +69,8 @@ class AppServiceProvider extends ServiceProvider
         // INFRA-6: Remote Agent client
         $this->app->singleton(\App\Services\Infrastructure\RemoteAgentClient::class);
 
-        // TB-3: Theme AI Analyzer (reads ANTHROPIC_API_KEY at resolve time)
-        $this->app->singleton(\App\Services\ThemeBuilder\ThemeAiAnalyzerService::class, function () {
-            return new \App\Services\ThemeBuilder\ThemeAiAnalyzerService(
-                (string) config('services.anthropic.key', '')
-            );
-        });
+        // TB-3: Theme AI Analyzer (GapGPT exclusive via GapGptClient)
+        $this->app->singleton(\App\Services\ThemeBuilder\ThemeAiAnalyzerService::class);
 
         // Payment Gateway
         $this->app->bind(PaymentGatewayInterface::class, function ($app) {

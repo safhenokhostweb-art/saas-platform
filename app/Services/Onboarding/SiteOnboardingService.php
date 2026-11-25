@@ -237,6 +237,13 @@ class SiteOnboardingService
             'license_types'           => self::LICENSE_TYPES,
             'base_modules'            => self::BASE_MODULES,
             'backup_policies'         => self::BACKUP_POLICIES,
+            'restricted_assets'       => collect(\SaaSPlatform\ThemeRuntime\Access\AssetAccessCatalog::restrictedAssets())
+                ->map(fn (array $a, string $ref) => [
+                    'ref'    => $ref,
+                    'name'   => $a['name'],
+                    'kind'   => \SaaSPlatform\ThemeRuntime\Access\AssetRef::KIND_LABELS[$a['kind']] ?? $a['kind'],
+                    'family' => $a['rule']->familyLabel ?? $a['family'] ?? 'اختصاصی',
+                ])->values()->all(),
         ];
     }
 
@@ -394,6 +401,7 @@ class SiteOnboardingService
                 'cpu_cores'         => $cpuCores,
                 'bandwidth_gb'      => $bandwidthGb,
                 'dns_pending'       => $dnsPending,
+                'asset_grants'      => array_values(array_unique(array_filter(array_map('strval', (array) ($data['asset_grants'] ?? []))))),
             ];
 
             return CustomerInstallation::create([

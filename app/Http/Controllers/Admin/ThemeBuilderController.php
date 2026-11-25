@@ -3,7 +3,12 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Site;
+use App\Models\SiteAssetGrant;
+use App\Models\PlatformAssetPolicy;
 use App\Models\Theme;
+use SaaSPlatform\ThemeRuntime\Access\AssetAccessCatalog;
+use SaaSPlatform\ThemeRuntime\Access\BusinessVerticals;
+use Illuminate\Support\Facades\Route;
 use App\Models\ThemeLicense;
 use App\Models\ThemeRelease;
 use App\Models\ThemeRevision;
@@ -38,7 +43,23 @@ class ThemeBuilderController extends Controller
             ->orderByDesc('updated_at')
             ->paginate(20);
         $sites = Site::orderBy('title')->get(['id', 'title']);
-        return view('admin.theme-builder.index', compact('themes', 'sites', 'siteId'));
+        $overrides = PlatformAssetPolicy::query()->orderBy('asset_kind')->orderBy('asset_key')->get()->keyBy(fn (PlatformAssetPolicy $p) => $p->ref());
+        $grantCounts = SiteAssetGrant::query()->active()
+            ->selectRaw('asset_kind, asset_key, COUNT(*) as aggregate')
+            ->groupBy('asset_kind', 'asset_key')->get()
+            ->mapWithKeys(fn ($row) => [$row->asset_kind . ':' . $row->asset_key => (int) $row->aggregate]);
+
+        return view('admin.theme-builder.index', [
+            'themes' => $themes,
+            'sites' => $sites,
+            'siteId' => $siteId,
+            'restricted' => AssetAccessCatalog::restrictedAssets(),
+            'listed' => AssetAccessCatalog::listedAssets(),
+            'overrides' => $overrides,
+            'grantCounts' => $grantCounts,
+            'verticals' => BusinessVerticals::LABELS,
+            'motionCatalogUrl' => Route::has('admin.motion-graphics.catalog.index') ? route('admin.motion-graphics.catalog.index') : null,
+        ]);
     }
 
     public function create(Request $request)

@@ -22,10 +22,7 @@ use Illuminate\Support\Facades\Storage;
  */
 class VisualReverseEngineeringService
 {
-    private const CLAUDE_API     = 'https://api.anthropic.com/v1/messages';
-    private const CLAUDE_VERSION = '2023-06-01';
-    private const CLAUDE_MODEL   = 'claude-sonnet-4-6';
-    private const TIMEOUT        = 90;
+    private const TIMEOUT = 90;
 
     public function __construct(
         private readonly DomExtractionService             $domExtractor,
@@ -38,12 +35,17 @@ class VisualReverseEngineeringService
         private readonly PlaywrightExtractionService      $playwright,
         private readonly HeadlessComponentExtractor       $headlessExtractor,
         private readonly PlaywrightSnapshotService        $snapshotService,
+        private readonly ?\App\Services\AI\GapGptClient   $gapGpt = null,
     ) {}
+
+    private function client(): \App\Services\AI\GapGptClient
+    {
+        return $this->gapGpt ?? app(\App\Services\AI\GapGptClient::class);
+    }
 
     public function isEnabled(): bool
     {
-        return !empty(config('services.anthropic.key', ''))
-            || !empty(config('services.deepseek.key', ''));
+        return $this->client()->isEnabled();
     }
 
     public function isHeadlessAvailable(): bool
@@ -58,16 +60,12 @@ class VisualReverseEngineeringService
 
     public function getEnvKeyName(): string
     {
-        if (!empty(config('services.anthropic.key', ''))) return 'ANTHROPIC_API_KEY';
-        if (!empty(config('services.deepseek.key', ''))) return 'DEEPSEEK_API_KEY';
-        return 'ANTHROPIC_API_KEY';
+        return 'GAPGPT_API_KEY';
     }
 
     public function getActiveProvider(): string
     {
-        if (!empty(config('services.anthropic.key', ''))) return 'claude';
-        if (!empty(config('services.deepseek.key', ''))) return 'deepseek';
-        return 'php-fallback';
+        return $this->isEnabled() ? 'gapgpt' : 'php-fallback';
     }
 
     // ── Entry points by input type ────────────────────────────────────────────
@@ -314,7 +312,7 @@ class VisualReverseEngineeringService
 
         // Phase 6: Theme Reconstruction
         $job->update(['status' => ReverseEngineeringJob::STATUS_RECONSTRUCTING]);
-        $apiKey    = (string) config('services.anthropic.key', '');
+        $apiKey    = (string) ($this->client()->config()['api_key'] ?? '');
         $themePack = $this->reconstructor->reconstruct(
             $name,
             $domStructure,
@@ -457,8 +455,7 @@ class VisualReverseEngineeringService
 
     private function analyzeScreenshotWithVision(string $base64Image, string $mimeType, string $notes): array
     {
-        $apiKey = (string) config('services.anthropic.key', '');
-        if (empty($apiKey)) {
+        if (!$this->isEnabled()) {
             return $this->screenshotFallback($notes);
         }
 
@@ -497,29 +494,19 @@ Analyze this website screenshot for reverse engineering. Return JSON:
 Additional notes: {$notes}
 USR;
 
-        $response = Http::withHeaders([
-            'x-api-key'         => $apiKey,
-            'anthropic-version' => self::CLAUDE_VERSION,
-            'content-type'      => 'application/json',
-        ])->timeout(self::TIMEOUT)->post(self::CLAUDE_API, [
-            'model'      => self::CLAUDE_MODEL,
-            'max_tokens' => 1500,
-            'system'     => $systemPrompt,
-            'messages'   => [[
-                'role'    => 'user',
-                'content' => [
-                    ['type' => 'image', 'source' => ['type' => 'base64', 'media_type' => $mimeType, 'data' => $base64Image]],
-                    ['type' => 'text', 'text' => $userText],
-                ],
-            ]],
-        ]);
-
-        if (!$response->successful()) {
-            Log::warning('VRE: Vision API failed', ['status' => $response->status()]);
+        try {
+            $raw = $this->client()->askWithImage(
+                prompt: $userText,
+                base64Image: $base64Image,
+                mimeType: $mimeType,
+                system: $systemPrompt,
+                maxTokens: 1500,
+                timeout: self::TIMEOUT,
+            );
+        } catch (\Throwable $e) {
+            Log::warning('VRE: GapGPT Vision API failed', ['error' => $e->getMessage()]);
             return $this->screenshotFallback($notes);
         }
-
-        $raw  = $response->json('content.0.text') ?? '{}';
         $raw  = $this->stripFences($raw);
         $data = json_decode($raw, true) ?? [];
 

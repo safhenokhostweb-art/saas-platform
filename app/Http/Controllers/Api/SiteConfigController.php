@@ -267,6 +267,15 @@ class SiteConfigController extends Controller
                 ],
             ],
             'theme_builder' => $this->themeBuilderPayload($siteId),
+            'ai' => (function () {
+                $gapGpt = PlatformSettings::gapGptConfig();
+                return $gapGpt['api_key'] !== '' ? [
+                    'provider' => 'gapgpt',
+                    'api_key'  => $gapGpt['api_key'],
+                    'base_url' => $gapGpt['base_url'],
+                    'model'    => $gapGpt['model'],
+                ] : null;
+            })(),
         ];
         if ($request->boolean('debug')) {
             $payload['debug'] = array_merge($debug, [

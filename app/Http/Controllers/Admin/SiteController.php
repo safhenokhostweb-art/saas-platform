@@ -24,6 +24,13 @@ use App\Services\ModuleAssignmentService;
 use App\Services\PublishedThemeAssignmentService;
 use App\Models\Theme;
 use App\Models\ThemeAssignment;
+use App\Models\PlatformAssetPolicy;
+use App\Models\SiteAssetGrant;
+use App\Services\AssetProvisioning\SiteAssetEntitlementService;
+use SaaSPlatform\ThemeRuntime\Access\AssetAccessCatalog;
+use SaaSPlatform\ThemeRuntime\Access\AssetAccessPolicy;
+use SaaSPlatform\ThemeRuntime\Access\AssetRef;
+use SaaSPlatform\ThemeRuntime\Access\BusinessVerticals;
 use DomainException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
@@ -207,7 +214,47 @@ class SiteController extends Controller
             ? Theme::published()->with('currentRelease.qualityReports')->orderBy('name')->get()
                 ->filter(fn (Theme $theme) => $theme->isCommerciallyEligible())
             : collect();
-        return view('admin.sites.edit', compact('site', 'customers', 'modules', 'paymentGateways', 'customerMenuKeys', 'siteDesign', 'themes'));
+
+        $assetService = app(SiteAssetEntitlementService::class);
+        $entitlements = $assetService->forSite($site);
+        $grants = $site->assetGrants()->get()->keyBy(fn (SiteAssetGrant $g) => $g->ref());
+        $refs = array_keys(AssetAccessCatalog::restrictedAssets());
+        foreach (PlatformAssetPolicy::query()->where('is_public', false)->get() as $override) {
+            $refs[] = $override->ref();
+        }
+        $assetRows = [];
+        foreach (array_unique($refs) as $ref) {
+            [$kind, $key] = AssetRef::parse($ref);
+            $rule = AssetAccessCatalog::rule($kind, $key, $entitlements);
+            if ($rule === null) {
+                continue;
+            }
+            $assetRows[$ref] = [
+                'kind' => $kind,
+                'key' => $key,
+                'name' => AssetAccessCatalog::displayName($kind, $key),
+                'rule' => $rule,
+                'decision' => AssetAccessPolicy::decide($rule, $ref, $entitlements),
+                'grant' => $grants->get($ref),
+            ];
+        }
+        uasort($assetRows, fn (array $a, array $b) => [$a['rule']->family, $a['kind'], $a['key']] <=> [$b['rule']->family, $b['kind'], $b['key']]);
+        $verticals = BusinessVerticals::LABELS;
+        $sourceLabels = SiteAssetGrant::SOURCE_LABELS;
+
+        return view('admin.sites.edit', compact(
+            'site',
+            'customers',
+            'modules',
+            'paymentGateways',
+            'customerMenuKeys',
+            'siteDesign',
+            'themes',
+            'entitlements',
+            'assetRows',
+            'verticals',
+            'sourceLabels'
+        ));
     }
 
     /**
@@ -225,6 +272,9 @@ class SiteController extends Controller
         }
         if (Schema::hasTable('themes') && Schema::hasColumn('sites', 'theme_id')) {
             $rules['theme_id'] = 'nullable|exists:themes,id';
+        }
+        if (Schema::hasColumn('sites', 'business_vertical')) {
+            $rules['business_vertical'] = 'nullable|string|max:64';
         }
         $request->validate($rules);
 
@@ -289,6 +339,14 @@ class SiteController extends Controller
 
         // sync expiry notifications after renewal
         $this->syncExpiryNotifications($site);
+
+        if ($request->has('business_vertical') && Schema::hasColumn('sites', 'business_vertical')) {
+            try {
+                app(SiteAssetEntitlementService::class)->setVertical($site, $request->input('business_vertical') ?: null, Auth::id());
+            } catch (DomainException $exception) {
+                return back()->withInput()->withErrors(['business_vertical' => $exception->getMessage()]);
+            }
+        }
 
         // Phase 17-D — Part 5: بروزرسانی ماژول‌ها — دیگر sync() مستقیم روی
         // همهٔ ماژول‌های فعال پلتفرم (شامل internal) نیست. فقط ماژول‌های

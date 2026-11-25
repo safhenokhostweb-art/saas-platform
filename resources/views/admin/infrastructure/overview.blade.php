@@ -23,10 +23,76 @@
 .alert-row--red{background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
 .alert-row--amber{background:#fffbeb;color:#92400e;border:1px solid #fde68a}
 .alert-row--blue{background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe}
+.infra-tab-btn{padding:.55rem .9rem;font-size:.8125rem;font-weight:500;border-radius:.625rem;color:#475569;white-space:nowrap;transition:all .15s ease;border:1px solid transparent;background:transparent}
+.infra-tab-btn:hover{background:#f1f5f9;color:#1e293b}
+.infra-tab-btn.is-active{background:#4f46e5;color:#fff;font-weight:600;box-shadow:0 2px 8px rgba(79,70,229,.25)}
 </style>
 @endpush
 
 @section('content')
+@php
+    $infraTabs = [
+        ['slug' => 'overview',            'label' => 'نمای کلی',          'url' => route('admin.infrastructure.overview')],
+        ['slug' => 'servers',             'label' => 'سرورها',            'url' => route('admin.infrastructure.servers.index')],
+        ['slug' => 'domains',             'label' => 'دامنه‌ها',          'url' => route('admin.infrastructure.domains.index')],
+        ['slug' => 'hosting',             'label' => 'هاستینگ',           'url' => route('admin.infrastructure.hosting.index')],
+        ['slug' => 'storage',             'label' => 'فضای ذخیره‌سازی',   'url' => route('admin.infrastructure.storage.index')],
+        ['slug' => 'databases',           'label' => 'دیتابیس‌ها',        'url' => route('admin.infrastructure.databases.index')],
+        ['slug' => 'sms',                 'label' => 'آمار پیامک',        'url' => route('admin.infrastructure.sms')],
+        ['slug' => 'remote-agents',       'label' => 'Remote Agents',     'url' => route('admin.infrastructure.remote-agents.index')],
+        ['slug' => 'monitoring',          'label' => 'مرکز سلامت',        'url' => route('admin.infrastructure.monitoring.index')],
+        ['slug' => 'customer-deployment', 'label' => 'استقرار مشتریان',   'url' => route('admin.infrastructure.customer-deployment.dashboard')],
+        ['slug' => 'auth-center',         'label' => 'مرکز احراز هویت',   'url' => route('admin.infrastructure.customer-deployment.auth-center.index')],
+        ['slug' => 'dns-provider',        'label' => 'DNS آروان',         'url' => route('admin.infrastructure.dns-provider.index')],
+        ['slug' => 'recovery-repository', 'label' => 'خزانه بازیابی',     'url' => route('admin.infrastructure.recovery-repository.index')],
+    ];
+@endphp
+
+<div id="infra-tabs-root"
+     x-data="infraTabsWorkspace(@js($infraTabs))"
+     x-init="init()"
+     data-testid="infra-tabs-root">
+
+    {{-- Tab Bar --}}
+    <div class="bg-white border border-gray-200 rounded-xl p-2 mb-5 shadow-sm overflow-x-auto">
+        <div class="flex items-center gap-1 min-w-max" role="tablist" aria-label="بخش‌های زیرساخت">
+            <template x-for="t in tabs" :key="t.slug">
+                <button type="button"
+                        role="tab"
+                        :aria-selected="activeTab === t.slug"
+                        :data-tab="t.slug"
+                        @click="switchTab(t.slug)"
+                        :class="activeTab === t.slug ? 'infra-tab-btn is-active' : 'infra-tab-btn'"
+                        x-text="t.label"></button>
+            </template>
+        </div>
+    </div>
+
+    {{-- Inline Flash & Validation Feedback inside active tab --}}
+    <template x-if="flashSuccess">
+        <div class="alert alert-success flex items-center justify-between gap-2 mb-4">
+            <span x-text="flashSuccess"></span>
+            <button type="button" @click="flashSuccess = ''" class="text-xs underline">بستن</button>
+        </div>
+    </template>
+    <template x-if="flashError">
+        <div class="alert alert-danger flex items-center justify-between gap-2 mb-4">
+            <span x-text="flashError"></span>
+            <button type="button" @click="flashError = ''" class="text-xs underline">بستن</button>
+        </div>
+    </template>
+    <template x-if="validationErrors.length">
+        <div class="alert alert-danger mb-4">
+            <ul class="list-disc list-inside text-right mb-0 text-sm">
+                <template x-for="(err, idx) in validationErrors" :key="idx">
+                    <li x-text="err"></li>
+                </template>
+            </ul>
+        </div>
+    </template>
+
+    {{-- Overview Tab (Server-rendered default) --}}
+    <div x-show="activeTab === 'overview'">
 
 {{-- Header --}}
 <div class="flex items-center justify-between mb-6">
@@ -35,7 +101,9 @@
         <p class="text-gray-500 text-sm mt-1">نمای کلی از سرورها، دامنه‌ها، هاستینگ، استوریج و دیتابیس‌ها</p>
     </div>
     <div class="flex gap-2">
-        <a href="{{ route('admin.infrastructure.servers.create') }}" class="btn btn-primary text-sm">
+        <a href="{{ route('admin.infrastructure.servers.create') }}"
+           @click.prevent="openTabUrl('servers', '{{ route('admin.infrastructure.servers.create') }}')"
+           class="btn btn-primary text-sm">
             <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
             افزودن سرور
         </a>
@@ -256,5 +324,199 @@
     </div>
 
 </div>
+
+    </div> {{-- end overview tab --}}
+
+    {{-- Lazy AJAX Tab Panel --}}
+    <div x-show="activeTab !== 'overview'" x-cloak>
+        <div x-show="loading" class="infra-card flex items-center justify-center py-12 text-sm text-gray-500 gap-2">
+            <svg class="w-5 h-5 animate-spin text-indigo-600" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+            <span>در حال بارگذاری بخش...</span>
+        </div>
+        <div id="infra-tab-panel"
+             x-show="!loading"
+             @click="handlePanelClick($event)"
+             @submit="handlePanelSubmit($event)">
+        </div>
+    </div>
+</div>
+
+<script>
+function infraTabsWorkspace(tabs) {
+    return {
+        tabs: tabs,
+        activeTab: 'overview',
+        loading: false,
+        cache: {},
+        flashSuccess: '',
+        flashError: '',
+        validationErrors: [],
+        csrfToken: document.querySelector('meta[name="csrf-token"]')?.content || '',
+
+        init() {
+            const fromHash = this.parseHash();
+            if (fromHash && fromHash !== 'overview') {
+                this.switchTab(fromHash, false);
+            }
+            window.addEventListener('hashchange', () => {
+                const next = this.parseHash() || 'overview';
+                if (next !== this.activeTab) {
+                    this.switchTab(next, false);
+                }
+            });
+        },
+
+        parseHash() {
+            const m = (window.location.hash || '').match(/tab=([a-z0-9-]+)/i);
+            const slug = m ? m[1] : null;
+            return this.tabs.some(t => t.slug === slug) ? slug : null;
+        },
+
+        switchTab(slug, updateHash = true) {
+            const tab = this.tabs.find(t => t.slug === slug);
+            if (!tab) return;
+            this.activeTab = slug;
+            this.validationErrors = [];
+            if (updateHash) {
+                window.location.hash = 'tab=' + slug;
+            }
+            if (slug === 'overview') return;
+
+            if (this.cache[slug]) {
+                this.renderPanel(this.cache[slug]);
+                return;
+            }
+            this.loadUrl(tab.url, slug);
+        },
+
+        openTabUrl(slug, url) {
+            this.activeTab = slug;
+            this.validationErrors = [];
+            window.location.hash = 'tab=' + slug;
+            this.loadUrl(url, slug);
+        },
+
+        async loadUrl(url, slug) {
+            this.loading = true;
+            try {
+                const res = await fetch(url, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-Infra-Tab': '1', 'Accept': 'application/json' },
+                    credentials: 'same-origin',
+                });
+                const ct = res.headers.get('content-type') || '';
+                if (ct.includes('application/json')) {
+                    const data = await res.json();
+                    if (data.html !== undefined) {
+                        this.cache[slug] = data.html;
+                        this.renderPanel(data.html);
+                    }
+                } else {
+                    const html = await res.text();
+                    this.cache[slug] = html;
+                    this.renderPanel(html);
+                }
+            } catch (e) {
+                this.flashError = 'خطا در بارگذاری محتوای تب.';
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        renderPanel(html) {
+            const panel = document.getElementById('infra-tab-panel');
+            if (!panel) return;
+            panel.innerHTML = html;
+            panel.querySelectorAll('script').forEach((oldScript) => {
+                const s = document.createElement('script');
+                if (oldScript.src) s.src = oldScript.src;
+                else s.textContent = oldScript.textContent;
+                oldScript.replaceWith(s);
+            });
+        },
+
+        handlePanelClick(e) {
+            const link = e.target.closest('a[href]');
+            if (!link) return;
+            const href = link.getAttribute('href') || '';
+            if (!href || href.startsWith('#') || link.target === '_blank' || link.hasAttribute('download')) return;
+            if (href.includes('/download/') || href.includes('/stream') || href.includes('/progress')) return;
+            try {
+                const u = new URL(href, window.location.origin);
+                if (u.origin === window.location.origin && u.pathname.startsWith('/admin/infrastructure')) {
+                    e.preventDefault();
+                    this.flashSuccess = '';
+                    this.flashError = '';
+                    this.validationErrors = [];
+                    this.loadUrl(u.toString(), this.activeTab);
+                }
+            } catch (_) {}
+        },
+
+        async handlePanelSubmit(e) {
+            const form = e.target.closest('form');
+            if (!form) return;
+            const action = form.getAttribute('action') || window.location.href;
+            const method = (form.getAttribute('method') || 'GET').toUpperCase();
+            e.preventDefault();
+            this.flashSuccess = '';
+            this.flashError = '';
+            this.validationErrors = [];
+
+            const headers = {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-Infra-Tab': '1',
+                'X-CSRF-TOKEN': this.csrfToken,
+                'Accept': 'application/json',
+            };
+
+            try {
+                let res;
+                if (method === 'GET') {
+                    const qs = new URLSearchParams(new FormData(form)).toString();
+                    const sep = action.includes('?') ? '&' : '?';
+                    res = await fetch(qs ? action + sep + qs : action, { headers, credentials: 'same-origin' });
+                } else {
+                    res = await fetch(action, {
+                        method: 'POST',
+                        headers,
+                        body: new FormData(form),
+                        credentials: 'same-origin',
+                    });
+                }
+
+                if (res.status === 422) {
+                    const errData = await res.json();
+                    const msgs = [];
+                    Object.values(errData.errors || {}).forEach((arr) => {
+                        if (Array.isArray(arr)) msgs.push(...arr);
+                    });
+                    this.validationErrors = msgs.length ? msgs : [errData.message || 'لطفاً خطاهای فرم را بررسی کنید.'];
+                    return;
+                }
+
+                const data = await res.json();
+                if (data.flash_success) this.flashSuccess = data.flash_success;
+                if (data.flash_error) this.flashError = data.flash_error;
+
+                if (data.html !== undefined) {
+                    this.cache[this.activeTab] = data.html;
+                    this.renderPanel(data.html);
+                } else if (data.redirect_url) {
+                    delete this.cache[this.activeTab];
+                    await this.loadUrl(data.redirect_url, this.activeTab);
+                } else if (data.message && !data.flash_success && !data.flash_error) {
+                    if (data.ok === false) this.flashError = data.message;
+                    else this.flashSuccess = data.message;
+                }
+            } catch (err) {
+                this.flashError = 'خطا در ارسال درخواست. لطفاً دوباره تلاش کنید.';
+            }
+        },
+    };
+}
+</script>
 
 @endsection

@@ -208,7 +208,7 @@
             @change="handleScreenshot($event)">
           @if(!$hasAiKey)
           <p class="mt-2 text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2">
-            ⚠ بدون <code>ANTHROPIC_API_KEY</code> تصویر تحلیل نمی‌شود. از URL یا HTML استفاده کنید.
+            ⚠ بدون <code>GAPGPT_API_KEY</code> تصویر تحلیل نمی‌شود. از URL یا HTML استفاده کنید.
           </p>
           @endif
         </div>

@@ -27,6 +27,7 @@
         'business_vertical' => old('business_vertical', ''),
         'kit_module_ids'    => array_map('intval', (array) old('kit_module_ids', [])),
         'active_module_ids' => array_map('intval', (array) old('active_module_ids', [])),
+        'asset_grants' => array_values(array_map('strval', (array) old('asset_grants', []))),
         'base_modules'      => (array) old('base_modules', ['forms']),
         'theme_id'          => old('theme_id') !== null && old('theme_id') !== '' ? (int) old('theme_id') : null,
         'remote_server_id'  => old('remote_server_id') ? (int) old('remote_server_id') : (collect($options['servers'])->firstWhere('implemented', true)['id'] ?? null),
@@ -670,6 +671,22 @@
                         <input type="hidden" name="active_module_ids[]" :value="id">
                     </template>
                     @error('active_module_ids')<p class="ob-err">{{ $message }}</p>@enderror
+                </div>
+
+                {{-- Optional Restricted Asset Grants --}}
+                <div class="ob-field" x-show="options.restricted_assets && options.restricted_assets.length" style="border-top:1px dashed var(--ob-border);padding-top:1rem">
+                    <span style="display:block;font-size:.85rem;font-weight:600;margin-block-end:.4rem" id="ob-assets-label">دسترسی مستقیم قالب‌ها و ویجت‌های اختصاصی (اختیاری)</span>
+                    <div class="ob-choices" role="group" aria-labelledby="ob-assets-label">
+                        <template x-for="asset in options.restricted_assets" :key="asset.ref">
+                            <button type="button" class="ob-choice" :aria-pressed="form.asset_grants.includes(asset.ref)" @click="toggleAssetGrant(asset.ref)">
+                                <strong x-text="asset.name"></strong>
+                                <small x-text="asset.kind + ' · ' + asset.family"></small>
+                            </button>
+                        </template>
+                    </div>
+                    <template x-for="ref in form.asset_grants" :key="'ag-' + ref">
+                        <input type="hidden" name="asset_grants[]" :value="ref">
+                    </template>
                 </div>
 
                 {{-- Kits (Preserved for compatibility and entitlement linkage) --}}
@@ -1321,6 +1338,10 @@ function onboardingWizard(options, initial, prefill, errorStep) {
                 this.form.theme_id = null;
             }
             this.selectDefaultVerticalModules();
+        },
+        toggleAssetGrant(ref) {
+            const i = this.form.asset_grants.indexOf(ref);
+            if (i === -1) { this.form.asset_grants.push(ref); } else { this.form.asset_grants.splice(i, 1); }
         },
         toggleKit(kit) {
             if (kit.vertical && kit.vertical !== this.form.business_vertical) { return; }

@@ -47,6 +47,8 @@ class CustomerInstallRequest
         // VALIDATE_DOMAIN_DNS passes with a warning and ISSUE_SSL waits
         // (status awaiting_dns) instead of failing the installation.
         public readonly bool    $dnsPending = false,
+        /** @var list<string> optional initial asset grant refs (e.g. template:solar-header) */
+        public readonly array   $assetGrants = [],
     ) {}
 
     public static function fromArray(array $data): self
@@ -87,6 +89,7 @@ class CustomerInstallRequest
             cpuCores:             (float) ($data['cpu_cores'] ?? 1.0),
             bandwidthGb:          (float) ($data['bandwidth_gb'] ?? 10.0),
             dnsPending:           (bool) ($data['dns_pending'] ?? false),
+            assetGrants:          array_values(array_unique(array_filter(array_map('strval', (array) ($data['asset_grants'] ?? []))))),
         );
     }
 
@@ -128,6 +131,7 @@ class CustomerInstallRequest
             'cpu_cores'             => $this->cpuCores,
             'bandwidth_gb'          => $this->bandwidthGb,
             'dns_pending'           => $this->dnsPending,
+            'asset_grants'          => $this->assetGrants,
         ];
     }
 }

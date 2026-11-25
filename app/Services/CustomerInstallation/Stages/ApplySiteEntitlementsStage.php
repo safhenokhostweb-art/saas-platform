@@ -192,6 +192,17 @@ class ApplySiteEntitlementsStage extends AbstractStage
                 }
             }
 
+            if ($req->assetGrants !== []) {
+                $assetService = app(\App\Services\AssetProvisioning\SiteAssetEntitlementService::class);
+                foreach ($req->assetGrants as $assetRef) {
+                    try {
+                        $assetService->grant($site, $assetRef, \App\Models\SiteAssetGrant::SOURCE_ADMIN_GRANT, null, $actor?->id);
+                    } catch (\DomainException $e) {
+                        // Ignore invalid/non-restricted asset refs during onboarding
+                    }
+                }
+            }
+
             return StageResult::success($this->name(), [
                 'site_id'           => $site->id,
                 'business_vertical' => $site->fresh()->business_vertical,

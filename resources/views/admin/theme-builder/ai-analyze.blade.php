@@ -29,7 +29,7 @@
              this.progress += Math.random() * 8;
              if      (this.progress < 30) this.progressMsg = 'در حال دریافت صفحه...';
              else if (this.progress < 55) this.progressMsg = 'استخراج اطلاعات طراحی...';
-             else if (this.progress < 72) this.progressMsg = 'ارسال به Claude AI...';
+             else if (this.progress < 72) this.progressMsg = 'ارسال به GapGPT AI...';
              else                          this.progressMsg = 'در حال تولید قالب...';
            }
          }, 600);
@@ -125,7 +125,7 @@
         </div>
 
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-2">نام قالب <span class="text-gray-400 font-normal">(اختیاری — Claude پیشنهاد می‌دهد)</span></label>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">نام قالب <span class="text-gray-400 font-normal">(اختیاری — GapGPT پیشنهاد می‌دهد)</span></label>
           <input type="text" x-model="name"
             placeholder="مثلاً: قالب طلایی فروشگاه"
             class="w-full border border-gray-300 rounded-xl text-sm px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">

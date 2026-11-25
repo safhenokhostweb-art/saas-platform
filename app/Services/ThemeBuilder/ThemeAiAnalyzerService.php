@@ -2,67 +2,42 @@
 namespace App\Services\ThemeBuilder;
 
 use App\Models\Theme;
+use App\Services\AI\GapGptClient;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 /**
  * TB-3 — AI URL Analyzer: fetches a URL, extracts design signals, and calls
- * an AI API (GapGPT or Claude) to produce a ready-to-use Theme JSON.
- *
- * Provider selection via THEME_AI_PROVIDER env:
- *   gapgpt  → OpenAI-compatible (default when GAPGPT_API_KEY is set)
- *   claude  → Anthropic Messages API
+ * GapGPT exclusively to produce a ready-to-use Theme JSON.
  */
 class ThemeAiAnalyzerService
 {
-    // ── GapGPT (OpenAI-compatible) ────────────────────────────────────────────
-    private const GAPGPT_DEFAULT_BASE  = 'https://api.gapgpt.app/v1';
-    private const GAPGPT_DEFAULT_MODEL = 'gpt-4o-mini';
-
-    // ── Claude (Anthropic) ────────────────────────────────────────────────────
-    private const CLAUDE_API     = 'https://api.anthropic.com/v1/messages';
-    private const CLAUDE_VERSION = '2023-06-01';
-    private const CLAUDE_MODEL   = 'claude-sonnet-4-6';
-
     private const MAX_TOKENS = 4096;
     private const TIMEOUT    = 60;
 
-    private string $provider;
-    private string $apiKey;
-    private string $baseUrl;
-    private string $model;
+    public function __construct(
+        private readonly ?GapGptClient $gapGpt = null,
+    ) {}
 
-    public function __construct()
+    private function client(): GapGptClient
     {
-        $this->provider = strtolower((string) config('services.theme_ai.provider', 'gapgpt'));
-
-        if ($this->provider === 'claude') {
-            $this->apiKey  = (string) config('services.anthropic.key', '');
-            $this->baseUrl = self::CLAUDE_API;
-            $this->model   = (string) config('services.theme_ai.model', self::CLAUDE_MODEL);
-        } else {
-            // GapGPT (default) — base URL + /chat/completions
-            $this->apiKey  = (string) config('services.gapgpt.key', '');
-            $base          = rtrim((string) config('services.gapgpt.base_url', self::GAPGPT_DEFAULT_BASE), '/');
-            $this->baseUrl = $base . '/chat/completions';
-            $this->model   = (string) config('services.theme_ai.model', self::GAPGPT_DEFAULT_MODEL);
-        }
+        return $this->gapGpt ?? app(GapGptClient::class);
     }
 
     public function isEnabled(): bool
     {
-        return !empty($this->apiKey);
+        return $this->client()->isEnabled();
     }
 
     public function getProviderLabel(): string
     {
-        return $this->provider === 'claude' ? 'Claude AI' : 'GapGPT AI';
+        return 'GapGPT AI';
     }
 
     public function getEnvKeyName(): string
     {
-        return $this->provider === 'claude' ? 'ANTHROPIC_API_KEY' : 'GAPGPT_API_KEY';
+        return 'GAPGPT_API_KEY';
     }
 
     // ── Public API ────────────────────────────────────────────────────────────
@@ -71,9 +46,12 @@ class ThemeAiAnalyzerService
     {
         $pageData = $this->fetchPage($url);
         $prompt   = $this->buildPrompt($url, $pageData, $notes);
-        $raw      = $this->provider === 'claude'
-                        ? $this->callClaude($prompt)
-                        : $this->callGapGpt($prompt);
+        $raw      = $this->client()->ask(
+            prompt: $prompt['user'],
+            system: $prompt['system'],
+            maxTokens: self::MAX_TOKENS,
+            timeout: self::TIMEOUT,
+        );
 
         return $this->parseThemeJson($raw);
     }
@@ -267,60 +245,6 @@ Return ONLY the JSON object.
 USR;
 
         return ['system' => $system, 'user' => $user];
-    }
-
-    // ── Private: GapGPT call (OpenAI-compatible) ──────────────────────────────
-
-    private function callGapGpt(array $prompt): string
-    {
-        $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $this->apiKey,
-            'Content-Type'  => 'application/json',
-        ])
-        ->timeout(self::TIMEOUT)
-        ->post($this->baseUrl, [
-            'model'       => $this->model,
-            'max_tokens'  => self::MAX_TOKENS,
-            'messages'    => [
-                ['role' => 'system', 'content' => $prompt['system']],
-                ['role' => 'user',   'content' => $prompt['user']],
-            ],
-        ]);
-
-        if (!$response->successful()) {
-            $err = $response->json('error.message') ?? $response->body();
-            Log::error('TB-3: GapGPT API error', ['status' => $response->status(), 'body' => $response->body()]);
-            throw new \RuntimeException("GapGPT API error: {$err}");
-        }
-
-        return $response->json('choices.0.message.content') ?? '';
-    }
-
-    // ── Private: Claude call ──────────────────────────────────────────────────
-
-    private function callClaude(array $prompt): string
-    {
-        $response = Http::withHeaders([
-            'x-api-key'         => $this->apiKey,
-            'anthropic-version' => self::CLAUDE_VERSION,
-            'content-type'      => 'application/json',
-        ])
-        ->timeout(self::TIMEOUT)
-        ->post(self::CLAUDE_API, [
-            'model'      => $this->model,
-            'max_tokens' => self::MAX_TOKENS,
-            'system'     => $prompt['system'],
-            'messages'   => [
-                ['role' => 'user', 'content' => $prompt['user']],
-            ],
-        ]);
-
-        if (!$response->successful()) {
-            $err = $response->json('error.message') ?? $response->body();
-            throw new \RuntimeException("Claude API error: {$err}");
-        }
-
-        return $response->json('content.0.text') ?? '';
     }
 
     // ── Private: JSON parse ───────────────────────────────────────────────────

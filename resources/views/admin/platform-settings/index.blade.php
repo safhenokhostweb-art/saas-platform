@@ -288,6 +288,65 @@
                     </div>
                 </div>
 
+                {{-- تنظیمات هوش مصنوعی (GapGPT) --}}
+                <div class="pt-4 border-t border-gray-100 space-y-4" id="gapgpt-settings-card" data-testid="gapgpt-settings-card">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                            <h3 class="font-semibold text-base">تنظیمات هوش مصنوعی (GapGPT)</h3>
+                            <p class="text-xs text-gray-500 mt-0.5">تمام ابزارهای هوش مصنوعی پلتفرم و سایت‌های مشتریان منحصراً از طریق GapGPT متصل می‌شوند. کلید API به صورت رمزنگاری‌شده ذخیره می‌شود.</p>
+                        </div>
+                        @if(($gapGptStatus['configured'] ?? false))
+                            <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                فعال ({{ ($gapGptStatus['source'] ?? '') === 'panel' ? 'پنل ادمین' : '.env' }} · پایان با <span dir="ltr" class="font-mono">••••{{ $gapGptStatus['last4'] ?? '' }}</span>)
+                            </span>
+                        @else
+                            <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                                تنظیم نشده
+                            </span>
+                        @endif
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label class="form-label" for="gapgpt_api_key">کلید API سرویس GapGPT</label>
+                            <input id="gapgpt_api_key"
+                                   type="password"
+                                   name="gapgpt_api_key"
+                                   class="form-control"
+                                   dir="ltr"
+                                   value=""
+                                   placeholder="{{ ($gapGptStatus['configured'] ?? false) ? 'برای تغییر، کلید جدید وارد کنید (••••' . ($gapGptStatus['last4'] ?? '') . ')' : 'sk-...' }}"
+                                   autocomplete="new-password">
+                            @if(($gapGptStatus['source'] ?? '') === 'panel')
+                                <label class="inline-flex items-center gap-2 mt-2 text-xs text-red-600 cursor-pointer">
+                                    <input type="checkbox" name="gapgpt_clear_key" value="1" class="rounded border-gray-300">
+                                    <span>پاک کردن کلید ذخیره‌شده در پنل (بازگشت به .env)</span>
+                                </label>
+                            @endif
+                        </div>
+                        <div>
+                            <label class="form-label" for="gapgpt_base_url">آدرس پایه (Base URL)</label>
+                            <input id="gapgpt_base_url"
+                                   type="url"
+                                   name="gapgpt_base_url"
+                                   class="form-control"
+                                   dir="ltr"
+                                   value="{{ old('gapgpt_base_url', $gapGptStatus['base_url'] ?? 'https://api.gapgpt.app/v1') }}"
+                                   placeholder="https://api.gapgpt.app/v1">
+                        </div>
+                        <div>
+                            <label class="form-label" for="gapgpt_model">مدل پیش‌فرض</label>
+                            <input id="gapgpt_model"
+                                   type="text"
+                                   name="gapgpt_model"
+                                   class="form-control"
+                                   dir="ltr"
+                                   value="{{ old('gapgpt_model', $gapGptStatus['model'] ?? 'gpt-4o-mini') }}"
+                                   placeholder="gpt-4o-mini">
+                        </div>
+                    </div>
+                </div>
+
                 <h3 class="font-semibold text-base pt-4 border-t border-gray-100">Feature Flags</h3>
                 <p class="text-gray-500 text-sm">فعال‌سازی قابلیت‌های سطح enterprise برای کل پلتفرم.</p>
                 <div class="space-y-3">

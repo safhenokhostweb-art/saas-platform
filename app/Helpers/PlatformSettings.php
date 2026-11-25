@@ -412,6 +412,94 @@ class PlatformSettings
         return $out;
     }
 
+    /**
+     * تنظیمات سرویس انحصاری هوش مصنوعی GapGPT (خواندن کلید رمزنگاری‌شده پنل با fallback به .env).
+     *
+     * @return array{api_key: string, base_url: string, model: string}
+     */
+    public static function gapGptConfig(): array
+    {
+        $panelKey = '';
+        $rawEncrypted = (string) Setting::get('gapgpt_api_key_encrypted', '');
+        if ($rawEncrypted !== '') {
+            try {
+                $panelKey = trim((string) \Illuminate\Support\Facades\Crypt::decryptString($rawEncrypted));
+            } catch (\Throwable $e) {
+                $panelKey = '';
+            }
+        }
+
+        $envKey = trim((string) config('services.gapgpt.key', ''));
+        $baseUrl = trim((string) Setting::get('gapgpt_base_url', ''));
+        if ($baseUrl === '') {
+            $baseUrl = trim((string) config('services.gapgpt.base_url', 'https://api.gapgpt.app/v1'));
+        }
+        $model = trim((string) Setting::get('gapgpt_model', ''));
+        if ($model === '') {
+            $model = trim((string) config('services.theme_ai.model', 'gpt-4o-mini'));
+        }
+
+        return [
+            'api_key'  => $panelKey !== '' ? $panelKey : $envKey,
+            'base_url' => rtrim($baseUrl ?: 'https://api.gapgpt.app/v1', '/'),
+            'model'    => $model ?: 'gpt-4o-mini',
+        ];
+    }
+
+    /**
+     * وضعیت نمایشی کلید GapGPT برای رابط کاربری (هرگز کلید کامل را برنمی‌گرداند).
+     */
+    public static function gapGptStatus(): array
+    {
+        $panelKey = '';
+        $rawEncrypted = (string) Setting::get('gapgpt_api_key_encrypted', '');
+        if ($rawEncrypted !== '') {
+            try {
+                $panelKey = trim((string) \Illuminate\Support\Facades\Crypt::decryptString($rawEncrypted));
+            } catch (\Throwable $e) {
+                $panelKey = '';
+            }
+        }
+        $envKey = trim((string) config('services.gapgpt.key', ''));
+        $effective = $panelKey !== '' ? $panelKey : $envKey;
+        $cfg = self::gapGptConfig();
+
+        return [
+            'configured' => $effective !== '',
+            'source'     => $panelKey !== '' ? 'panel' : ($envKey !== '' ? 'env' : 'none'),
+            'last4'      => $effective !== '' ? mb_substr($effective, -4) : '',
+            'base_url'   => $cfg['base_url'],
+            'model'      => $cfg['model'],
+        ];
+    }
+
+    /**
+     * ذخیره رمزنگاری‌شده کلید GapGPT و تنظیمات مدل در دیتابیس.
+     */
+    public static function saveGapGptSettings(?string $apiKey, bool $clearKey, ?string $baseUrl, ?string $model): void
+    {
+        if ($clearKey) {
+            Setting::where('key', 'gapgpt_api_key_encrypted')->delete();
+        } elseif ($apiKey !== null && trim($apiKey) !== '') {
+            Setting::updateOrCreate(
+                ['key' => 'gapgpt_api_key_encrypted'],
+                ['value' => \Illuminate\Support\Facades\Crypt::encryptString(trim($apiKey))]
+            );
+        }
+
+        $cleanBase = rtrim(trim((string) ($baseUrl ?? '')), '/');
+        Setting::updateOrCreate(
+            ['key' => 'gapgpt_base_url'],
+            ['value' => $cleanBase !== '' ? $cleanBase : 'https://api.gapgpt.app/v1']
+        );
+
+        $cleanModel = trim((string) ($model ?? ''));
+        Setting::updateOrCreate(
+            ['key' => 'gapgpt_model'],
+            ['value' => $cleanModel !== '' ? $cleanModel : 'gpt-4o-mini']
+        );
+    }
+
     public static function allFeatureFlags(): array
     {
         $out = [];

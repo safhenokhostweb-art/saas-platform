@@ -69,14 +69,15 @@ return [
     |
     */
 
-    'deepseek' => [
-        'key' => env('DEEPSEEK_API_KEY'),
+    // Theme Builder & Platform AI — GapGPT Exclusive (OpenAI-compatible)
+    'theme_ai' => [
+        'provider'  => 'gapgpt',
+        'model'     => env('GAPGPT_MODEL', env('THEME_AI_MODEL', 'gpt-4o-mini')),
     ],
 
-    'local_ai' => [
-        'enabled'  => filter_var(env('LOCAL_AI_ENABLED', false), FILTER_VALIDATE_BOOLEAN),
-        'endpoint' => env('LOCAL_AI_ENDPOINT', 'http://127.0.0.1:11434/api/generate'),
-        'model'    => env('LOCAL_AI_MODEL', 'llama3'),
+    'gapgpt' => [
+        'key'       => env('GAPGPT_API_KEY', ''),
+        'base_url'  => env('GAPGPT_BASE_URL', 'https://api.gapgpt.app/v1'),
     ],
 
     // 8.3d: Slack webhook alerting for critical anomalies + deployment events
@@ -89,21 +90,6 @@ return [
     // Set OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318 to enable
     'otel' => [
         'endpoint' => env('OTEL_EXPORTER_OTLP_ENDPOINT'),
-    ],
-
-    // Theme Builder AI — GapGPT (OpenAI-compatible) or Claude
-    'theme_ai' => [
-        'provider'  => env('THEME_AI_PROVIDER', 'gapgpt'),
-        'model'     => env('THEME_AI_MODEL', 'gpt-4o-mini'),
-    ],
-
-    'gapgpt' => [
-        'key'       => env('GAPGPT_API_KEY', ''),
-        'base_url'  => env('GAPGPT_BASE_URL', 'https://api.gapgpt.app/v1'),
-    ],
-
-    'anthropic' => [
-        'key' => env('ANTHROPIC_API_KEY', ''),
     ],
 
     'customer_provision_secret' => env('CUSTOMER_PROVISION_SECRET', ''),

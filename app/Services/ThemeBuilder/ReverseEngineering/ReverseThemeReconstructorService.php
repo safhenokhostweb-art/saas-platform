@@ -24,19 +24,12 @@ use Illuminate\Support\Facades\Log;
  */
 class ReverseThemeReconstructorService
 {
-    // Claude API constants
-    private const CLAUDE_API     = 'https://api.anthropic.com/v1/messages';
-    private const CLAUDE_MODEL   = 'claude-sonnet-4-6';
-    private const CLAUDE_VERSION = '2023-06-01';
-    private const MAX_TOKENS     = 8000;
-    private const TIMEOUT        = 120;
-
-    // DeepSeek API constants (OpenAI-compatible)
-    private const DEEPSEEK_API   = 'https://api.deepseek.com/v1/chat/completions';
-    private const DEEPSEEK_MODEL = 'deepseek-chat';
+    private const MAX_TOKENS = 8000;
+    private const TIMEOUT    = 120;
 
     public function __construct(
         private readonly ThemePlaceholderService $placeholder,
+        private readonly ?\App\Services\AI\GapGptClient $gapGpt = null,
     ) {}
 
     /**
@@ -73,24 +66,17 @@ class ReverseThemeReconstructorService
         // RE-FP-003: Extract real nav labels from DOM structure (Playwright headless pass)
         $navLabels = $domStructure['header']['nav_labels'] ?? [];
 
-        // Try AI-assisted pack generation, fall back to PHP
-        $packJson    = null;
-        $deepseekKey = (string) config('services.deepseek.key', '');
+        // Try AI-assisted pack generation via GapGPT, fall back to PHP
+        $packJson = null;
+        $client   = $this->gapGpt ?? app(\App\Services\AI\GapGptClient::class);
+        $effectiveKey = !empty($apiKey) ? $apiKey : (string) ($client->config()['api_key'] ?? '');
 
-        if (!empty($apiKey)) {
+        if ($effectiveKey !== '') {
             try {
-                $packJson = $this->aiGeneratePack($name, $sections, $globalStyles, $layoutMap, $visualProfile, $commerceProfile, $similarityScores, $apiKey, $navLabels);
+                $packJson = $this->aiGeneratePack($name, $sections, $globalStyles, $layoutMap, $visualProfile, $commerceProfile, $similarityScores, $effectiveKey, $navLabels);
+                Log::info('RE: GapGPT reconstruction succeeded');
             } catch (\Throwable $e) {
-                Log::warning('RE: Claude reconstruction failed, trying DeepSeek', ['error' => $e->getMessage()]);
-            }
-        }
-
-        if ($packJson === null && !empty($deepseekKey)) {
-            try {
-                $packJson = $this->aiGeneratePackDeepSeek($name, $sections, $globalStyles, $layoutMap, $visualProfile, $commerceProfile, $similarityScores, $deepseekKey, $navLabels);
-                Log::info('RE: DeepSeek reconstruction succeeded');
-            } catch (\Throwable $e) {
-                Log::warning('RE: DeepSeek reconstruction failed, using PHP fallback', ['error' => $e->getMessage()]);
+                Log::warning('RE: GapGPT reconstruction failed, using PHP fallback', ['error' => $e->getMessage()]);
             }
         }
 
@@ -167,22 +153,13 @@ Generate a complete Persian ThemePack JSON:
 IMPORTANT: Replace all UUID with real UUIDs. Generate 6–10 blocks for the home page. Ensure all sections: {$sectionList}
 USR;
 
-        $response = \Illuminate\Support\Facades\Http::withHeaders([
-            'x-api-key'         => $apiKey,
-            'anthropic-version' => self::CLAUDE_VERSION,
-            'content-type'      => 'application/json',
-        ])->timeout(self::TIMEOUT)->post(self::CLAUDE_API, [
-            'model'      => self::CLAUDE_MODEL,
-            'max_tokens' => self::MAX_TOKENS,
-            'system'     => $system,
-            'messages'   => [['role' => 'user', 'content' => $user]],
-        ]);
-
-        if (!$response->successful()) {
-            throw new \RuntimeException('Claude API: ' . ($response->json('error.message') ?? $response->status()));
-        }
-
-        $raw = $response->json('content.0.text') ?? '{}';
+        $client = $this->gapGpt ?? app(\App\Services\AI\GapGptClient::class);
+        $raw = $client->ask(
+            prompt: $user,
+            system: $system,
+            maxTokens: self::MAX_TOKENS,
+            timeout: self::TIMEOUT,
+        );
         $raw = $this->stripJsonFences($raw);
 
         $start = strpos($raw, '{');

@@ -5,70 +5,43 @@ namespace App\Services\ThemeBuilder;
 use App\Models\AiGenerationJob;
 use App\Models\ThemePack;
 use App\Models\ThemeTemplate;
+use App\Services\AI\GapGptClient;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 /**
- * TB3 Sprint 8 — AI Theme Generator
- *
- * Supports 4 input methods:
- *   - URL        → crawl → extract signals → section detect → AI generate
- *   - Screenshot → Claude Vision → section detect → AI generate
- *   - HTML       → DOMDocument parse → section detect → AI generate
- *   - Prompt     → text description → AI generate directly
- *
- * Safe mode: never copies source code or proprietary assets.
- * All content generated is original Persian placeholder text.
+ * TB3 Sprint 8 — AI Theme Generator (GapGPT Exclusive)
  */
 class ThemeAiGeneratorService
 {
-    // Provider constants (shared with ThemeAiAnalyzerService)
-    private const GAPGPT_DEFAULT_BASE  = 'https://api.gapgpt.app/v1';
-    private const GAPGPT_DEFAULT_MODEL = 'gpt-4o-mini';
-    private const CLAUDE_API           = 'https://api.anthropic.com/v1/messages';
-    private const CLAUDE_VISION_MODEL  = 'claude-sonnet-4-6'; // supports vision
-    private const CLAUDE_TEXT_MODEL    = 'claude-sonnet-4-6';
-    private const CLAUDE_VERSION       = '2023-06-01';
-    private const MAX_TOKENS           = 8000;
-    private const TIMEOUT              = 90;
-
-    private string $provider;
-    private string $apiKey;
-    private string $chatUrl;
-    private string $model;
+    private const MAX_TOKENS = 8000;
+    private const TIMEOUT    = 90;
 
     public function __construct(
         private readonly ThemeSectionDetectorService $detector,
         private readonly ThemePlaceholderService $placeholder,
-    ) {
-        $this->provider = strtolower((string) config('services.theme_ai.provider', 'claude'));
+        private readonly ?GapGptClient $gapGpt = null,
+    ) {}
 
-        if ($this->provider === 'claude') {
-            $this->apiKey  = (string) config('services.anthropic.key', '');
-            $this->chatUrl = self::CLAUDE_API;
-            $this->model   = (string) config('services.theme_ai.model', self::CLAUDE_TEXT_MODEL);
-        } else {
-            $this->apiKey  = (string) config('services.gapgpt.key', '');
-            $base          = rtrim((string) config('services.gapgpt.base_url', self::GAPGPT_DEFAULT_BASE), '/');
-            $this->chatUrl = $base . '/chat/completions';
-            $this->model   = (string) config('services.theme_ai.model', self::GAPGPT_DEFAULT_MODEL);
-        }
+    private function client(): GapGptClient
+    {
+        return $this->gapGpt ?? app(GapGptClient::class);
     }
 
     public function isEnabled(): bool
     {
-        return !empty($this->apiKey);
+        return $this->client()->isEnabled();
     }
 
     public function getProviderLabel(): string
     {
-        return $this->provider === 'claude' ? 'Claude AI' : 'GapGPT AI';
+        return 'GapGPT AI';
     }
 
     public function getEnvKeyName(): string
     {
-        return $this->provider === 'claude' ? 'ANTHROPIC_API_KEY' : 'GAPGPT_API_KEY';
+        return 'GAPGPT_API_KEY';
     }
 
     // ── STEP 1: Detect sections from input ───────────────────────────────────
@@ -401,35 +374,14 @@ Analyze this website screenshot and return a JSON object with:
 Additional notes: {$notes}
 USR;
 
-        $response = Http::withHeaders([
-            'x-api-key'         => $this->apiKey,
-            'anthropic-version' => self::CLAUDE_VERSION,
-            'content-type'      => 'application/json',
-        ])->timeout(self::TIMEOUT)->post(self::CLAUDE_API, [
-            'model'      => self::CLAUDE_VISION_MODEL,
-            'max_tokens' => 1024,
-            'system'     => $system,
-            'messages'   => [[
-                'role'    => 'user',
-                'content' => [
-                    [
-                        'type'   => 'image',
-                        'source' => [
-                            'type'       => 'base64',
-                            'media_type' => $mimeType,
-                            'data'       => $imageData,
-                        ],
-                    ],
-                    ['type' => 'text', 'text' => $userText],
-                ],
-            ]],
-        ]);
-
-        if (!$response->successful()) {
-            throw new \RuntimeException('Claude Vision error: ' . ($response->json('error.message') ?? $response->status()));
-        }
-
-        $raw  = $response->json('content.0.text') ?? '{}';
+        $raw  = $this->client()->askWithImage(
+            prompt: $userText,
+            base64Image: $imageData,
+            mimeType: $mimeType,
+            system: $system,
+            maxTokens: 1024,
+            timeout: self::TIMEOUT,
+        );
         $raw  = $this->stripJsonFences($raw);
         $data = json_decode($raw, true) ?? [];
 
@@ -598,49 +550,12 @@ USR;
 
     private function callAi(string $system, string $user): string
     {
-        if ($this->provider === 'claude') {
-            return $this->callClaude($system, $user);
-        }
-        return $this->callGapGpt($system, $user);
-    }
-
-    private function callClaude(string $system, string $user): string
-    {
-        $response = Http::withHeaders([
-            'x-api-key'         => $this->apiKey,
-            'anthropic-version' => self::CLAUDE_VERSION,
-            'content-type'      => 'application/json',
-        ])->timeout(self::TIMEOUT)->post(self::CLAUDE_API, [
-            'model'      => $this->model,
-            'max_tokens' => self::MAX_TOKENS,
-            'system'     => $system,
-            'messages'   => [['role' => 'user', 'content' => $user]],
-        ]);
-
-        if (!$response->successful()) {
-            throw new \RuntimeException('Claude API error: ' . ($response->json('error.message') ?? $response->status()));
-        }
-        return $response->json('content.0.text') ?? '';
-    }
-
-    private function callGapGpt(string $system, string $user): string
-    {
-        $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $this->apiKey,
-            'Content-Type'  => 'application/json',
-        ])->timeout(self::TIMEOUT)->post($this->chatUrl, [
-            'model'      => $this->model,
-            'max_tokens' => self::MAX_TOKENS,
-            'messages'   => [
-                ['role' => 'system', 'content' => $system],
-                ['role' => 'user',   'content' => $user],
-            ],
-        ]);
-
-        if (!$response->successful()) {
-            throw new \RuntimeException('GapGPT API error: ' . ($response->json('error.message') ?? $response->status()));
-        }
-        return $response->json('choices.0.message.content') ?? '';
+        return $this->client()->ask(
+            prompt: $user,
+            system: $system,
+            maxTokens: self::MAX_TOKENS,
+            timeout: self::TIMEOUT,
+        );
     }
 
     // ── Private: Build ThemePack ──────────────────────────────────────────────

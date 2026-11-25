@@ -299,7 +299,7 @@
                    @change="onScreenshotChange($event)">
           </div>
           <div class="bg-purple-50 rounded-xl p-4 text-xs text-purple-700">
-            Claude AI تصویر را با Vision تحلیل می‌کند و بخش‌ها را بدون کپی محتوا شناسایی می‌کند.
+            GapGPT AI تصویر را با Vision تحلیل می‌کند و بخش‌ها را بدون کپی محتوا شناسایی می‌کند.
           </div>
         </div>
 

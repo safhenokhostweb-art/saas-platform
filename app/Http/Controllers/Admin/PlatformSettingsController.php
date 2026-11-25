@@ -20,7 +20,8 @@ class PlatformSettingsController extends Controller
         $sms = PlatformSettings::allSms();
         $apiKeys = PlatformSettings::allApiKeys();
         $featureFlags = PlatformSettings::allFeatureFlags();
-        return view('admin.platform-settings.index', compact('general', 'theme', 'font', 'upload', 'autoExpiry', 'smsExpiry', 'guideWidget', 'email', 'sms', 'apiKeys', 'featureFlags'));
+        $gapGptStatus = PlatformSettings::gapGptStatus();
+        return view('admin.platform-settings.index', compact('general', 'theme', 'font', 'upload', 'autoExpiry', 'smsExpiry', 'guideWidget', 'email', 'sms', 'apiKeys', 'featureFlags', 'gapGptStatus'));
     }
 
     public function update(Request $request)
@@ -34,6 +35,9 @@ class PlatformSettingsController extends Controller
             'contact_email' => 'nullable|email|max:255',
             'contact_phone' => 'nullable|string|max:64',
             'contact_address' => 'nullable|string|max:500',
+            'gapgpt_api_key' => 'nullable|string|max:500',
+            'gapgpt_base_url' => 'nullable|url|max:255',
+            'gapgpt_model' => 'nullable|string|max:120',
         ]));
 
         $data = $request->only(array_merge(
@@ -110,6 +114,13 @@ class PlatformSettingsController extends Controller
         }
 
         PlatformSettings::save($data);
+
+        PlatformSettings::saveGapGptSettings(
+            $request->input('gapgpt_api_key'),
+            $request->boolean('gapgpt_clear_key'),
+            $request->input('gapgpt_base_url'),
+            $request->input('gapgpt_model')
+        );
 
         return back()->with('success', 'تنظیمات عمومی پلتفرم ذخیره شد.');
     }

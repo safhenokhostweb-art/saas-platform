@@ -788,6 +788,48 @@
                     setOpen(open);
                 });
             });
+
+            // Persist & restore sidebar scrollTop via sessionStorage
+            var scrollArea = document.querySelector('#admin-sidebar .admin-sidebar-scroll-area');
+            if (scrollArea) {
+                var scrollKey = 'saas-admin-sidebar-scroll';
+                var savedScroll = sessionStorage.getItem(scrollKey);
+                if (savedScroll !== null) {
+                    var parsedScroll = parseInt(savedScroll, 10);
+                    if (!isNaN(parsedScroll)) {
+                        requestAnimationFrame(function() { scrollArea.scrollTop = parsedScroll; });
+                    }
+                }
+                var saveSidebarScroll = function() {
+                    sessionStorage.setItem(scrollKey, String(scrollArea.scrollTop));
+                };
+                scrollArea.addEventListener('scroll', saveSidebarScroll, { passive: true });
+                window.addEventListener('beforeunload', saveSidebarScroll);
+            }
+
+            // General data-preserve-scroll support for multi-section admin forms
+            var mainArea = document.querySelector('#admin-layout-root main');
+            var pageScrollKey = 'saas-admin-page-scroll:' + window.location.pathname;
+            var savedPageScroll = sessionStorage.getItem(pageScrollKey);
+            if (savedPageScroll !== null) {
+                sessionStorage.removeItem(pageScrollKey);
+                try {
+                    var pos = JSON.parse(savedPageScroll);
+                    requestAnimationFrame(function() {
+                        if (mainArea && typeof pos.main === 'number') mainArea.scrollTop = pos.main;
+                        if (typeof pos.win === 'number') window.scrollTo(0, pos.win);
+                    });
+                } catch (_) {}
+            }
+            document.addEventListener('submit', function(e) {
+                var form = e.target;
+                if (form && form.matches && form.matches('form[data-preserve-scroll]')) {
+                    sessionStorage.setItem(pageScrollKey, JSON.stringify({
+                        main: mainArea ? mainArea.scrollTop : 0,
+                        win: window.scrollY || window.pageYOffset || 0
+                    }));
+                }
+            });
         })();
     </script>
     <script>

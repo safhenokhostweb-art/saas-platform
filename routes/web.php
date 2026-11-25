@@ -872,7 +872,7 @@ Route::prefix('admin')
         | مدیریت زیرساخت — Infrastructure Management
         |--------------------------------------------------------------------------
         */
-        Route::prefix('infrastructure')->name('infrastructure.')->group(function () {
+        Route::prefix('infrastructure')->name('infrastructure.')->middleware(\App\Http\Middleware\InfraTabMiddleware::class)->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\Infrastructure\InfrastructureOverviewController::class, 'index'])->name('overview');
 
             Route::resource('servers', \App\Http\Controllers\Admin\Infrastructure\InfraServerController::class)
@@ -1077,7 +1077,7 @@ Route::prefix('admin')
         | DNS Provider Settings (Arvan DNS)
         |--------------------------------------------------------------------------
         */
-        Route::prefix('infrastructure/dns-provider')->name('infrastructure.dns-provider.')->group(function () {
+        Route::prefix('infrastructure/dns-provider')->name('infrastructure.dns-provider.')->middleware(\App\Http\Middleware\InfraTabMiddleware::class)->group(function () {
             Route::get('/',          [\App\Http\Controllers\Admin\Infrastructure\DnsProviderController::class, 'index'])->name('index');
             Route::post('/save',     [\App\Http\Controllers\Admin\Infrastructure\DnsProviderController::class, 'save'])->name('save');
             Route::post('/health',   [\App\Http\Controllers\Admin\Infrastructure\DnsProviderController::class, 'healthCheck'])->name('health');
@@ -1089,7 +1089,7 @@ Route::prefix('admin')
         | Local Recovery Repository
         |--------------------------------------------------------------------------
         */
-        Route::prefix('infrastructure/recovery-repository')->name('infrastructure.recovery-repository.')->group(function () {
+        Route::prefix('infrastructure/recovery-repository')->name('infrastructure.recovery-repository.')->middleware(\App\Http\Middleware\InfraTabMiddleware::class)->group(function () {
             Route::get('/',            [\App\Http\Controllers\Admin\RecoveryRepositoryController::class, 'index'])->name('index');
             Route::post('/save',       [\App\Http\Controllers\Admin\RecoveryRepositoryController::class, 'save'])->name('save');
             Route::post('/validate-path', [\App\Http\Controllers\Admin\RecoveryRepositoryController::class, 'validatePath'])->name('validate-path');

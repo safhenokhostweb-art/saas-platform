@@ -266,6 +266,17 @@
         </div>
 
         <div class="mb-3">
+            <label class="form-label">حوزهٔ کسب‌وکار سایت</label>
+            <select name="business_vertical" class="form-select">
+                <option value="">— تعیین نشده —</option>
+                @foreach($verticals ?? [] as $value => $label)
+                    <option value="{{ $value }}" @selected(old('business_vertical', $site->business_vertical) === $value)>{{ $label }}</option>
+                @endforeach
+            </select>
+            <p class="text-xs text-gray-500 mt-1">کیت‌های اختصاصی یک صنعت فقط برای سایت‌های همان حوزه نمایش داده می‌شوند.</p>
+        </div>
+
+        <div class="mb-3">
             <label class="inline-flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" name="is_active" value="1" {{ old('is_active', $site->is_active) ? 'checked' : '' }} class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
                 <span>سایت فعال است</span>
@@ -280,7 +291,6 @@
             <a href="{{ route('admin.captcha.site', $site) }}" class="btn btn-outline-primary">تنظیمات کپچا این سایت</a>
             <a href="{{ route('admin.sites.modules.edit', $site) }}" class="btn btn-outline-primary">ماژول‌های این سایت</a>
             <a href="{{ route('admin.sites.domain.show', $site) }}" class="btn btn-outline-primary">دامنه و SSL</a>
-            <a href="{{ route('admin.sites.asset-access', $site) }}" class="btn btn-outline-primary">قالب‌ها و ویجت‌های اختصاصی</a>
             @if(\App\Helpers\PlatformModules::isEnabled('notifications'))
             <a href="{{ route('admin.sites.notifications.index', $site) }}" class="btn btn-outline-primary">اعلان‌های این سایت</a>
             @endif
@@ -291,6 +301,8 @@
             <a href="{{ route('admin.access.index') }}" class="btn btn-outline-secondary">دسترسی و منو (ماژول‌های پلتفرم)</a>
         </div>
     </form>
+
+    @include('admin.asset-access.partials.site-grants-panel')
 
     @if(isset($hasNewerThemeRelease) && $hasNewerThemeRelease)
     <form id="upgrade-theme-form" method="POST" action="{{ route('admin.onboarding.fleet-update') }}" class="hidden">

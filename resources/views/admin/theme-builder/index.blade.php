@@ -4,7 +4,30 @@
 
 @section('content')
 
+<div x-data="{
+    tab: window.location.hash === '#tab=asset-policies' ? 'asset-policies' : 'themes',
+    setTab(name) {
+        this.tab = name;
+        window.location.hash = name === 'asset-policies' ? '#tab=asset-policies' : '#tab=themes';
+    }
+}" x-init="window.addEventListener('hashchange', () => { tab = window.location.hash === '#tab=asset-policies' ? 'asset-policies' : 'themes'; })">
 
+<div class="flex items-center gap-2 border-b border-gray-200 mb-5">
+    <button type="button"
+            @click="setTab('themes')"
+            :class="tab === 'themes' ? 'border-indigo-600 text-indigo-600 font-semibold' : 'border-transparent text-gray-500 hover:text-gray-700'"
+            class="px-4 py-2.5 text-sm border-b-2 transition-colors">
+        قالب‌ها و پوسته‌ها
+    </button>
+    <button type="button"
+            @click="setTab('asset-policies')"
+            :class="tab === 'asset-policies' ? 'border-indigo-600 text-indigo-600 font-semibold' : 'border-transparent text-gray-500 hover:text-gray-700'"
+            class="px-4 py-2.5 text-sm border-b-2 transition-colors">
+        سیاست دسترسی قالب‌ها و ویجت‌ها
+    </button>
+</div>
+
+<div x-show="tab === 'themes'">
 <div class="flex flex-wrap gap-2 items-center justify-between">
     <div class="flex flex-wrap gap-2 items-center">
         <a href="{{ route('admin.theme-builder.create') }}"
@@ -273,5 +296,11 @@ document.getElementById('sync-modal').addEventListener('click', function(e) {
     if (e.target === this) closeSyncModal();
 });
 </script>
+</div>
+
+<div x-show="tab === 'asset-policies'" x-cloak>
+    @include('admin.asset-access.partials.catalog-panel')
+</div>
+</div>
 
 @endsection
