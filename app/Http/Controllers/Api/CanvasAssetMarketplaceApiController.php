@@ -135,13 +135,22 @@ class CanvasAssetMarketplaceApiController extends Controller
         $iconPacks = CanvasIconPack::query()
             ->where('is_active', true)
             ->withCount('items')
-            ->with(['items' => fn ($q) => $q->orderBy('sort_order')->take(12)])
+            ->with(['items' => fn ($q) => $q->orderBy('sort_order')->orderBy('id')])
             ->orderBy('sort_order')
             ->get()
             ->map(function (CanvasIconPack $p) use ($activeGrants, $formatVersions) {
                 $ref = AssetRef::KIND_ICON_PACK . ':' . $p->slug;
                 $grant = $activeGrants->get($ref);
+                $isGranted = $grant !== null;
                 $curVer = $p->current_version ?: '1.0.0';
+                $items = $isGranted ? $p->items : $p->items->take(12);
+                $itemsPayload = $items->map(fn ($it) => [
+                    'slug' => $it->slug,
+                    'title' => $it->title,
+                    'keywords' => $it->keywords,
+                    'svg_content' => $it->svg_content,
+                ])->all();
+
                 return [
                     'kind' => AssetRef::KIND_ICON_PACK,
                     'slug' => $p->slug,
@@ -155,13 +164,9 @@ class CanvasAssetMarketplaceApiController extends Controller
                     'current_version' => $curVer,
                     'versions_history' => $formatVersions(AssetRef::KIND_ICON_PACK, $p->slug, $curVer),
                     'items_count' => $p->items_count,
-                    'sample_items' => $p->items->map(fn ($it) => [
-                        'slug' => $it->slug,
-                        'title' => $it->title,
-                        'keywords' => $it->keywords,
-                        'svg_content' => $it->svg_content,
-                    ])->all(),
-                    'is_granted' => $grant !== null,
+                    'sample_items' => $itemsPayload,
+                    'items' => $itemsPayload,
+                    'is_granted' => $isGranted,
                     'granted_version' => $grant?->granted_version,
                 ];
             });

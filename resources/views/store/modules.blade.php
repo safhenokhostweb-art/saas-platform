@@ -39,6 +39,7 @@
                     $sites = auth()->user()->customer?->sites ?? collect();
                     $hasForAnySite = $product->module_id && collect($enabledModuleIdsBySite ?? [])->flatten()->unique()->contains($product->module_id);
                 @endphp
+                <div class="card flex flex-col justify-between overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
                     <div class="p-5 flex-1 flex flex-col">
                         <div class="flex items-start justify-between gap-2 mb-2">
                             <h3 class="font-bold text-lg text-gray-800">{{ \App\Helpers\NumberHelper::toPersianNumbers($product->name_fa) }}</h3>
@@ -67,7 +68,7 @@
                             <form action="{{ route('store.cart.add') }}" method="post" class="space-y-2">
                                 @csrf
                                 <input type="hidden" name="product_id" value="{{ $product->id }}">
-                                <select name="site_id" class="form-control text-sm" required>
+                                <select name="site_id" class="form-control text-sm w-full" required>
                                     <option value="">انتخاب سایت</option>
                                     @foreach($sites as $site)
                                         @php $siteHasModule = $product->module_id && in_array($product->module_id, $enabledModuleIdsBySite[$site->id] ?? [], true); @endphp

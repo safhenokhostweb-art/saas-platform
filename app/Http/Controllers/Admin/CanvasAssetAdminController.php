@@ -629,6 +629,51 @@ class CanvasAssetAdminController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────
+    // BULK JSON IMPORT
+    // ─────────────────────────────────────────────────────────────
+
+    public function importJson(Request $request, \App\Services\AssetProvisioning\CanvasAssetImportService $importer): RedirectResponse
+    {
+        $request->validate([
+            'json_file' => 'nullable|file|max:10240',
+            'json_text' => 'nullable|string',
+        ]);
+
+        $raw = null;
+        if ($request->hasFile('json_file')) {
+            $raw = file_get_contents($request->file('json_file')->getRealPath());
+        } elseif (!empty($request->input('json_text'))) {
+            $raw = $request->input('json_text');
+        }
+
+        if (empty($raw)) {
+            return redirect()->back()->with('error', 'لطفاً فایل JSON را انتخاب کرده یا متن JSON را وارد کنید.');
+        }
+
+        $data = json_decode($raw, true);
+        if (!is_array($data)) {
+            return redirect()->back()->with('error', 'فرمت فایل یا متن JSON نامعتبر است.');
+        }
+
+        try {
+            $summary = $importer->import($data);
+            $msg = sprintf(
+                'ورود دارایی‌ها با موفقیت انجام شد: %d پک دکمه (%d پریست)، %d پک آیکن (%d آیکن)، %d قالب هدر، %d موشن گرافیک (%d نسخه ثبت شد).',
+                $summary['button_packs'],
+                $summary['button_presets'],
+                $summary['icon_packs'],
+                $summary['icon_items'],
+                $summary['header_presets'],
+                $summary['motion_graphics'],
+                $summary['versions']
+            );
+            return redirect()->back()->with('success', $msg);
+        } catch (\Throwable $e) {
+            return redirect()->back()->with('error', 'خطا در ورود اطلاعات: ' . $e->getMessage());
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────
     // HELPER: SVG SANITIZATION
     // ─────────────────────────────────────────────────────────────
 

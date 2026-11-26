@@ -96,6 +96,7 @@ class GenerateEnvironmentStage extends AbstractStage
                 "MAIL_ENCRYPTION=" . ($req->smtp['encryption'] ?? 'tls'),
                 "",
                 "PLATFORM_URL={$platformUrl}",
+                "PLATFORM_API_URL={$platformUrl}",
                 "PLATFORM_SITE_ID=" . ($ctx->installation->site_id ? (string) $ctx->installation->site_id : ""),
                 "LICENSE_KEY=__LICENSE_KEY__",
                 "LICENSE_VERIFY_SSL=false",

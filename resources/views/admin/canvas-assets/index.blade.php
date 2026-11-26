@@ -10,6 +10,7 @@
 @section('content')
 <div class="max-w-7xl mx-auto space-y-6" x-data="{
     activeTab: '{{ $activeTab ?? 'buttons' }}',
+    importModalOpen: false,
     grantModalOpen: false,
     grantAssetKind: '',
     grantAssetKey: '',
@@ -96,8 +97,15 @@
             </button>
         </div>
 
-        <div class="text-xs text-gray-400 px-3">
-            مرکز کنترل لایسنس، قیمت‌گذاری و نگارش ۴ دارایی Canvas
+        <div class="flex items-center gap-3">
+            <button type="button" @click="importModalOpen = true"
+                    class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold transition shadow-sm flex items-center gap-1.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                <span>ورود گروهی با JSON</span>
+            </button>
+            <div class="text-xs text-gray-400 px-1 hidden md:block">
+                مرکز کنترل لایسنس، قیمت‌گذاری و نگارش ۴ دارایی Canvas
+            </div>
         </div>
     </div>
 
@@ -945,6 +953,56 @@
                 <div class="flex justify-end gap-2 pt-3 border-t border-gray-100">
                     <button type="button" @click="versionModalOpen = false" class="px-4 py-2 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-xl">انصراف</button>
                     <button type="submit" class="px-4 py-2 text-xs font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-sm">انتشار نسخه جدید</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- MODAL: BULK JSON IMPORT -->
+    <!-- ===================================================================== -->
+    <div x-show="importModalOpen" style="display: none;" class="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div @click.away="importModalOpen = false" class="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-gray-100 space-y-4 text-right">
+            <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-gray-900 text-base">ورود گروهی دارایی‌های Canvas (JSON)</h3>
+                        <p class="text-xs text-gray-500 mt-0.5">بارگذاری یا وارد کردن دسته‌ای پک‌های دکمه، آیکن، هدر و موشن با نسخه‌بندی SemVer</p>
+                    </div>
+                </div>
+                <button type="button" @click="importModalOpen = false" class="text-gray-400 hover:text-gray-600 text-lg">✕</button>
+            </div>
+
+            <form method="POST" action="{{ route('admin.canvas-assets.import-json') }}" enctype="multipart/form-data" class="space-y-4">
+                @csrf
+                <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600 space-y-1">
+                    <div class="font-semibold text-slate-800">راهنمای ساختار فایل JSON:</div>
+                    <div>می‌توانید کلیدهای <code class="bg-slate-200 px-1 py-0.5 rounded text-indigo-700">button_packs</code>، <code class="bg-slate-200 px-1 py-0.5 rounded text-indigo-700">icon_packs</code>، <code class="bg-slate-200 px-1 py-0.5 rounded text-indigo-700">header_presets</code> و <code class="bg-slate-200 px-1 py-0.5 rounded text-indigo-700">motion_graphics</code> را به صورت ترکیبی یا مجزا وارد نمایید. فیلدهای <code class="bg-slate-200 px-1 py-0.5 rounded">version</code> و <code class="bg-slate-200 px-1 py-0.5 rounded">changelog</code> خودکار در سیستم نسخه‌بندی ثبت می‌شوند.</div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">بارگذاری فایل JSON</label>
+                    <input type="file" name="json_file" accept=".json,application/json,text/plain"
+                           class="w-full text-xs text-slate-500 file:mr-2 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 border border-gray-200 rounded-xl p-1.5">
+                </div>
+
+                <div class="text-center text-xs text-gray-400 font-semibold">— یا چسباندن متن مستقیم JSON —</div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">متن محتوای JSON</label>
+                    <textarea name="json_text" rows="6" dir="ltr" placeholder="{ &quot;button_packs&quot;: [...], &quot;icon_packs&quot;: [...] }"
+                              class="w-full text-xs font-mono rounded-xl border-gray-200 bg-gray-50 focus:bg-white"></textarea>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-3 border-t border-gray-100">
+                    <button type="button" @click="importModalOpen = false" class="px-4 py-2 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-xl">انصراف</button>
+                    <button type="submit" class="px-5 py-2 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-sm flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        <span>شروع پردازش و ورود اطلاعات</span>
+                    </button>
                 </div>
             </form>
         </div>

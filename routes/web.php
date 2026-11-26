@@ -586,6 +586,9 @@ Route::prefix('admin')
             // Grants (Single & Bulk)
             Route::post('grants', [\App\Http\Controllers\Admin\CanvasAssetAdminController::class, 'grantAsset'])->name('grants.store');
             Route::post('grants/revoke', [\App\Http\Controllers\Admin\CanvasAssetAdminController::class, 'revokeAsset'])->name('grants.revoke');
+
+            // Bulk JSON Import
+            Route::post('import-json', [\App\Http\Controllers\Admin\CanvasAssetAdminController::class, 'importJson'])->name('import-json');
         });
         // Phase 13-K — module upgrade request & approval flow
         Route::get('sites/{site}/module-upgrades', [\App\Http\Controllers\Admin\SiteModuleUpgradeController::class, 'index'])->name('sites.module-upgrades.index');

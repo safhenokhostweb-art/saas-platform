@@ -1,0 +1,45 @@
+{
+  "button_packs": [
+    {
+      "slug": "modern-gradients",
+      "title": "پکیج گرادیانت‌های مدرن",
+      "category_label": "مدرن",
+      "access_type": "free",
+      "price": 0,
+      "version": "1.0.0",
+      "changelog": "انتشار اولیه پکیج گرادیانت مدرن",
+      "presets": [
+        {
+          "slug": "sunset-glow",
+          "title": "درخشش غروب (Sunset Glow)",
+          "css_tokens": {
+            "btn_bg": "linear-gradient(135deg, #f97316, #ec4899)",
+            "btn_text": "#ffffff",
+            "btn_radius": "12px",
+            "btn_shadow": "0 4px 14px 0 rgba(249, 115, 22, 0.39)"
+          },
+          "preview_html": "<button style=\"background:linear-gradient(135deg, #f97316, #ec4899);color:#fff;border-radius:12px;padding:8px 16px;box-shadow:0 4px 14px rgba(249,115,22,0.39);border:none;\">پیش‌نمایش</button>"
+        }
+      ]
+    }
+  ],
+  "icon_packs": [
+    {
+      "slug": "finance-duotone",
+      "title": "آیکن‌های مالی و بانکی",
+      "category_label": "کسب‌وکار",
+      "access_type": "free",
+      "price": 0,
+      "version": "1.0.0",
+      "changelog": "مجموعه اولیه آیکن‌های مالی",
+      "items": [
+        {
+          "slug": "wallet",
+          "title": "کیف پول",
+          "keywords": ["کیف پول", "مالی", "wallet"],
+          "svg_content": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4\"/><path d=\"M4 6v12c0 1.1.9 2 2 2h14v-4\"/><circle cx=\"18\" cy=\"14\" r=\"1\"/></svg>"
+        }
+      ]
+    }
+  ]
+}

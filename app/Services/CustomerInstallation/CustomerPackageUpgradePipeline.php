@@ -169,6 +169,20 @@ class CustomerPackageUpgradePipeline
                 throw new RuntimeException("خطا در اجرای مایگریشن‌های سایت: " . $migrateRes->output());
             }
 
+            // Sync essential platform connection variables in .env
+            $envPath = $webRoot . '/.env';
+            $platformUrl = rtrim((string) config('app.url'), '/');
+            if ($platformUrl !== '') {
+                $connection->execute(\App\Services\CustomerInstallation\Env\RemoteEnvFile::set($envPath, 'PLATFORM_URL', $platformUrl));
+                $connection->execute(\App\Services\CustomerInstallation\Env\RemoteEnvFile::set($envPath, 'PLATFORM_API_URL', $platformUrl));
+            }
+            if (!empty($site->id)) {
+                $connection->execute(\App\Services\CustomerInstallation\Env\RemoteEnvFile::set($envPath, 'PLATFORM_SITE_ID', (string) $site->id));
+            }
+            if (!empty($site->license_key)) {
+                $connection->execute(\App\Services\CustomerInstallation\Env\RemoteEnvFile::set($envPath, 'LICENSE_KEY', (string) $site->license_key));
+            }
+
             Log::info("CustomerPackageUpgrade: Clearing and rebuilding caches on site #{$site->id}");
             $connection->execute("cd {$safeWebRoot} && php artisan optimize:clear 2>&1");
             $connection->execute("cd {$safeWebRoot} && php artisan view:clear 2>&1");
