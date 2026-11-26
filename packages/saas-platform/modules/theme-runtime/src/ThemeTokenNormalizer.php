@@ -174,6 +174,25 @@ class ThemeTokenNormalizer
         // dark candidate regardless of the theme's own body text color.
         $vars['--tb-surface-text'] = $this->pickReadableOn($vars['--tb-surface'], '#111827');
 
+        // Active Button Preset tokens (Global Theme Button Styles)
+        if (!empty($globalStyles['active_button_pack'])) {
+            $vars['--tb-btn-global-pack'] = (string) $globalStyles['active_button_pack'];
+        }
+        if (!empty($globalStyles['active_button_preset'])) {
+            $vars['--tb-btn-global-preset'] = (string) $globalStyles['active_button_preset'];
+        }
+        if (!empty($globalStyles['active_button_version'])) {
+            $vars['--tb-btn-global-version'] = (string) $globalStyles['active_button_version'];
+        }
+        if (!empty($globalStyles['active_button_tokens']) && is_array($globalStyles['active_button_tokens'])) {
+            foreach ($globalStyles['active_button_tokens'] as $tokKey => $tokVal) {
+                if (is_scalar($tokVal)) {
+                    $sanitizedKey = preg_replace('/[^a-z0-9_-]/i', '', (string) $tokKey);
+                    $vars['--tb-btn-global-' . $sanitizedKey] = (string) $tokVal;
+                }
+            }
+        }
+
         return $vars;
     }
 

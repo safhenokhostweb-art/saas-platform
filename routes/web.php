@@ -256,6 +256,11 @@ Route::middleware('auth')->group(function () {
     });
 });
 
+// Canvas Marketplace payment callback (public callback called by banking gateway)
+Route::match(['get', 'post'], '/canvas-marketplace/payment-callback/{order}', [\App\Http\Controllers\CanvasAssetPaymentController::class, 'callback'])
+    ->name('canvas-marketplace.payment-callback')
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
+
 
 /*
 |--------------------------------------------------------------------------
@@ -546,6 +551,42 @@ Route::prefix('admin')
         Route::post('sites/{site}/asset-access/vertical', [\App\Http\Controllers\Admin\AssetAccessController::class, 'updateVertical'])->name('sites.asset-access.vertical');
         Route::post('sites/{site}/asset-access/grants', [\App\Http\Controllers\Admin\AssetAccessController::class, 'grant'])->name('sites.asset-access.grant');
         Route::post('sites/{site}/asset-access/grants/revoke', [\App\Http\Controllers\Admin\AssetAccessController::class, 'revoke'])->name('sites.asset-access.revoke');
+
+        // Unified Canvas Asset Management & Licensing (Motions, Headers, Button Packs, Icon Packs)
+        Route::prefix('canvas-assets')->name('canvas-assets.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\CanvasAssetAdminController::class, 'index'])->name('index');
+            
+            // Buttons
+            Route::post('button-packs', [\App\Http\Controllers\Admin\CanvasAssetAdminController::class, 'storeButtonPack'])->name('button-packs.store');
+            Route::put('button-packs/{pack}', [\App\Http\Controllers\Admin\CanvasAssetAdminController::class, 'updateButtonPack'])->name('button-packs.update');
+            Route::delete('button-packs/{pack}', [\App\Http\Controllers\Admin\CanvasAssetAdminController::class, 'destroyButtonPack'])->name('button-packs.destroy');
+            Route::post('button-packs/{pack}/presets', [\App\Http\Controllers\Admin\CanvasAssetAdminController::class, 'storeButtonPreset'])->name('button-presets.store');
+            Route::put('button-packs/{pack}/presets/{preset}', [\App\Http\Controllers\Admin\CanvasAssetAdminController::class, 'updateButtonPreset'])->name('button-presets.update');
+            Route::delete('button-presets/{preset}', [\App\Http\Controllers\Admin\CanvasAssetAdminController::class, 'destroyButtonPreset'])->name('button-presets.destroy');
+            Route::post('button-packs/{pack}/publish-version', [\App\Http\Controllers\Admin\CanvasAssetAdminController::class, 'publishButtonPackVersion'])->name('button-packs.publish-version');
+
+            // Icons
+            Route::post('icon-packs', [\App\Http\Controllers\Admin\CanvasAssetAdminController::class, 'storeIconPack'])->name('icon-packs.store');
+            Route::put('icon-packs/{pack}', [\App\Http\Controllers\Admin\CanvasAssetAdminController::class, 'updateIconPack'])->name('icon-packs.update');
+            Route::delete('icon-packs/{pack}', [\App\Http\Controllers\Admin\CanvasAssetAdminController::class, 'destroyIconPack'])->name('icon-packs.destroy');
+            Route::post('icon-packs/{pack}/items', [\App\Http\Controllers\Admin\CanvasAssetAdminController::class, 'storeIconItem'])->name('icon-items.store');
+            Route::delete('icon-items/{item}', [\App\Http\Controllers\Admin\CanvasAssetAdminController::class, 'destroyIconItem'])->name('icon-items.destroy');
+            Route::post('icon-packs/{pack}/publish-version', [\App\Http\Controllers\Admin\CanvasAssetAdminController::class, 'publishIconPackVersion'])->name('icon-packs.publish-version');
+
+            // Headers
+            Route::post('header-presets', [\App\Http\Controllers\Admin\CanvasAssetAdminController::class, 'storeHeaderPreset'])->name('header-presets.store');
+            Route::put('header-presets/{preset}', [\App\Http\Controllers\Admin\CanvasAssetAdminController::class, 'updateHeaderPreset'])->name('header-presets.update');
+            Route::delete('header-presets/{preset}', [\App\Http\Controllers\Admin\CanvasAssetAdminController::class, 'destroyHeaderPreset'])->name('header-presets.destroy');
+            Route::post('header-presets/{preset}/publish-version', [\App\Http\Controllers\Admin\CanvasAssetAdminController::class, 'publishHeaderPresetVersion'])->name('header-presets.publish-version');
+
+            // Motions
+            Route::put('motions/{id}/commercial', [\App\Http\Controllers\Admin\CanvasAssetAdminController::class, 'updateMotionCommercial'])->name('motions.commercial.update');
+            Route::post('motions/{id}/publish-version', [\App\Http\Controllers\Admin\CanvasAssetAdminController::class, 'publishMotionVersion'])->name('motions.publish-version');
+
+            // Grants (Single & Bulk)
+            Route::post('grants', [\App\Http\Controllers\Admin\CanvasAssetAdminController::class, 'grantAsset'])->name('grants.store');
+            Route::post('grants/revoke', [\App\Http\Controllers\Admin\CanvasAssetAdminController::class, 'revokeAsset'])->name('grants.revoke');
+        });
         // Phase 13-K — module upgrade request & approval flow
         Route::get('sites/{site}/module-upgrades', [\App\Http\Controllers\Admin\SiteModuleUpgradeController::class, 'index'])->name('sites.module-upgrades.index');
         Route::get('sites/{site}/module-upgrades/{moduleSlug}', [\App\Http\Controllers\Admin\SiteModuleUpgradeController::class, 'confirm'])->name('sites.module-upgrades.confirm');

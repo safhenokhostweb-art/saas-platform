@@ -85,6 +85,10 @@ final class AssetAccessCatalog
         return match ($kind) {
             AssetRef::KIND_TEMPLATE => isset(self::section($kind)[$key]) || TemplateLibrary::isLibraryId(TemplateLibrary::ID_PREFIX . $key),
             AssetRef::KIND_WIDGET => isset(self::section($kind)[$key]) || BlockRegistry::isCanonicalType($key),
+            AssetRef::KIND_MOTION,
+            AssetRef::KIND_HEADER,
+            AssetRef::KIND_BUTTON_PACK,
+            AssetRef::KIND_ICON_PACK => isset(self::section($kind)[$key]),
             default => false,
         };
     }
@@ -93,8 +97,12 @@ final class AssetAccessCatalog
     public static function section(string $kind): array
     {
         return match ($kind) {
-            AssetRef::KIND_TEMPLATE => self::manifest()['templates'],
-            AssetRef::KIND_WIDGET => self::manifest()['widgets'],
+            AssetRef::KIND_TEMPLATE => self::manifest()['templates'] ?? [],
+            AssetRef::KIND_WIDGET => self::manifest()['widgets'] ?? [],
+            AssetRef::KIND_MOTION => self::manifest()['motions'] ?? [],
+            AssetRef::KIND_HEADER => self::manifest()['headers'] ?? [],
+            AssetRef::KIND_BUTTON_PACK => self::manifest()['button_packs'] ?? [],
+            AssetRef::KIND_ICON_PACK => self::manifest()['icon_packs'] ?? [],
             default => [],
         };
     }

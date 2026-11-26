@@ -1792,7 +1792,54 @@ class BlockRenderer
         $rawStyle = $props['style'] ?? 'primary';
         $style = in_array($rawStyle, ['primary', 'secondary'], true) ? $rawStyle : 'primary';
         $ea    = $this->editableAttr('text', 'text');
-        return "<a id=\"tb-{$id}\" href=\"{$url}\" class=\"tb-btn tb-btn-{$style}\"{$ea}>{$text}</a>";
+
+        $styleMode = trim((string) ($props['style_mode'] ?? 'inherit'));
+        $presetSlug = trim((string) ($props['preset_slug'] ?? ''));
+        $packSlug = trim((string) ($props['pack_slug'] ?? ''));
+        $assetVersion = trim((string) ($props['asset_version'] ?? ''));
+
+        // Zero-diff baseline: inherit mode (default) renders standard button classes
+        // which seamlessly inherit global theme preset tokens (--tb-btn-global-*) without breaking layout.
+        if ($styleMode !== 'custom' || $presetSlug === '') {
+            $versionAttr = $assetVersion !== '' ? ' data-asset-version="' . $this->escapeAttr($assetVersion) . '"' : '';
+            return "<a id=\"tb-{$id}\" href=\"{$url}\" class=\"tb-btn tb-btn-{$style}\"{$ea}{$versionAttr}>{$text}</a>";
+        }
+
+        // Granular Widget-Level Custom Override:
+        $safePreset = preg_replace('/[^a-zA-Z0-9_-]/', '', $presetSlug);
+        $safePack = preg_replace('/[^a-zA-Z0-9_-]/', '', $packSlug);
+        $safeVersion = preg_replace('/[^a-zA-Z0-9._-]/', '', $assetVersion);
+
+        $customClasses = 'tb-btn tb-btn-' . $style . ' tb-btn--custom tb-btn--preset-' . $safePreset;
+        if ($safePack !== '') {
+            $customClasses .= ' tb-btn-pack-' . $safePack;
+        }
+
+        $dataAttrs = ' data-style-mode="custom" data-preset="' . $this->escapeAttr($safePreset) . '"';
+        if ($safePack !== '') {
+            $dataAttrs .= ' data-pack="' . $this->escapeAttr($safePack) . '"';
+        }
+        if ($safeVersion !== '') {
+            $dataAttrs .= ' data-asset-version="' . $this->escapeAttr($safeVersion) . '"';
+        }
+
+        // Scoped inline style overrides from preset_snapshot if provided
+        $inlineStyle = '';
+        $snapshot = $props['preset_snapshot'] ?? null;
+        if (is_array($snapshot) && !empty($snapshot['tokens']) && is_array($snapshot['tokens'])) {
+            $declarations = [];
+            foreach ($snapshot['tokens'] as $k => $v) {
+                if (is_scalar($v)) {
+                    $sanitizedK = preg_replace('/[^a-z0-9_-]/i', '', (string) $k);
+                    $declarations[] = '--tb-btn-custom-' . $sanitizedK . ':' . $this->escapeAttr((string) $v);
+                }
+            }
+            if (!empty($declarations)) {
+                $inlineStyle = ' style="' . implode(';', $declarations) . ';"';
+            }
+        }
+
+        return "<a id=\"tb-{$id}\" href=\"{$url}\" class=\"{$customClasses}\"{$inlineStyle}{$ea}{$dataAttrs}>{$text}</a>";
     }
 
     protected function renderDivider(array $props, string $inner, string $id): string
@@ -1922,21 +1969,120 @@ class BlockRenderer
     protected function renderIcon(array $props, string $inner, string $id): string
     {
         $name = trim((string) ($props['name'] ?? ''));
-        if ($name === '') {
-            return '';
-        }
         $sizeMap = ['small' => '1.25rem', 'medium' => '2rem', 'large' => '3rem'];
         $rawSize = (string) ($props['size'] ?? 'medium');
         $size = $sizeMap[$rawSize] ?? (preg_match('/^[\d.]+(px|rem|em)$/', $rawSize) ? $rawSize : $sizeMap['medium']);
-        $safeName = $this->escape($name);
         $safeSize = $this->escapeAttr($size);
+
+        $iconSlug = trim((string) ($props['icon_slug'] ?? ''));
+        $packSlug = trim((string) ($props['pack_slug'] ?? ''));
+        $version = trim((string) ($props['asset_version'] ?? ''));
+        $svgSnapshot = trim((string) ($props['svg_snapshot'] ?? ''));
+
+        // Case 1: Custom Icon Pack selection on this specific widget (Individual Override)
+        if ($iconSlug !== '') {
+            $safeIconSlug = preg_replace('/[^a-zA-Z0-9_-]/', '', $iconSlug);
+            $safePackSlug = preg_replace('/[^a-zA-Z0-9_-]/', '', $packSlug);
+            $safeVersion = preg_replace('/[^a-zA-Z0-9._-]/', '', $version);
+
+            $customClasses = 'tb-icon tb-icon--custom';
+            if ($safePackSlug !== '') {
+                $customClasses .= ' tb-icon-pack-' . $safePackSlug;
+            }
+            if ($safeIconSlug !== '') {
+                $customClasses .= ' tb-icon--' . $safeIconSlug;
+            }
+
+            $dataAttrs = ' data-icon="' . $this->escapeAttr($safeIconSlug) . '"';
+            if ($safePackSlug !== '') {
+                $dataAttrs .= ' data-pack="' . $this->escapeAttr($safePackSlug) . '"';
+            }
+            if ($safeVersion !== '') {
+                $dataAttrs .= ' data-asset-version="' . $this->escapeAttr($safeVersion) . '"';
+            }
+
+            // Attempt to isolate and sanitize SVG snapshot
+            $customSvg = '';
+            if ($svgSnapshot !== '') {
+                $customSvg = $this->isolateAndSanitizeSvg($svgSnapshot, $id, $safeIconSlug);
+            }
+
+            // Safe fallback if svg_snapshot is missing or malformed:
+            if ($customSvg === '') {
+                if ($name !== '' && IconLibrary::has($name)) {
+                    $customSvg = IconLibrary::svg($name, IconLibrary::label($name));
+                } else {
+                    $customSvg = IconLibrary::svg('star', 'ستاره');
+                }
+            }
+
+            return "<span id=\"tb-{$id}\" class=\"{$customClasses}\" style=\"display:inline-block;font-size:{$safeSize};line-height:1;\"{$dataAttrs}>{$customSvg}</span>";
+        }
+
+        // Case 2: Standard Lucide or legacy emoji icon (Untouched backward compatibility)
+        if ($name === '') {
+            return '';
+        }
+        $safeName = $this->escape($name);
+        $versionAttr = $version !== '' ? ' data-asset-version="' . $this->escapeAttr($version) . '"' : '';
+
         // Phase 0.6 (ADR-065): a catalog name is an SVG labelled in Persian;
         // a legacy emoji/text keeps its original markup.
         if (IconLibrary::has($name)) {
             $svg = IconLibrary::svg($name, IconLibrary::label($name));
-            return "<span id=\"tb-{$id}\" class=\"tb-icon\" style=\"display:inline-block;font-size:{$safeSize};line-height:1;\">{$svg}</span>";
+            return "<span id=\"tb-{$id}\" class=\"tb-icon\" style=\"display:inline-block;font-size:{$safeSize};line-height:1;\"{$versionAttr}>{$svg}</span>";
         }
-        return "<span id=\"tb-{$id}\" class=\"tb-icon\" style=\"display:inline-block;font-size:{$safeSize};line-height:1;\" role=\"img\" aria-label=\"{$safeName}\">{$safeName}</span>";
+        return "<span id=\"tb-{$id}\" class=\"tb-icon\" style=\"display:inline-block;font-size:{$safeSize};line-height:1;\" role=\"img\" aria-label=\"{$safeName}\"{$versionAttr}>{$safeName}</span>";
+    }
+
+    /**
+     * Sanitizes and isolates an SVG markup snapshot, namespacing internal IDs
+     * (gradients, masks, clips) to prevent collisions across the page.
+     */
+    protected function isolateAndSanitizeSvg(string $svg, string $blockId, ?string $label = null): string
+    {
+        if (!str_contains($svg, '<svg') || !str_contains($svg, '</svg>')) {
+            return '';
+        }
+
+        // Remove dangerous tags and attributes
+        $clean = preg_replace('/<script\b[^>]*>(.*?)<\/script>/is', '', $svg);
+        $clean = preg_replace('/\s+on[a-z]+\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)/i', '', $clean);
+
+        // Ensure default viewBox if missing
+        if (!preg_match('/\bviewBox\s*=/i', $clean)) {
+            $clean = preg_replace('/<svg\b/i', '<svg viewBox="0 0 24 24"', $clean, 1);
+        }
+
+        // Ensure class="tb-icon-svg" and accessibility attributes
+        if (preg_match('/<svg\b([^>]*)>/i', $clean, $m)) {
+            $attrs = $m[1];
+            if (!preg_match('/\bclass\s*=/i', $attrs)) {
+                $attrs .= ' class="tb-icon-svg"';
+            } elseif (!str_contains($attrs, 'tb-icon-svg')) {
+                $attrs = preg_replace('/class\s*=\s*"([^"]*)"/i', 'class="tb-icon-svg $1"', $attrs);
+            }
+            if ($label !== null && $label !== '') {
+                $attrs .= ' role="img" aria-label="' . htmlspecialchars($label, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '"';
+            } else {
+                $attrs .= ' aria-hidden="true"';
+            }
+            $clean = preg_replace('/<svg\b[^>]*>/i', '<svg' . $attrs . '>', $clean, 1);
+        }
+
+        // Isolate internal element IDs (gradients, clipPath, filters)
+        $uniquePrefix = 'tb-ico-' . preg_replace('/[^a-zA-Z0-9_-]/', '', $blockId) . '-';
+        if (preg_match_all('/\bid\s*=\s*["\']([^"\']+)["\']/i', $clean, $idMatches)) {
+            $ids = array_unique($idMatches[1]);
+            foreach ($ids as $originalId) {
+                $newId = $uniquePrefix . $originalId;
+                $clean = preg_replace('/\bid\s*=\s*(["\'])' . preg_quote($originalId, '/') . '\1/i', 'id="' . $newId . '"', $clean);
+                $clean = preg_replace('/url\(\s*(["\']?)#' . preg_quote($originalId, '/') . '\1\s*\)/i', 'url(#' . $newId . ')', $clean);
+                $clean = preg_replace('/href\s*=\s*(["\'])#' . preg_quote($originalId, '/') . '\1/i', 'href="#' . $newId . '"', $clean);
+            }
+        }
+
+        return $clean;
     }
 
     /**
@@ -4483,6 +4629,7 @@ class BlockRenderer
 
         $safeId = $this->escapeAttr($id);
         $menuId = 'tb-header-modern-menu-' . $safeId;
+        $versionAttr = !empty($props['asset_version']) ? ' data-asset-version="' . $this->escapeAttr((string) $props['asset_version']) . '"' : '';
         $style = '--tb-header-bg:' . $bgColor
             . ';--tb-header-text:' . $textColor
             . ';--tb-header-cta:' . $ctaColor
@@ -4490,7 +4637,7 @@ class BlockRenderer
 
         $assets = $this->headerModernAssets();
 
-        return '<div id="tb-' . $safeId . '" class="tb-header-modern" style="' . $style . '">'
+        return '<div id="tb-' . $safeId . '" class="tb-header-modern"' . $versionAttr . ' style="' . $style . '">'
             . '<div class="tb-header-modern__inner">'
             . '<a class="tb-header-modern__brand" href="' . $homeUrl . '" aria-label="' . $brandName . '">' . $logo . ($mobileLogo !== '' ? $mobileLogo : '') . '</a>'
             . '<nav id="' . $menuId . '" class="tb-header-modern__menu" aria-label="منوی اصلی">' . $menuHtml . '</nav>'
@@ -4949,6 +5096,9 @@ class BlockRenderer
         $burger = $props['burger_breakpoint'] ?? 'mobile';
         if (in_array($burger, ['tablet', 'always', 'never'], true)) {
             $headerAttrs .= ' data-tb-burger="' . $burger . '"';
+        }
+        if (!empty($props['asset_version'])) {
+            $headerAttrs .= ' data-asset-version="' . $this->escapeAttr((string) $props['asset_version']) . '"';
         }
 
         $scripts = $headerFlags !== [] || $hasMegaMenu ? $this->siteHeaderAssets() : '';

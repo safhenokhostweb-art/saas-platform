@@ -58,6 +58,20 @@
     ],
     "reviewed": [
       {
+        "path": "database/migrations/2026_11_26_100000_create_canvas_unified_asset_management_tables.php",
+        "sha256": "5cc9ace96e92d52aecd4352d320c57d9bb620b76ac02863d6a18139a45ae080b",
+        "reviewed_by": "Owner (approved in session 2026-11-26 for Canvas Asset Management)",
+        "reviewed_at": "2026-11-26",
+        "reason": "Additive migration: up() creates canvas asset tables and adds nullable columns; down() cleanly drops only these tables and columns."
+      },
+      {
+        "path": "database/migrations/2026_11_26_120000_create_canvas_asset_purchase_orders_table.php",
+        "sha256": "f529be538622dc7a41cf8d306e605f2f80139eb9283b5455609ae47343f1f670",
+        "reviewed_by": "Owner (approved in session 2026-11-26 for Canvas Asset Payment Integration)",
+        "reviewed_at": "2026-11-26",
+        "reason": "Create-only migration: up() creates canvas_asset_purchase_orders table; down() drops only this table."
+      },
+      {
         "path": "database/migrations/2026_11_25_000001_alter_settings_value_to_longtext.php",
         "sha256": "fd7d4073c683319a976aeb2c39a67b2ff926d851de905da344f3b166b6de1e73",
         "reviewed_by": "Owner (approved in session 2026-11-25 for GapGPT encrypted settings)",

@@ -598,8 +598,22 @@ class BlockRegistry
                     // Only the variants renderButton() allowlists; customer-
                     // site's former `outline` option rendered as primary.
                     'style' => ['type' => 'select', 'label' => 'استایل', 'options' => ['primary' => 'اصلی', 'secondary' => 'ثانویه'], 'default' => 'primary'],
+                    'style_mode' => ['type' => 'select', 'label' => 'نحوه اعمال استایل', 'options' => ['inherit' => 'پیش‌فرض قالب سایت (ارث‌بری)', 'custom' => 'استایل اختصاصی فقط این دکمه'], 'default' => 'inherit'],
+                    'pack_slug' => ['type' => 'string', 'label' => 'شناسه دسته دکمه', 'default' => ''],
+                    'preset_slug' => ['type' => 'string', 'label' => 'شناسه پریست دکمه', 'default' => ''],
+                    'asset_version' => ['type' => 'string', 'label' => 'نسخه دارایی', 'default' => ''],
+                    'preset_snapshot' => ['type' => 'array', 'label' => 'نسخه ذخیره‌شده استایل', 'default' => null],
                 ],
-                'defaultProps' => ['text' => '', 'url' => '#', 'style' => 'primary'],
+                'defaultProps' => [
+                    'text' => '',
+                    'url' => '#',
+                    'style' => 'primary',
+                    'style_mode' => 'inherit',
+                    'pack_slug' => '',
+                    'preset_slug' => '',
+                    'asset_version' => '',
+                    'preset_snapshot' => null,
+                ],
             ],
             'divider' => [
                 'name' => 'جداکننده',
@@ -694,8 +708,19 @@ class BlockRegistry
                 'schema' => [
                     'name' => ['type' => 'icon', 'label' => 'آیکون', 'default' => ''],
                     'size' => ['type' => 'string', 'label' => 'اندازهٔ آیکون', 'default' => 'md'],
+                    'pack_slug' => ['type' => 'string', 'label' => 'شناسه بسته آیکون', 'default' => ''],
+                    'icon_slug' => ['type' => 'string', 'label' => 'شناسه آیکون اختصاصی', 'default' => ''],
+                    'asset_version' => ['type' => 'string', 'label' => 'نسخه دارایی', 'default' => ''],
+                    'svg_snapshot' => ['type' => 'string', 'label' => 'کد SVG ذخیره‌شده', 'default' => ''],
                 ],
-                'defaultProps' => ['name' => '', 'size' => 'md'],
+                'defaultProps' => [
+                    'name' => '',
+                    'size' => 'md',
+                    'pack_slug' => '',
+                    'icon_slug' => '',
+                    'asset_version' => '',
+                    'svg_snapshot' => '',
+                ],
             ],
             'counter' => [
                 'name' => 'شمارنده',
@@ -1560,8 +1585,10 @@ class BlockRegistry
                     'cta_radius'         => ['type' => 'range', 'unit' => 'px', 'label' => 'گردی گوشهٔ دکمه‌ها', 'default' => 6, 'min' => 0, 'max' => 40, 'step' => 1, 'panel' => 'style', 'group' => 'دکمهٔ CTA و تماس'],
                     'cta_font_size'      => ['type' => 'range', 'unit' => 'px', 'label' => 'اندازهٔ متن دکمه‌ها (خالی = پیش‌فرض قالب)', 'default' => '', 'min' => 10, 'max' => 22, 'step' => 0.5, 'panel' => 'style', 'group' => 'دکمهٔ CTA و تماس'],
                     'header_order'       => ['type' => 'array', 'label' => 'ترتیب اجزای هدر (Drag & Drop)', 'default' => ['logo','menu','search','social','phone','cta','cart','account','dark_toggle','burger'], 'group' => 'چیدمان'],
+                    'asset_version'      => ['type' => 'string', 'label' => 'نسخه هدر', 'default' => '', 'group' => 'پیشرفته'],
                 ],
                 'defaultProps' => [
+                    'asset_version' => '',
                     'logo_text' => '',
                     'logo_url' => '/',
                     'nav_links' => [],
@@ -1593,8 +1620,10 @@ class BlockRegistry
                     'homeUrl'    => ['type' => 'link', 'label' => 'لینک صفحه اصلی', 'default' => '/'],
                     'ctaText'    => ['type' => 'string', 'label' => 'متن دکمه اصلی', 'default' => 'شروع کنید'],
                     'ctaUrl'     => ['type' => 'link', 'label' => 'لینک دکمه اصلی', 'default' => '/contact'],
+                    'asset_version' => ['type' => 'string', 'label' => 'نسخه هدر', 'default' => ''],
                 ],
                 'defaultProps' => [
+                    'asset_version' => '',
                     'bgColor' => '#ffffff',
                     'textColor' => '#172033',
                     'ctaColor' => '#4f46e5',
@@ -1814,8 +1843,9 @@ class BlockRegistry
                     // render time, so stale keys after switching assets are
                     // harmless.
                     'motion_params' => ['type' => 'motion_params', 'label' => 'تنظیمات اختصاصی موشن', 'default' => []],
+                    'asset_version' => ['type' => 'string', 'label' => 'نسخه موشن', 'default' => ''],
                 ],
-                'defaultProps' => ['motion_asset_id' => '', 'placement' => 'section', 'enabled' => true, 'fallback_image' => '', 'motion_params' => []],
+                'defaultProps' => ['motion_asset_id' => '', 'placement' => 'section', 'enabled' => true, 'fallback_image' => '', 'motion_params' => [], 'asset_version' => ''],
             ],
 
             // ─── MODULE: وبلاگ ───────────────────────────────────────────────

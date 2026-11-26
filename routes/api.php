@@ -119,6 +119,16 @@ Route::prefix('asset-entitlements')->middleware(['throttle:60,1', 'tenant.api'])
     Route::get('/', [\App\Http\Controllers\Api\SiteAssetEntitlementApiController::class, 'show'])->name('api.asset-entitlements.show');
 });
 
+/*
+| Canvas Asset Marketplace API — Catalog, Claim Free & Instant Purchase.
+| Auth: license_key + domain (tenant.api).
+*/
+Route::prefix('canvas-marketplace')->middleware(['throttle:60,1', 'tenant.api'])->group(function () {
+    Route::get('/', [\App\Http\Controllers\Api\CanvasAssetMarketplaceApiController::class, 'index'])->name('api.canvas-marketplace.index');
+    Route::post('/claim', [\App\Http\Controllers\Api\CanvasAssetMarketplaceApiController::class, 'claim'])->name('api.canvas-marketplace.claim');
+    Route::post('/purchase', [\App\Http\Controllers\Api\CanvasAssetMarketplaceApiController::class, 'purchase'])->name('api.canvas-marketplace.purchase');
+});
+
 // Finance Ledger API — customer-site pushes payment events to platform ledger
 Route::prefix('ledger')->middleware(['throttle:60,1', 'tenant.api'])->group(function () {
     Route::post('/push-event', [\App\Http\Controllers\Api\FinanceLedgerApiController::class, 'pushEvent'])->name('api.ledger.push-event');

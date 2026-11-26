@@ -42,6 +42,7 @@ final class MotionGraphic extends Model
         'editable_schema_json', 'ai_metadata_json', 'runtime_configuration', 'dimensions',
         'accessibility', 'latest_working_version', 'approved_version', 'published_version',
         'status', 'created_by_actor_identifier', 'published_at', 'archived_at',
+        'access_type', 'price', 'discount_price', 'current_version',
     ];
 
     protected $hidden = ['source_definition_json', 'editable_schema_json', 'ai_metadata_json'];

@@ -298,6 +298,9 @@
             <a href="{{ route('admin.sites.agents.show', $site) }}" class="btn btn-outline-primary" style="border-color:#6366f1;color:#4f46e5">
                 🔑 ادمین پلتفرم
             </a>
+            <a href="{{ route('admin.canvas-assets.index') }}" class="btn btn-outline-primary" style="border-color:#8b5cf6;color:#7c3aed">
+                🎨 دارایی‌های Canvas
+            </a>
             <a href="{{ route('admin.access.index') }}" class="btn btn-outline-secondary">دسترسی و منو (ماژول‌های پلتفرم)</a>
         </div>
     </form>

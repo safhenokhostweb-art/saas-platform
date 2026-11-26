@@ -41,9 +41,53 @@
 
   function name(value) {
     if (typeof value !== 'string') return null;
-    let n = value.trim().toLowerCase();
+    let n = value.trim();
+    if (n.startsWith('pack:')) {
+      return Object.prototype.hasOwnProperty.call(catalog.icons, n) ? n : n;
+    }
+    n = n.toLowerCase();
     if (n === 'fas fa-sun' || n === 'fa-sun') n = 'sun-solar';
     return n !== '' && Object.prototype.hasOwnProperty.call(catalog.icons, n) ? n : null;
+  }
+
+  function loadCustomPacks(packs) {
+    if (!Array.isArray(packs)) return api;
+    packs.forEach((pack) => {
+      if (!pack || !pack.slug) return;
+      const catKey = 'pack:' + pack.slug;
+      if (!catalog.categories.some((c) => c.key === catKey)) {
+        catalog.categories.push({
+          key: catKey,
+          label: '★ ' + (pack.title || pack.slug),
+        });
+      }
+      const items = Array.isArray(pack.items) ? pack.items : (Array.isArray(pack.sample_items) ? pack.sample_items : []);
+      items.forEach((it) => {
+        if (!it || !it.slug) return;
+        const iconKey = 'pack:' + pack.slug + '/' + it.slug;
+        catalog.icons[iconKey] = {
+          label: it.title || it.slug,
+          category: catKey,
+          pack_slug: pack.slug,
+          item_slug: it.slug,
+          version: pack.current_version || '1.0.0',
+          keywords: Array.isArray(it.keywords) ? it.keywords : [],
+          body: it.svg_content || '',
+          is_custom: true,
+        };
+        if (!names.includes(iconKey)) {
+          names.push(iconKey);
+        }
+      });
+    });
+    return api;
+  }
+
+  function getCustomItem(value) {
+    const n = name(value);
+    if (!n) return null;
+    const it = catalog.icons[n];
+    return it && it.is_custom ? it : null;
   }
 
   function isIcon(value) {
@@ -110,6 +154,14 @@
   function svg(value) {
     const n = name(value);
     if (!n) return '';
+    const item = catalog.icons[n];
+    if (item && item.is_custom && item.body) {
+      if (item.body.trim().startsWith('<svg')) {
+        return item.body;
+      }
+      return '<svg class="tb-icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="currentColor" focusable="false" aria-hidden="true">'
+        + item.body + '</svg>';
+    }
     return '<svg class="tb-icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true">'
       + catalog.icons[n].body + '</svg>';
   }
@@ -133,7 +185,7 @@
     return 'بدون آیکون';
   }
 
-  const api = { load, normalize, name, isIcon, kind, label, categories, search, svg, previewHtml, describe };
+  const api = { load, loadCustomPacks, getCustomItem, normalize, name, isIcon, kind, label, categories, search, svg, previewHtml, describe };
   root.CanvasIcons = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

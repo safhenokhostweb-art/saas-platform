@@ -23,17 +23,20 @@ class SiteAssetGrant extends Model
 
     public const SOURCE_LICENSE = 'license';
 
-    public const SOURCES = [self::SOURCE_ADMIN_GRANT, self::SOURCE_PURCHASE, self::SOURCE_LICENSE];
+    public const SOURCE_PLAN_SYNC = 'plan_sync';
+
+    public const SOURCES = [self::SOURCE_ADMIN_GRANT, self::SOURCE_PURCHASE, self::SOURCE_LICENSE, self::SOURCE_PLAN_SYNC];
 
     public const SOURCE_LABELS = [
         self::SOURCE_ADMIN_GRANT => 'اختصاص ادمین',
         self::SOURCE_PURCHASE => 'خرید',
         self::SOURCE_LICENSE => 'لایسنس',
+        self::SOURCE_PLAN_SYNC => 'همگام‌سازی پلن',
     ];
 
     protected $fillable = [
         'site_id', 'asset_kind', 'asset_key', 'status', 'source', 'reference',
-        'granted_by', 'granted_at', 'revoked_by', 'revoked_at',
+        'granted_version', 'granted_by', 'granted_at', 'revoked_by', 'revoked_at',
     ];
 
     protected $casts = [

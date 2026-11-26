@@ -34,6 +34,26 @@ final class AssetAccessGate
         return AssetAccessCatalog::decide(AssetRef::KIND_WIDGET, $type, $site);
     }
 
+    public static function decideButtonPack(string $slug, SiteAssetEntitlements $site): ?AssetAccessDecision
+    {
+        return AssetAccessCatalog::decide(AssetRef::KIND_BUTTON_PACK, $slug, $site);
+    }
+
+    public static function decideIconPack(string $slug, SiteAssetEntitlements $site): ?AssetAccessDecision
+    {
+        return AssetAccessCatalog::decide(AssetRef::KIND_ICON_PACK, $slug, $site);
+    }
+
+    public static function decideHeader(string $slug, SiteAssetEntitlements $site): ?AssetAccessDecision
+    {
+        return AssetAccessCatalog::decide(AssetRef::KIND_HEADER, $slug, $site);
+    }
+
+    public static function decideMotion(string $slug, SiteAssetEntitlements $site): ?AssetAccessDecision
+    {
+        return AssetAccessCatalog::decide(AssetRef::KIND_MOTION, $slug, $site);
+    }
+
     /**
      * Theme scopes unlocked by site entitlements or explicit site_asset_grants.
      *
