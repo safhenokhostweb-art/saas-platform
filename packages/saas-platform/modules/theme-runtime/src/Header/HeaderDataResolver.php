@@ -192,6 +192,9 @@ final class HeaderDataResolver
                 'show_cart' => $showCart,
                 'show_account' => $showAccount,
                 'show_dark_toggle' => $showDarkToggle,
+                'dark_mode_icon' => self::safeString($props['dark_mode_icon'] ?? 'moon', 'moon'),
+                'light_mode_icon' => self::safeString($props['light_mode_icon'] ?? 'sun', 'sun'),
+                'show_social_in_main_header' => (bool) ($props['show_social_in_main_header'] ?? false),
                 'social_links' => is_array($props['social_links'] ?? null) ? $props['social_links'] : [],
                 'social_style' => self::safeString($props['social_style'] ?? 'mono', 'mono'),
                 'social_show_mobile' => (bool) ($props['social_show_mobile'] ?? false),
@@ -251,6 +254,8 @@ final class HeaderDataResolver
                 'border_bottom_color' => self::safeString($props['border_bottom_color'] ?? ''),
                 'header_shadow' => $props['header_shadow'] ?? null,
                 'backdrop_blur' => $backdropBlur,
+                'radius' => (int) ($props['header_radius'] ?? $props['menu_item_radius'] ?? 16),
+                'menu_color_hover' => self::safeString($props['menu_color_hover'] ?? ''),
             ],
             'order' => is_array($props['header_order'] ?? null) ? $props['header_order'] : ['logo', 'menu', 'search', 'social', 'phone', 'cta', 'cart', 'account', 'dark_toggle', 'burger'],
             'asset_version' => self::safeString($props['asset_version'] ?? '1.2.0', '1.2.0'),
@@ -301,6 +306,11 @@ final class HeaderDataResolver
                 $decoded = json_decode($selectedPageIds, true);
                 $selectedPageIds = is_array($decoded) ? $decoded : [];
             }
+            $pageIcons = $props['page_icons'] ?? [];
+            if (is_string($pageIcons)) {
+                $decodedIcons = json_decode($pageIcons, true);
+                $pageIcons = is_array($decodedIcons) ? $decodedIcons : [];
+            }
 
             if (!empty($selectedPageIds)) {
                 // If pages passed in context
@@ -317,10 +327,11 @@ final class HeaderDataResolver
                             $page = $pagesById[$pid];
                             $slug = $page['slug'] ?? '';
                             $url = function_exists('route') ? route('page.show', $slug) : '/' . ltrim($slug, '/');
+                            $icon = $pageIcons[$pid] ?? $pageIcons[(string) $pid] ?? ($page['icon'] ?? '');
                             $items[] = [
                                 'label' => $page['title'] ?? '',
                                 'url' => $url,
-                                'icon' => $page['icon'] ?? '',
+                                'icon' => $icon,
                                 'target' => '_self',
                                 'badge' => null,
                                 'children' => [],
@@ -375,10 +386,12 @@ final class HeaderDataResolver
                                 $url = function_exists('route') && \Illuminate\Support\Facades\Route::has('page.show')
                                     ? route('page.show', $page->slug)
                                     : '/' . ltrim($page->slug, '/');
+                                $pid = $page->id ?? $v;
+                                $icon = $pageIcons[$pid] ?? $pageIcons[(string) $pid] ?? ($page->icon ?? '');
                                 $items[] = [
                                     'label' => $page->title,
                                     'url' => $url,
-                                    'icon' => '',
+                                    'icon' => $icon,
                                     'target' => '_self',
                                     'badge' => null,
                                     'children' => [],

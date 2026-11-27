@@ -49,7 +49,7 @@ final class SharedHeaderSchema
             'topbar_links'       => ['type' => 'repeater', 'label' => 'لینک‌های سفارشی نوار بالایی', 'item_label' => 'لینک', 'fields' => ['label' => ['type' => 'string', 'label' => 'عنوان لینک', 'default' => ''], 'url' => ['type' => 'link', 'label' => 'آدرس لینک', 'default' => '#'], 'icon' => ['type' => 'icon', 'label' => 'آیکون (اختیاری)', 'default' => '']], 'default' => [], 'group' => 'نوار بالایی (Top Bar)', 'condition' => ['topbar_enable' => true]],
 
             // ─── Navigation & Menu Source (3-way) ────────────────────────────────────
-            'menu_align'         => ['type' => 'select', 'ui' => 'segmented', 'label' => 'چیدمان منو', 'options' => ['start' => 'راست (کنار لوگو)', 'center' => 'وسط', 'end' => 'چپ (کنار اکشن‌ها)'], 'default' => 'center', 'group' => 'ناوبری و منو'],
+            'menu_align'         => ['type' => 'select', 'ui' => 'segmented', 'label' => 'چیدمان منو', 'options' => ['start' => 'راست (کنار لوگو)', 'center' => 'وسط', 'end' => 'چپ (کنار اکشن‌ها)'], 'default' => 'end', 'group' => 'ناوبری و منو'],
             'menu_source'        => [
                 'type' => 'select',
                 'label' => 'منبع منوی ناوبری',
@@ -95,6 +95,13 @@ final class SharedHeaderSchema
                 'default' => [],
                 'group' => 'ناوبری و منو',
                 'condition' => ['menu_source' => 'pages_module'],
+            ],
+            'page_icons'         => [
+                'type' => 'array',
+                'label' => 'آیکون‌های صفحات',
+                'default' => [],
+                'group' => 'ناوبری و منو',
+                'hidden' => true,
             ],
             'nav_links'          => [
                 'type' => 'repeater',
@@ -152,7 +159,7 @@ final class SharedHeaderSchema
             // ─── Actions & Quick Access ──────────────────────────────────────────────
             'phone'              => ['type' => 'string', 'label' => 'شماره تماس', 'default' => '', 'group' => 'دسترسی سریع و اکشن‌ها'],
             'cta_text'           => ['type' => 'string', 'label' => 'متن دکمه اصلی (CTA)', 'default' => 'شروع کنید', 'group' => 'دسترسی سریع و اکشن‌ها'],
-            'cta_label'          => ['type' => 'string', 'label' => 'متن دکمه اصلی (جایگزین متن CTA)', 'default' => '', 'group' => 'دسترسی سریع و اکشن‌ها'],
+            'cta_label'          => ['type' => 'string', 'label' => 'متن دکمه اصلی', 'default' => '', 'group' => 'دسترسی سریع و اکشن‌ها', 'hidden' => true],
             'cta_url'            => ['type' => 'link', 'label' => 'لینک دکمه اصلی', 'default' => '/contact', 'group' => 'دسترسی سریع و اکشن‌ها', 'condition' => ['cta_text!' => '']],
             'cta_icon'           => ['type' => 'icon', 'label' => 'آیکون دکمه اصلی (اختیاری)', 'default' => '', 'group' => 'دسترسی سریع و اکشن‌ها', 'condition' => ['cta_text!' => '']],
             'cta_style'          => ['type' => 'select', 'ui' => 'segmented', 'label' => 'ظاهر دکمه اصلی', 'options' => ['primary' => 'توپر', 'outline' => 'خطی', 'gradient' => 'گرادیانی'], 'default' => 'primary', 'group' => 'دسترسی سریع و اکشن‌ها', 'condition' => ['cta_text!' => '']],
@@ -160,9 +167,9 @@ final class SharedHeaderSchema
             'cta_color_end'      => ['type' => 'color', 'label' => 'رنگ پایان گرادیان دکمه', 'default' => '#c4008d', 'group' => 'دسترسی سریع و اکشن‌ها', 'condition' => ['cta_text!' => '']],
 
             'cta2_text'          => ['type' => 'string', 'label' => 'متن دکمه ثانویه (مانند ورود)', 'default' => '', 'group' => 'دسترسی سریع و اکشن‌ها'],
-            'secondary_label'    => ['type' => 'string', 'label' => 'متن لینک ثانویه (جایگزین دکمه ثانویه)', 'default' => '', 'group' => 'دسترسی سریع و اکشن‌ها'],
+            'secondary_label'    => ['type' => 'string', 'label' => 'متن لینک ثانویه', 'default' => '', 'group' => 'دسترسی سریع و اکشن‌ها', 'hidden' => true],
             'cta2_url'           => ['type' => 'link', 'label' => 'لینک دکمه ثانویه', 'default' => '/login', 'group' => 'دسترسی سریع و اکشن‌ها', 'condition' => ['cta2_text!' => '']],
-            'secondary_url'      => ['type' => 'link', 'label' => 'آدرس لینک ثانویه', 'default' => '/login', 'group' => 'دسترسی سریع و اکشن‌ها'],
+            'secondary_url'      => ['type' => 'link', 'label' => 'آدرس لینک ثانویه', 'default' => '/login', 'group' => 'دسترسی سریع و اکشن‌ها', 'hidden' => true],
             'cta2_icon'          => ['type' => 'icon', 'label' => 'آیکون دکمه ثانویه (اختیاری)', 'default' => '', 'group' => 'دسترسی سریع و اکشن‌ها', 'condition' => ['cta2_text!' => '']],
             'cta2_style'         => ['type' => 'select', 'ui' => 'segmented', 'label' => 'ظاهر دکمه ثانویه', 'options' => ['primary' => 'توپر', 'outline' => 'خطی', 'subtle' => 'ساده'], 'default' => 'outline', 'group' => 'دسترسی سریع و اکشن‌ها', 'condition' => ['cta2_text!' => '']],
 
@@ -175,6 +182,15 @@ final class SharedHeaderSchema
             'show_cart'          => ['type' => 'boolean', 'label' => 'نمایش سبد خرید (با شمارنده زنده)', 'default' => false, 'group' => 'دسترسی سریع و اکشن‌ها'],
             'show_account'       => ['type' => 'boolean', 'label' => 'نمایش حساب کاربری', 'default' => false, 'group' => 'دسترسی سریع و اکشن‌ها'],
             'show_dark_toggle'   => ['type' => 'boolean', 'label' => 'نمایش تغییر حالت روشن/تاریک', 'default' => false, 'group' => 'دسترسی سریع و اکشن‌ها'],
+            'dark_mode_icon'     => ['type' => 'icon', 'label' => 'آیکون حالت شب (Dark Mode)', 'default' => 'moon', 'group' => 'دسترسی سریع و اکشن‌ها', 'condition' => ['show_dark_toggle' => true]],
+            'light_mode_icon'    => ['type' => 'icon', 'label' => 'آیکون حالت روز (Light Mode)', 'default' => 'sun', 'group' => 'دسترسی سریع و اکشن‌ها', 'condition' => ['show_dark_toggle' => true]],
+            'show_social_in_main_header' => ['type' => 'boolean', 'label' => 'نمایش شبکه‌های اجتماعی در هدر اصلی', 'default' => false, 'group' => 'دسترسی سریع و اکشن‌ها'],
+            'ctaText'            => ['type' => 'string', 'label' => 'متن دکمه اصلی (قدیمی)', 'default' => '', 'group' => 'دسترسی سریع و اکشن‌ها', 'hidden' => true],
+            'ctaUrl'             => ['type' => 'string', 'label' => 'لینک دکمه اصلی (قدیمی)', 'default' => '', 'group' => 'دسترسی سریع و اکشن‌ها', 'hidden' => true],
+            'secondary_text'     => ['type' => 'string', 'label' => 'متن دکمه ثانویه (قدیمی)', 'default' => '', 'group' => 'دسترسی سریع و اکشن‌ها', 'hidden' => true],
+            'secondary_style'    => ['type' => 'string', 'label' => 'ظاهر دکمه ثانویه (قدیمی)', 'default' => '', 'group' => 'دسترسی سریع و اکشن‌ها', 'hidden' => true],
+            'ctaGlow'            => ['type' => 'boolean', 'label' => 'افکت نورانی دکمه اصلی (قدیمی)', 'default' => false, 'group' => 'دسترسی سریع و اکشن‌ها', 'hidden' => true],
+            'phoneGlow'          => ['type' => 'boolean', 'label' => 'افکت نورانی تلفن (قدیمی)', 'default' => false, 'group' => 'دسترسی سریع و اکشن‌ها', 'hidden' => true],
             'social_links'       => [
                 'type' => 'repeater',
                 'label' => 'شبکه‌های اجتماعی و پیام‌رسان‌ها',
@@ -214,6 +230,7 @@ final class SharedHeaderSchema
             'border_bottom_color' => ['type' => 'color', 'label' => 'رنگ خط حاشیه پایین', 'default' => '', 'panel' => 'style', 'group' => 'رنگ‌ها و کانتینر', 'condition' => ['border_bottom_width!' => [0, '']]],
             'header_shadow'       => ['type' => 'shadow', 'label' => 'سایه هدر', 'panel' => 'style', 'group' => 'رنگ‌ها و کانتینر'],
             'backdrop_blur'       => ['type' => 'range', 'unit' => 'px', 'label' => 'محوشدگی شیشه‌ای (Backdrop blur)', 'default' => 16, 'min' => 0, 'max' => 30, 'step' => 1, 'panel' => 'style', 'group' => 'رنگ‌ها و کانتینر'],
+            'header_radius'       => ['type' => 'range', 'unit' => 'px', 'label' => 'گردی گوشه هدر (Radius)', 'default' => 16, 'min' => 0, 'max' => 50, 'step' => 1, 'panel' => 'style', 'group' => 'رنگ‌ها و کانتینر'],
 
             // Style: Menu Navigation Typography & Interaction
             'menu_typography'     => ['type' => 'typography', 'label' => 'تایپوگرافی منو', 'responsive' => true, 'panel' => 'style', 'group' => 'استایل منوی ناوبری'],
@@ -268,14 +285,12 @@ final class SharedHeaderSchema
             'asset_version'         => ['type' => 'string', 'label' => 'نسخه هدر', 'default' => '1.2.0', 'group' => 'پیشرفته'],
 
             // Legacy camelCase Aliases for 100% Backwards Compatibility
-            'bgColor'               => ['type' => 'color', 'label' => 'رنگ پس‌زمینه (قدیمی)', 'default' => '#ffffff'],
-            'textColor'             => ['type' => 'color', 'label' => 'رنگ متن (قدیمی)', 'default' => '#111827'],
-            'ctaColor'              => ['type' => 'color', 'label' => 'رنگ دکمه (قدیمی)', 'default' => '#e20c35'],
-            'brandName'             => ['type' => 'string', 'label' => 'نام برند (قدیمی)', 'default' => ''],
-            'logoUrl'               => ['type' => 'link', 'label' => 'لوگو / خانه (قدیمی)', 'default' => '/'],
-            'ctaText'               => ['type' => 'string', 'label' => 'متن دکمه (قدیمی)', 'default' => ''],
-            'ctaUrl'                => ['type' => 'link', 'label' => 'لینک دکمه (قدیمی)', 'default' => '/contact'],
-            'menuItems'             => ['type' => 'repeater', 'label' => 'آیتم‌های منو (قدیمی)', 'fields' => ['label' => ['type' => 'string', 'label' => 'عنوان'], 'url' => ['type' => 'link', 'label' => 'آدرس']], 'default' => []],
+            'bgColor'               => ['type' => 'color', 'label' => 'رنگ پس‌زمینه (قدیمی)', 'default' => '#ffffff', 'group' => 'پیشرفته', 'hidden' => true],
+            'textColor'             => ['type' => 'color', 'label' => 'رنگ متن (قدیمی)', 'default' => '#111827', 'group' => 'پیشرفته', 'hidden' => true],
+            'ctaColor'              => ['type' => 'color', 'label' => 'رنگ دکمه (قدیمی)', 'default' => '#e20c35', 'group' => 'پیشرفته', 'hidden' => true],
+            'brandName'             => ['type' => 'string', 'label' => 'نام برند (قدیمی)', 'default' => '', 'group' => 'پیشرفته', 'hidden' => true],
+            'logoUrl'               => ['type' => 'link', 'label' => 'لوگو / خانه (قدیمی)', 'default' => '/', 'group' => 'پیشرفته', 'hidden' => true],
+            'menuItems'             => ['type' => 'repeater', 'label' => 'آیتم‌های منو (قدیمی)', 'fields' => ['label' => ['type' => 'string', 'label' => 'عنوان'], 'url' => ['type' => 'link', 'label' => 'آدرس']], 'default' => [], 'group' => 'پیشرفته', 'hidden' => true],
         ];
     }
 

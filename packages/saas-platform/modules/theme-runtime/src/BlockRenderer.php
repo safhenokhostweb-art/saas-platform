@@ -4584,6 +4584,77 @@ class BlockRenderer
         return '<span class="tb-header-icon-slot" aria-hidden="true">' . $raw . '</span>';
     }
 
+    public function renderTopBarHtml(array $topbar, array $socialLinks = []): string
+    {
+        if (empty($topbar['enabled'])) {
+            return '';
+        }
+
+        $topbarHideMobile = !empty($topbar['hide_mobile']) ? ' tb-topbar--hide-mobile' : '';
+        $topbarBg = $this->escapeAttr($this->cssColor($topbar['bg'] ?? '', ''));
+        $topbarColor = $this->escapeAttr($this->cssColor($topbar['color'] ?? '', ''));
+        $topbarStyle = '';
+        if ($topbarBg !== '') $topbarStyle .= "background:{$topbarBg};";
+        if ($topbarColor !== '') $topbarStyle .= "color:{$topbarColor};";
+        $topbarStyleAttr = $topbarStyle !== '' ? ' style="' . $topbarStyle . '"' : '';
+
+        $topbarStart = '';
+        $topbarPhone = trim($this->stringify($topbar['phone'] ?? ''));
+        if ($topbarPhone !== '') {
+            $phoneClean = preg_replace('/[^\d+]/', '', $topbarPhone);
+            $topbarStart .= '<a href="tel:' . $this->escapeAttr($phoneClean) . '" class="tb-topbar-item">' . $this->iconHtml('phone') . '<span>' . $this->escape($topbarPhone) . '</span></a>';
+        }
+        $topbarEmail = trim($this->stringify($topbar['email'] ?? ''));
+        if ($topbarEmail !== '') {
+            $topbarStart .= '<a href="mailto:' . $this->escapeAttr($topbarEmail) . '" class="tb-topbar-item">' . $this->iconHtml('mail') . '<span>' . $this->escape($topbarEmail) . '</span></a>';
+        }
+        $topbarAddress = trim($this->stringify($topbar['address'] ?? ''));
+        if ($topbarAddress !== '') {
+            $topbarStart .= '<span class="tb-topbar-item">' . $this->iconHtml('map-pin') . '<span>' . $this->escape($topbarAddress) . '</span></span>';
+        }
+        $topbarText = trim($this->stringify($topbar['text'] ?? ''));
+        if ($topbarText !== '') {
+            $topbarStart .= '<span class="tb-topbar-item tb-topbar-text"><span>' . $this->escape($topbarText) . '</span></span>';
+        }
+
+        $topbarEnd = '';
+        $topbarLinks = is_array($topbar['links'] ?? null) ? $topbar['links'] : [];
+        if (!empty($topbarLinks)) {
+            $linksHtml = '';
+            foreach ($topbarLinks as $tbLink) {
+                if (!is_array($tbLink)) continue;
+                $lbl = trim($this->stringify($tbLink['label'] ?? ''));
+                $url = $this->linkHref($tbLink['url'] ?? '#', '#');
+                $icn = trim($this->stringify($tbLink['icon'] ?? ''));
+                if ($lbl === '' && $icn === '') continue;
+                $icnHtml = $icn !== '' ? $this->iconHtml($icn) . ' ' : '';
+                $linksHtml .= '<a href="' . $url . '" class="tb-topbar-link">' . $icnHtml . $this->escape($lbl) . '</a>';
+            }
+            if ($linksHtml !== '') {
+                $topbarEnd .= '<div class="tb-topbar-links">' . $linksHtml . '</div>';
+            }
+        }
+        if (!empty($topbar['social_links_enabled']) && !empty($socialLinks)) {
+            $topbarSocial = $this->socialIconsHtml($socialLinks, 'topbar-social', 'topbar', false, 'tb-topbar-social', true);
+            if ($topbarSocial !== '') {
+                if ($topbarEnd !== '') {
+                    $topbarEnd .= '<span class="tb-topbar-divider" aria-hidden="true"></span>';
+                }
+                $topbarEnd .= $topbarSocial;
+            }
+        }
+
+        if ($topbarStart === '' && $topbarEnd === '') {
+            return '';
+        }
+
+        return '<div class="tb-nav-header-topbar' . $topbarHideMobile . '"' . $topbarStyleAttr . '>'
+            . '<div class="tb-nav-header-topbar-inner">'
+            . ($topbarStart !== '' ? '<div class="tb-topbar-start">' . $topbarStart . '</div>' : '')
+            . ($topbarEnd !== '' ? '<div class="tb-topbar-end">' . $topbarEnd . '</div>' : '')
+            . '</div></div>';
+    }
+
     protected function renderHeaderModernV1(array $props, string $inner, string $id): string
     {
         $data = \SaaSPlatform\ThemeRuntime\Header\HeaderDataResolver::resolve($props, $this->context);
@@ -4597,18 +4668,30 @@ class BlockRenderer
         $ctaColor = $this->headerModernColor($actions['cta']['color_start'] ?? null, '#4f46e5');
         $ctaTextColor = $this->readableTextColorOn($ctaColor) ?? '#ffffff';
 
+        $safeId = $this->escapeAttr($id);
+        $menuId = 'tb-header-modern-menu-' . $safeId;
+
+        $logoAnim = $this->escapeAttr(trim($this->stringify($brand['animation'] ?? 'none')));
+        $logoAnimClass = ($logoAnim !== '' && $logoAnim !== 'none') ? ' tb-logo-anim--' . $logoAnim : '';
+        $logoAnimDurRaw = trim($this->stringify($brand['animation_dur'] ?? '5s'));
+        $logoAnimDur = is_numeric($logoAnimDurRaw) ? $logoAnimDurRaw . 's' : ($logoAnimDurRaw !== '' ? $logoAnimDurRaw : '5s');
+        $animDurStyle = ($logoAnim !== '' && $logoAnim !== 'none') ? ' style="--tb-hdr-logo-anim-dur:' . $logoAnimDur . ';"' : '';
+
         $brandName = $this->escape($brand['name']);
         $homeUrl = $this->linkHref($brand['url'] ?? '/', '/');
         $logoSrc = $brand['image'] !== '' ? $this->escapeUrl($brand['image'], '') : '';
         $mobileLogoSrc = $brand['mobile_image'] !== '' ? $this->escapeUrl($brand['mobile_image'], '') : '';
         $logo = $logoSrc !== ''
-            ? '<img class="tb-header-modern__logo" src="' . $logoSrc . '" alt="' . $brandName . '">'
-            : '<span>' . $brandName . '</span>';
+            ? '<img class="tb-header-modern__logo' . $logoAnimClass . '" src="' . $logoSrc . '" alt="' . $brandName . '"' . $animDurStyle . '>'
+            : '<span class="' . $logoAnimClass . '"' . $animDurStyle . '>' . $brandName . '</span>';
         $mobileLogo = $mobileLogoSrc !== ''
-            ? '<img class="tb-header-modern__logo tb-header-modern__logo--mobile" src="' . $mobileLogoSrc . '" alt="' . $brandName . '">'
+            ? '<img class="tb-header-modern__logo tb-header-modern__logo--mobile' . $logoAnimClass . '" src="' . $mobileLogoSrc . '" alt="' . $brandName . '"' . $animDurStyle . '>'
             : '';
 
+        $topbarHtml = $this->renderTopBarHtml($data['topbar'], $actions['social_links']);
+
         $menuHtml = '';
+        $hasMegaMenu = false;
         foreach ($nav['items'] as $item) {
             $label = trim($this->stringify($item['label'] ?? ''));
             if ($label === '') {
@@ -4616,7 +4699,46 @@ class BlockRenderer
             }
             $url = $this->escapeUrl($this->stringify($item['url'] ?? '#'), '#');
             $iconHtml = !empty($item['icon']) ? $this->headerIconHtml($item['icon']) . ' ' : '';
-            $menuHtml .= '<a class="tb-header-modern__link" href="' . $url . '">' . $iconHtml . $this->escape($label) . '</a>';
+            $mega = $this->normalizeMegaMenuData($item);
+            if ($mega !== null) {
+                $menuHtml .= $this->renderMegaMenuItem($safeId, $url, $this->escape($label), $mega, $iconHtml);
+                $hasMegaMenu = true;
+            } else {
+                $menuHtml .= '<a class="tb-header-modern__link" href="' . $url . '">' . $iconHtml . $this->escape($label) . '</a>';
+            }
+        }
+
+        $socialHtml = '';
+        if (!empty($actions['show_social_in_main_header']) || (!empty($actions['social_links']) && empty($data['topbar']['enabled']))) {
+            $socialStyle = ($actions['social_style'] ?? 'mono') === 'brand';
+            $socialClasses = 'tb-header-modern__social tb-nav-header-social flex items-center gap-1.5' . ($actions['social_show_mobile'] ? ' tb-nav-header-social--mobile' : '');
+            $socialHtml = $this->socialIconsHtml($actions['social_links'], $safeId . '-modern-social', 'quick-access', $socialStyle, $socialClasses, true);
+        }
+
+        $searchHtml = '';
+        if (!empty($actions['show_search'])) {
+            $searchHtml = '<a href="/shop" class="tb-header-modern__action-btn tb-nav-header-icon-link" aria-label="جستجو">' . $this->headerIconHtml('search') . '</a>';
+        }
+        $cartHtml = '';
+        if (!empty($actions['show_cart'])) {
+            $cartHtml = $this->cartTriggerHtml('tb-header-modern__action-btn tb-nav-header-cart', $this->headerIconHtml('shopping-bag'));
+        }
+        $accountHtml = '';
+        if (!empty($actions['show_account'])) {
+            $accountUrl = $this->linkHref($this->context['account_url'] ?? '/account', '/account');
+            $accountHtml = '<a href="' . $accountUrl . '" class="tb-header-modern__action-btn tb-nav-header-icon-link" aria-label="حساب کاربری">' . $this->headerIconHtml('user') . '</a>';
+        }
+        $darkToggleHtml = '';
+        if (!empty($actions['show_dark_toggle'])) {
+            $darkToggleHtml = $this->renderDarkModeToggle($safeId, $actions['light_mode_icon'] ?? 'sun', $actions['dark_mode_icon'] ?? 'moon');
+        }
+
+        $cta2Text = trim($this->stringify($actions['cta2']['text'] ?? ''));
+        $cta2Url = $this->linkHref($actions['cta2']['url'] ?? '#', '#');
+        $cta2Html = '';
+        if ($cta2Text !== '' && $this->showsLink($cta2Url)) {
+            $cta2IconHtml = !empty($actions['cta2']['icon']) ? $this->headerIconHtml($actions['cta2']['icon']) . ' ' : '';
+            $cta2Html = '<a class="tb-header-modern__cta tb-header-modern__cta--second" href="' . $cta2Url . '"' . $this->deadLinkMark($cta2Url) . '>' . $cta2IconHtml . $this->escape($cta2Text) . '</a>';
         }
 
         $ctaText = trim($this->stringify($actions['cta']['text'] ?? ''));
@@ -4641,8 +4763,6 @@ class BlockRenderer
             }
         }
 
-        $safeId = $this->escapeAttr($id);
-        $menuId = 'tb-header-modern-menu-' . $safeId;
         $versionAttr = !empty($props['asset_version']) ? ' data-asset-version="' . $this->escapeAttr((string) $props['asset_version']) . '"' : '';
         $style = '--tb-header-bg:' . $bgColor
             . ';--tb-header-text:' . $textColor
@@ -4650,15 +4770,17 @@ class BlockRenderer
             . ';--tb-header-cta-text:' . $ctaTextColor . ';';
 
         $assets = $this->headerModernAssets();
+        $siteAssets = $hasMegaMenu ? $this->siteHeaderAssets() : '';
 
         return '<div id="tb-' . $safeId . '" class="tb-header-modern"' . $versionAttr . ' style="' . $style . '">'
+            . $topbarHtml
             . '<div class="tb-header-modern__inner">'
             . '<a class="tb-header-modern__brand" href="' . $homeUrl . '" aria-label="' . $brandName . '">' . $logo . ($mobileLogo !== '' ? $mobileLogo : '') . '</a>'
             . '<nav id="' . $menuId . '" class="tb-header-modern__menu" aria-label="منوی اصلی">' . $menuHtml . '</nav>'
-            . '<div class="tb-header-modern__actions">' . $ctaHtml . $phoneHtml
+            . '<div class="tb-header-modern__actions">' . $socialHtml . $searchHtml . $cartHtml . $accountHtml . $darkToggleHtml . $cta2Html . $ctaHtml . $phoneHtml
             . '<button type="button" class="tb-header-modern__toggle" aria-expanded="false" aria-controls="' . $menuId . '" aria-label="باز کردن منو">'
             . '<span class="tb-header-modern__toggle-lines" aria-hidden="true"></span></button></div>'
-            . '</div></div>' . $assets;
+            . '</div></div>' . $assets . $siteAssets;
     }
 
     private function headerModernColor(mixed $value, string $fallback): string
@@ -4699,7 +4821,18 @@ class BlockRenderer
         $actions = $data['actions'];
         $style = $data['style'];
 
+        $topbarHtml = $this->renderTopBarHtml($data['topbar'], $actions['social_links']);
+
+        $logoAnim = $this->escapeAttr(trim($this->stringify($brand['animation'] ?? 'none')));
+        $logoAnimClass = ($logoAnim !== '' && $logoAnim !== 'none') ? ' tb-logo-anim--' . $logoAnim : '';
+        $logoAnimDurRaw = trim($this->stringify($brand['animation_dur'] ?? '5s'));
+        $logoAnimDur = is_numeric($logoAnimDurRaw) ? $logoAnimDurRaw . 's' : ($logoAnimDurRaw !== '' ? $logoAnimDurRaw : '5s');
+        $animDurStyle = ($logoAnim !== '' && $logoAnim !== 'none') ? ' style="--tb-hdr-logo-anim-dur:' . $logoAnimDur . ';"' : '';
+
         $escapedBrand = $this->escape($brand['name'] !== '' ? $brand['name'] : 'برند شما');
+        $brandAccent = $brand['accent'] !== '' ? ' <span class="tb-header-nimbus__accent text-[var(--color-tgn01-cta1)]">' . $this->escape($brand['accent']) . '</span>' : '';
+        $brandTagline = $brand['tagline'] !== '' ? '<span class="tb-header-nimbus__tagline block text-[10px] font-normal opacity-70">' . $this->escape($brand['tagline']) . '</span>' : '';
+        $brandTextHtml = '<span class="tb-header-nimbus__brand-text flex flex-col leading-tight"><span>' . $escapedBrand . $brandAccent . '</span>' . $brandTagline . '</span>';
         $homeUrl = $this->linkHref($brand['url'] ?? '/', '/');
 
         $logoSrc = $brand['image'] !== '' ? $this->escapeUrl($brand['image'], '') : '';
@@ -4708,8 +4841,8 @@ class BlockRenderer
 
         $badgeContent = !empty($brand['icon']) ? $this->headerIconHtml($brand['icon']) : $escapedBadgeSymbol;
         $logoHtml = $logoSrc !== ''
-            ? '<img src="' . $logoSrc . '" alt="' . $escapedBrand . '" class="tb-header-nimbus__logo size-8 rounded-[10px] object-contain">'
-            : '<span aria-hidden="true" class="tb-header-nimbus__badge grid size-8 place-items-center rounded-[10px] bg-gradient-to-br from-[var(--color-tgn01-cta1)] to-[var(--color-tgn01-cta2)] text-xs text-white shadow-[0_4px_12px_-2px_var(--color-tgn01-cta2)]">' . $badgeContent . '</span>';
+            ? '<img src="' . $logoSrc . '" alt="' . $escapedBrand . '" class="tb-header-nimbus__logo size-8 rounded-[10px] object-contain' . $logoAnimClass . '"' . $animDurStyle . '>'
+            : '<span aria-hidden="true" class="tb-header-nimbus__badge grid size-8 place-items-center rounded-[10px] bg-gradient-to-br from-[var(--color-tgn01-cta1)] to-[var(--color-tgn01-cta2)] text-xs text-white shadow-[0_4px_12px_-2px_var(--color-tgn01-cta2)]' . $logoAnimClass . '"' . $animDurStyle . '>' . $badgeContent . '</span>';
 
         $rawCtaStart = trim($this->stringify($actions['cta']['color_start'] ?? '#e20c35'));
         $rawCtaEnd = trim($this->stringify($actions['cta']['color_end'] ?? '#c4008d'));
@@ -4719,15 +4852,38 @@ class BlockRenderer
         $ctaColor2 = $this->cssColor($rawCtaEnd, '#c4008d');
         $inkColor = $this->cssColor($rawInk, '#211c48');
 
+        $bg = $this->escapeAttr($this->cssColor($style['bg_color'] ?? '', 'rgba(255, 255, 255, 0.5)'));
+        $textColor = $this->escapeAttr($this->cssColor($style['text_color'] ?? '', '#211c48'));
+        $linkHover = $this->escapeAttr($this->cssColor($style['menu_color_hover'] ?? '', 'rgba(255, 255, 255, 0.55)'));
+        $borderColor = $this->escapeAttr($this->cssColor($style['border_bottom_color'] ?? '', 'rgba(255, 255, 255, 0.6)'));
+        $borderWidth = (int) ($style['border_bottom_width'] ?? 1);
+        $borderWidthStr = ($borderWidth > 0 ? $borderWidth . 'px' : '1px');
+        $radius = (int) ($style['radius'] ?? 16);
+        $radiusStr = $radius . 'px';
+        $blur = (int) ($style['backdrop_blur'] ?? 16);
+        $blurStr = $blur . 'px';
+        $minHeight = (int) ($style['min_height'] ?? 64);
+        $minHeightStr = $minHeight . 'px';
+
         $styleVars = '--color-tgn01-ink:' . $this->escapeAttr($inkColor)
             . ';--color-tgn01-cta1:' . $this->escapeAttr($ctaColor1)
             . ';--color-tgn01-cta2:' . $this->escapeAttr($ctaColor2)
+            . ';--tgn01-bg:' . $bg
             . ';--tgn01-ink:' . $this->escapeAttr($inkColor)
+            . ';--tgn01-text:' . $textColor
+            . ';--tgn01-link-hover:' . $linkHover
+            . ';--tgn01-border-color:' . $borderColor
+            . ';--tgn01-border-width:' . $borderWidthStr
+            . ';--tgn01-radius:' . $radiusStr
+            . ';--tgn01-blur:' . $blurStr
+            . ';--tgn01-min-height:' . $minHeightStr
             . ';--tgn01-cta1:' . $this->escapeAttr($ctaColor1)
-            . ';--tgn01-cta2:' . $this->escapeAttr($ctaColor2) . ';';
+            . ';--tgn01-cta2:' . $this->escapeAttr($ctaColor2)
+            . ';min-height:' . $minHeightStr . ';';
 
         $desktopMenuHtml = '';
         $mobileMenuHtml = '';
+        $hasMegaMenu = false;
 
         foreach ($nav['items'] as $item) {
             $label = trim($this->stringify($item['label'] ?? ''));
@@ -4740,20 +4896,62 @@ class BlockRenderer
             $badgeHtml = !empty($item['badge']) ? ' <span class="ms-1 rounded bg-white/50 px-1 text-xs">' . $this->escape($item['badge']) . '</span>' : '';
             $ariaCurrent = !empty($item['is_active']) ? ' aria-current="page"' : '';
 
-            $desktopMenuHtml .= '<li><a href="' . $url . '"' . $ariaCurrent . ' class="tb-header-nimbus__link flex h-11 items-center gap-1.5 rounded-xl px-3.5 text-sm font-semibold text-[var(--color-tgn01-ink)]/80 transition-colors hover:bg-white/55 hover:text-[var(--color-tgn01-ink)] aria-[current=page]:bg-white/70 aria-[current=page]:text-[var(--color-tgn01-ink)]">' . $iconHtml . $escapedLabel . $badgeHtml . '</a></li>';
-            $mobileMenuHtml .= '<a href="' . $url . '"' . $ariaCurrent . ' class="tb-header-nimbus__mobile-link flex h-12 items-center gap-2 rounded-xl px-4 text-[15px] font-semibold hover:bg-white/60">' . $iconHtml . $escapedLabel . $badgeHtml . '</a>';
+            $mega = $this->normalizeMegaMenuData($item);
+            if ($mega !== null) {
+                $desktopMenuHtml .= '<li class="tb-header-nimbus__menu-item">' . $this->renderMegaMenuItem($safeId, $url, $escapedLabel, $mega, $iconHtml) . '</li>';
+                $mobileMenuHtml .= $this->renderMegaMenuItem($safeId . '-m', $url, $escapedLabel, $mega, $iconHtml);
+                $hasMegaMenu = true;
+            } else {
+                $desktopMenuHtml .= '<li><a href="' . $url . '"' . $ariaCurrent . ' class="tb-header-nimbus__link flex h-11 items-center gap-1.5 rounded-xl px-3.5 text-sm font-semibold text-[var(--color-tgn01-ink)]/80 transition-colors hover:bg-white/55 hover:text-[var(--color-tgn01-ink)] aria-[current=page]:bg-white/70 aria-[current=page]:text-[var(--color-tgn01-ink)]">' . $iconHtml . $escapedLabel . $badgeHtml . '</a></li>';
+                $mobileMenuHtml .= '<a href="' . $url . '"' . $ariaCurrent . ' class="tb-header-nimbus__mobile-link flex h-12 items-center gap-2 rounded-xl px-4 text-[15px] font-semibold hover:bg-white/60">' . $iconHtml . $escapedLabel . $badgeHtml . '</a>';
+            }
         }
 
-        // Action buttons (search, cart, account)
+        // Social Icons in Main Header
+        $socialHtml = '';
+        if (!empty($actions['show_social_in_main_header']) || (!empty($actions['social_links']) && empty($data['topbar']['enabled']))) {
+            $socialStyle = ($actions['social_style'] ?? 'mono') === 'brand';
+            $socialClasses = 'tb-header-nimbus__social tb-nav-header-social flex items-center gap-1.5' . ($actions['social_show_mobile'] ? ' tb-nav-header-social--mobile' : '');
+            $socialHtml = $this->socialIconsHtml($actions['social_links'], $safeId . '-nimbus-social', 'quick-access', $socialStyle, $socialClasses, true);
+        }
+
+        // Action buttons (social, search, cart, account, dark toggle)
         $actionButtonsHtml = '';
+        if ($socialHtml !== '') {
+            $actionButtonsHtml .= $socialHtml;
+        }
+
+        $searchAssets = '';
         if (!empty($actions['show_search'])) {
-            $actionButtonsHtml .= '<a href="/shop" class="tb-header-nimbus__action-btn" aria-label="جستجو">' . $this->headerIconHtml('search') . '</a>';
+            $searchMode = $actions['search_mode'] ?? 'icon';
+            $scope = $actions['search_scope'] ?? 'all';
+            [$searchAttrs, $hiddenInputs, $searchAssets, $searchParam] = $this->searchForm($scope);
+            $placeholder = $this->escapeAttr($actions['search_placeholder'] ?? 'جستجو...');
+            if ($searchMode === 'icon') {
+                $actionButtonsHtml .= '<div class="tb-header-nimbus__search-wrap relative flex items-center">'
+                    . '<button type="button" class="tb-header-nimbus__action-btn" aria-label="جستجو" data-tb-search-open="' . $rootId . '-search">' . $this->headerIconHtml('search') . '</button>'
+                    . '<form id="' . $rootId . '-search" class="tb-header-nimbus__search-popover tb-nav-header-search-popover" role="search" hidden' . $searchAttrs . '>'
+                    . '<input type="search" name="' . $this->escapeAttr($searchParam) . '" class="tb-nav-header-search-input" placeholder="' . $placeholder . '" autocomplete="off">'
+                    . $hiddenInputs
+                    . '<button type="submit" class="tb-nav-header-search-submit" aria-label="جستجو">' . $this->headerIconHtml('search') . '</button>'
+                    . '</form></div>';
+            } else {
+                $actionButtonsHtml .= '<form class="tb-header-nimbus__search-input-form relative flex items-center" role="search"' . $searchAttrs . '>'
+                    . '<input type="search" name="' . $this->escapeAttr($searchParam) . '" class="h-9 px-3 text-xs rounded-xl border border-white/60 bg-white/40 focus:bg-white focus:outline-none" placeholder="' . $placeholder . '" autocomplete="off">'
+                    . $hiddenInputs
+                    . '<button type="submit" class="absolute end-2 text-slate-500" aria-label="جستجو">' . $this->headerIconHtml('search') . '</button>'
+                    . '</form>';
+            }
         }
         if (!empty($actions['show_cart'])) {
-            $actionButtonsHtml .= '<a href="/cart" class="tb-header-nimbus__action-btn" aria-label="سبد خرید">' . $this->headerIconHtml('shopping-bag') . '<span class="tb-header-nimbus__cart-badge" data-tb-cart-count>0</span></a>';
+            $actionButtonsHtml .= $this->cartTriggerHtml('tb-header-nimbus__action-btn tb-nav-header-cart', $this->headerIconHtml('shopping-bag'));
         }
         if (!empty($actions['show_account'])) {
-            $actionButtonsHtml .= '<a href="/login" class="tb-header-nimbus__action-btn" aria-label="حساب کاربری">' . $this->headerIconHtml('user') . '</a>';
+            $accountUrl = $this->linkHref($this->context['account_url'] ?? '/account', '/account');
+            $actionButtonsHtml .= '<a href="' . $accountUrl . '" class="tb-header-nimbus__action-btn" aria-label="حساب کاربری">' . $this->headerIconHtml('user') . '</a>';
+        }
+        if (!empty($actions['show_dark_toggle'])) {
+            $actionButtonsHtml .= $this->renderDarkModeToggle($safeId, $actions['light_mode_icon'] ?? 'sun', $actions['dark_mode_icon'] ?? 'moon');
         }
 
         $secondaryLabel = trim($this->stringify($actions['cta2']['text'] ?? ''));
@@ -4783,6 +4981,15 @@ class BlockRenderer
         $version = !empty($data['asset_version']) ? (string) $data['asset_version'] : '1.2.0';
         $versionAttr = ' data-asset-version="' . $this->escapeAttr($version) . '"';
 
+        $headerFlags = [];
+        if ($this->flag($props['sticky'] ?? true)) {
+            $headerFlags[] = 'sticky';
+            if ($this->flag($props['sticky_hide_on_scroll'] ?? false)) {
+                $headerFlags[] = 'smart';
+            }
+        }
+        $headerAttrs = $headerFlags !== [] ? ' data-tb-header="' . implode(' ', $headerFlags) . '"' : '';
+
         $script = '<script>(function(){'
             . 'var h=document.getElementById("' . $rootId . '");if(!h||h.dataset.nimbusInit)return;h.dataset.nimbusInit="1";'
             . 'var btn=h.querySelector("[data-nimbus-toggle]");var m=document.getElementById("' . $menuId . '");if(!btn||!m)return;'
@@ -4795,10 +5002,13 @@ class BlockRenderer
             . 'm.querySelectorAll("a").forEach(function(a){if(a.hasAttribute("aria-current"))return;try{var u=new URL(a.getAttribute("href")||"",location.href);if(u.origin===location.origin&&(u.pathname.replace(/\/+$/,"")||"/")===here)a.setAttribute("aria-current","page");}catch(x){}});'
             . '})();</script>';
 
-        return '<header id="' . $rootId . '" class="tb-header-nimbus sticky top-3 z-30 flex h-16 items-center gap-4 rounded-2xl border border-white/60 bg-white/50 py-2.5 px-4 shadow-[0_8px_30px_-6px_oklch(0.25_0.1_285/0.35)] backdrop-blur-lg backdrop-saturate-[1.8] sm:px-5" style="' . $styleVars . '"' . $versionAttr . ' dir="rtl">'
+        $siteAssets = ($hasMegaMenu || $headerFlags !== []) ? $this->siteHeaderAssets() : '';
+
+        return $topbarHtml
+            . '<header id="' . $rootId . '" class="tb-header-nimbus sticky top-3 z-30 flex h-16 items-center gap-4 rounded-2xl border border-white/60 bg-white/50 py-2.5 px-4 shadow-[0_8px_30px_-6px_oklch(0.25_0.1_285/0.35)] backdrop-blur-lg backdrop-saturate-[1.8] sm:px-5" style="' . $styleVars . '"' . $versionAttr . $headerAttrs . ' dir="rtl">'
             . '<a class="tb-header-nimbus__brand flex items-center gap-2.5 rounded-lg text-lg font-extrabold text-[var(--color-tgn01-ink)]" href="' . $homeUrl . '">'
             . $logoHtml
-            . '<span>' . $escapedBrand . '</span>'
+            . $brandTextHtml
             . '</a>'
             . '<nav class="tb-header-nimbus__nav mx-auto max-md:hidden" aria-label="منوی اصلی">'
             . '<ul class="tb-header-nimbus__menu flex gap-1">'
@@ -4818,6 +5028,8 @@ class BlockRenderer
             . $mobileMenuHtml
             . $mobileSecondaryHtml
             . '</nav>'
+            . $searchAssets
+            . $siteAssets
             . $script;
     }
 
@@ -5041,7 +5253,7 @@ class BlockRenderer
         }
         $darkToggleHtml = '';
         if ($this->flag($props['show_dark_toggle'] ?? false)) {
-            $darkToggleHtml = $this->renderDarkModeToggle($safeId);
+            $darkToggleHtml = $this->renderDarkModeToggle($safeId, $props['light_mode_icon'] ?? 'sun', $props['dark_mode_icon'] ?? 'moon');
         }
 
         $ctaHtml = '';
@@ -5261,70 +5473,18 @@ class BlockRenderer
         }
         $headerSetAttr = $headerStyle['set'] !== [] ? ' data-tb-hdr-set="' . implode(' ', $headerStyle['set']) . '"' : '';
 
-        $topbarHtml = '';
-        if ($this->flag($props['topbar_enable'] ?? false)) {
-            $topbarHideMobile = $this->flag($props['topbar_hide_mobile'] ?? false) ? ' tb-topbar--hide-mobile' : '';
-            $topbarBg = $this->escapeAttr($this->cssColor($props['topbar_bg'] ?? '', ''));
-            $topbarColor = $this->escapeAttr($this->cssColor($props['topbar_color'] ?? '', ''));
-            $topbarStyle = '';
-            if ($topbarBg !== '') $topbarStyle .= "background:{$topbarBg};";
-            if ($topbarColor !== '') $topbarStyle .= "color:{$topbarColor};";
-            $topbarStyleAttr = $topbarStyle !== '' ? ' style="' . $topbarStyle . '"' : '';
-
-            $topbarStart = '';
-            $topbarPhone = trim($this->stringify($props['topbar_phone'] ?? ''));
-            if ($topbarPhone !== '') {
-                $phoneClean = preg_replace('/[^\d+]/', '', $topbarPhone);
-                $topbarStart .= '<a href="tel:' . $this->escapeAttr($phoneClean) . '" class="tb-topbar-item">' . $this->iconHtml('phone') . '<span>' . $this->escape($topbarPhone) . '</span></a>';
-            }
-            $topbarEmail = trim($this->stringify($props['topbar_email'] ?? ''));
-            if ($topbarEmail !== '') {
-                $topbarStart .= '<a href="mailto:' . $this->escapeAttr($topbarEmail) . '" class="tb-topbar-item">' . $this->iconHtml('mail') . '<span>' . $this->escape($topbarEmail) . '</span></a>';
-            }
-            $topbarAddress = trim($this->stringify($props['topbar_address'] ?? ''));
-            if ($topbarAddress !== '') {
-                $topbarStart .= '<span class="tb-topbar-item">' . $this->iconHtml('map-pin') . '<span>' . $this->escape($topbarAddress) . '</span></span>';
-            }
-            $topbarText = trim($this->stringify($props['topbar_text'] ?? ''));
-            if ($topbarText !== '') {
-                $topbarStart .= '<span class="tb-topbar-item tb-topbar-text"><span>' . $this->escape($topbarText) . '</span></span>';
-            }
-
-            $topbarEnd = '';
-            $topbarLinks = is_array($props['topbar_links'] ?? null) ? $props['topbar_links'] : [];
-            if (!empty($topbarLinks)) {
-                $linksHtml = '';
-                foreach ($topbarLinks as $tbLink) {
-                    if (!is_array($tbLink)) continue;
-                    $lbl = trim($this->stringify($tbLink['label'] ?? ''));
-                    $url = $this->linkHref($tbLink['url'] ?? '#', '#');
-                    $icn = trim($this->stringify($tbLink['icon'] ?? ''));
-                    if ($lbl === '' && $icn === '') continue;
-                    $icnHtml = $icn !== '' ? $this->iconHtml($icn) . ' ' : '';
-                    $linksHtml .= '<a href="' . $url . '" class="tb-topbar-link">' . $icnHtml . $this->escape($lbl) . '</a>';
-                }
-                if ($linksHtml !== '') {
-                    $topbarEnd .= '<div class="tb-topbar-links">' . $linksHtml . '</div>';
-                }
-            }
-            if ($this->flag($props['topbar_social_links'] ?? true)) {
-                $topbarSocial = $this->renderSocialIcons($socialLinks, 'plain', 'tb-topbar-social');
-                if ($topbarSocial !== '') {
-                    if ($topbarEnd !== '') {
-                        $topbarEnd .= '<span class="tb-topbar-divider" aria-hidden="true"></span>';
-                    }
-                    $topbarEnd .= $topbarSocial;
-                }
-            }
-
-            if ($topbarStart !== '' || $topbarEnd !== '') {
-                $topbarHtml = '<div class="tb-nav-header-topbar' . $topbarHideMobile . '"' . $topbarStyleAttr . '>'
-                    . '<div class="tb-nav-header-topbar-inner">'
-                    . ($topbarStart !== '' ? '<div class="tb-topbar-start">' . $topbarStart . '</div>' : '')
-                    . ($topbarEnd !== '' ? '<div class="tb-topbar-end">' . $topbarEnd . '</div>' : '')
-                    . '</div></div>';
-            }
-        }
+        $topbarHtml = $this->renderTopBarHtml([
+            'enabled' => $this->flag($props['topbar_enable'] ?? false),
+            'hide_mobile' => $this->flag($props['topbar_hide_mobile'] ?? false),
+            'bg' => $props['topbar_bg'] ?? '',
+            'color' => $props['topbar_color'] ?? '',
+            'phone' => $props['topbar_phone'] ?? '',
+            'email' => $props['topbar_email'] ?? '',
+            'address' => $props['topbar_address'] ?? '',
+            'text' => $props['topbar_text'] ?? '',
+            'links' => is_array($props['topbar_links'] ?? null) ? $props['topbar_links'] : [],
+            'social_links_enabled' => $this->flag($props['topbar_social_links'] ?? true),
+        ], $socialLinks);
 
         $animStyleVar = $logoAnimClass !== '' ? ';--tb-hdr-logo-anim-dur:' . $logoAnimDur : '';
 
@@ -5434,17 +5594,60 @@ class BlockRenderer
      * (this block can appear more than once, e.g. header + a duplicate in
      * a footer) stays in sync via the `tb-theme-change` event.
      */
-    private function renderDarkModeToggle(string $parentId): string
+    private function renderDarkModeToggle(string $parentId, string $lightIcon = 'sun', string $darkIcon = 'moon'): string
     {
         $toggleId = "tb-{$parentId}-theme-toggle";
 
+        $lightSvg = IconLibrary::svg($lightIcon !== '' ? $lightIcon : 'sun') ?: IconLibrary::svg('sun');
+        $darkSvg = IconLibrary::svg($darkIcon !== '' ? $darkIcon : 'moon') ?: IconLibrary::svg('moon');
+        $systemSvg = IconLibrary::svg('monitor');
+
         // Phase 1 (ADR-067): catalog SVG icons instead of ☀️ 🌙 💻.
-        $icons = json_encode(['light' => IconLibrary::svg('sun'), 'dark' => IconLibrary::svg('moon'), 'system' => IconLibrary::svg('monitor')], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_SLASHES);
+        $icons = json_encode(['light' => $lightSvg, 'dark' => $darkSvg, 'system' => $systemSvg], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_SLASHES);
 
         return "<button type=\"button\" id=\"{$toggleId}\" class=\"tb-theme-toggle\" aria-label=\"تغییر حالت رنگی\">
-            <span class=\"tb-theme-toggle-icon\" aria-hidden=\"true\">" . IconLibrary::svg('monitor') . "</span>
+            <span class=\"tb-theme-toggle-icon\" aria-hidden=\"true\">" . $systemSvg . "</span>
         </button>
         <script>(function(){
+            var KEY = 'tb-theme';
+            function resolvePref(p) {
+                if (p === 'system') {
+                    try { return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; } catch(e) { return 'light'; }
+                }
+                return p === 'dark' ? 'dark' : 'light';
+            }
+            function applyTheme(p) {
+                var res = resolvePref(p);
+                document.documentElement.setAttribute('data-theme', res);
+                document.documentElement.setAttribute('data-theme-pref', p);
+                if (res === 'dark') {
+                    document.documentElement.classList.add('tb-dark-mode');
+                    if (document.body) document.body.classList.add('tb-dark-mode');
+                } else {
+                    document.documentElement.classList.remove('tb-dark-mode');
+                    if (document.body) document.body.classList.remove('tb-dark-mode');
+                }
+            }
+            if (!window.__tbTheme) {
+                var pref = 'system';
+                try { pref = localStorage.getItem(KEY) || 'system'; } catch (e) {}
+                applyTheme(pref);
+                window.__tbTheme = {
+                    get: function () { return pref; },
+                    set: function (p) {
+                        pref = (p === 'light' || p === 'dark' || p === 'system') ? p : 'system';
+                        applyTheme(pref);
+                        try { localStorage.setItem(KEY, pref); } catch (e) {}
+                        document.dispatchEvent(new CustomEvent('tb-theme-change', { detail: { pref: pref, resolved: resolvePref(pref) } }));
+                    },
+                    cycle: function () {
+                        var order = ['light', 'dark', 'system'];
+                        this.set(order[(order.indexOf(pref) + 1) % order.length]);
+                    }
+                };
+            }
+            window.ThemeColorScheme = window.__tbTheme;
+
             var btn = document.getElementById('{$toggleId}');
             if (!btn || btn.dataset.tbInit) return;
             btn.dataset.tbInit = '1';
