@@ -4574,20 +4574,33 @@ class BlockRenderer
         </div>";
     }
 
+    public function headerIconHtml(mixed $value): string
+    {
+        $raw = $this->iconHtml($value);
+        if ($raw === '') {
+            return '';
+        }
+
+        return '<span class="tb-header-icon-slot" aria-hidden="true">' . $raw . '</span>';
+    }
+
     protected function renderHeaderModernV1(array $props, string $inner, string $id): string
     {
-        $bgColor = $this->headerModernColor($props['bgColor'] ?? null, '#ffffff');
-        $textColor = $this->headerModernColor($props['textColor'] ?? null, '#172033');
-        $ctaColor = $this->headerModernColor($props['ctaColor'] ?? null, '#4f46e5');
+        $data = \SaaSPlatform\ThemeRuntime\Header\HeaderDataResolver::resolve($props, $this->context);
+        $brand = $data['brand'];
+        $nav = $data['navigation'];
+        $actions = $data['actions'];
+        $styleData = $data['style'];
+
+        $bgColor = $this->headerModernColor($styleData['bg_color'] ?? null, '#ffffff');
+        $textColor = $this->headerModernColor($styleData['text_color'] ?? null, '#172033');
+        $ctaColor = $this->headerModernColor($actions['cta']['color_start'] ?? null, '#4f46e5');
         $ctaTextColor = $this->readableTextColorOn($ctaColor) ?? '#ffffff';
 
-        $brandName = trim($this->stringify($props['brandName'] ?? 'برند شما'));
-        $brandName = $this->escape($brandName !== '' ? $brandName : 'برند شما');
-        $homeUrl = $this->linkHref($props['homeUrl'] ?? '/', '/');
-        $logoUrl = trim($this->stringify($props['logoUrl'] ?? ''));
-        $logoSrc = $logoUrl !== '' ? $this->escapeUrl($logoUrl, '') : '';
-        $mobileLogoUrl = trim($this->stringify($props['mobileLogoUrl'] ?? ''));
-        $mobileLogoSrc = $mobileLogoUrl !== '' ? $this->escapeUrl($mobileLogoUrl, '') : '';
+        $brandName = $this->escape($brand['name']);
+        $homeUrl = $this->linkHref($brand['url'] ?? '/', '/');
+        $logoSrc = $brand['image'] !== '' ? $this->escapeUrl($brand['image'], '') : '';
+        $mobileLogoSrc = $brand['mobile_image'] !== '' ? $this->escapeUrl($brand['mobile_image'], '') : '';
         $logo = $logoSrc !== ''
             ? '<img class="tb-header-modern__logo" src="' . $logoSrc . '" alt="' . $brandName . '">'
             : '<span>' . $brandName . '</span>';
@@ -4596,26 +4609,27 @@ class BlockRenderer
             : '';
 
         $menuHtml = '';
-        $menuItems = $props['menuItems'] ?? [];
-        foreach (is_array($menuItems) ? $menuItems : [] as $item) {
-            $label = trim($this->stringify(is_array($item) ? ($item['label'] ?? '') : ''));
+        foreach ($nav['items'] as $item) {
+            $label = trim($this->stringify($item['label'] ?? ''));
             if ($label === '') {
                 continue;
             }
-            $url = $this->escapeUrl($this->stringify(is_array($item) ? ($item['url'] ?? '#') : '#'), '#');
-            $menuHtml .= '<a class="tb-header-modern__link" href="' . $url . '">' . $this->escape($label) . '</a>';
+            $url = $this->escapeUrl($this->stringify($item['url'] ?? '#'), '#');
+            $iconHtml = !empty($item['icon']) ? $this->headerIconHtml($item['icon']) . ' ' : '';
+            $menuHtml .= '<a class="tb-header-modern__link" href="' . $url . '">' . $iconHtml . $this->escape($label) . '</a>';
         }
 
-        $ctaText = trim($this->stringify($props['ctaText'] ?? 'شروع کنید'));
-        $ctaUrl = $this->linkHref($props['ctaUrl'] ?? '#', '#');
+        $ctaText = trim($this->stringify($actions['cta']['text'] ?? ''));
+        $ctaUrl = $this->linkHref($actions['cta']['url'] ?? '#', '#');
         $ctaHtml = '';
         if ($ctaText !== '' && $this->showsLink($ctaUrl)) {
-            $ctaGlow = $this->flag($props['ctaGlow'] ?? false);
+            $ctaGlow = $this->flag($props['ctaGlow'] ?? false) || !empty($actions['cta']['glow_enabled']);
             $ctaGlowClass = $ctaGlow ? ' is-glow' : '';
-            $ctaHtml = '<a class="tb-header-modern__cta' . $ctaGlowClass . '" href="' . $ctaUrl . '"' . $this->deadLinkMark($ctaUrl) . '>' . $this->escape($ctaText) . '</a>';
+            $ctaIconHtml = !empty($actions['cta']['icon']) ? $this->headerIconHtml($actions['cta']['icon']) . ' ' : '';
+            $ctaHtml = '<a class="tb-header-modern__cta' . $ctaGlowClass . '" href="' . $ctaUrl . '"' . $this->deadLinkMark($ctaUrl) . '>' . $ctaIconHtml . $this->escape($ctaText) . '</a>';
         }
 
-        $phone = trim($this->stringify($props['phone'] ?? ''));
+        $phone = trim($this->stringify($actions['phone'] ?? ''));
         $phoneHtml = '';
         if ($phone !== '') {
             $phoneHref = preg_replace('/[^0-9+]/', '', strtr($phone, ['۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4', '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9', '٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4', '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9'])) ?: '';
@@ -4679,26 +4693,27 @@ class BlockRenderer
         $rootId = 'tb-header-nimbus-' . $safeId;
         $menuId = 'tgn01-menu-' . $safeId;
 
-        $brandName = trim($this->stringify($props['brand_name'] ?? ''));
-        if ($brandName === '') {
-            $brandName = trim($this->stringify($this->context['site_title'] ?? ''));
-        }
-        $escapedBrand = $this->escape($brandName !== '' ? $brandName : 'برند شما');
+        $data = \SaaSPlatform\ThemeRuntime\Header\HeaderDataResolver::resolve($props, $this->context);
+        $brand = $data['brand'];
+        $nav = $data['navigation'];
+        $actions = $data['actions'];
+        $style = $data['style'];
 
-        $homeUrl = $this->linkHref($props['home_url'] ?? '/', '/');
+        $escapedBrand = $this->escape($brand['name'] !== '' ? $brand['name'] : 'برند شما');
+        $homeUrl = $this->linkHref($brand['url'] ?? '/', '/');
 
-        $logoUrl = trim($this->stringify($props['logo_url'] ?? ''));
-        $logoSrc = $logoUrl !== '' ? $this->escapeUrl($this->mediaSrc($logoUrl), '') : '';
-        $logoBadgeSymbol = trim($this->stringify($props['logo_badge_symbol'] ?? '◆'));
-        $escapedBadgeSymbol = $this->escape($logoBadgeSymbol !== '' ? $logoBadgeSymbol : '◆');
+        $logoSrc = $brand['image'] !== '' ? $this->escapeUrl($brand['image'], '') : '';
+        $logoBadgeSymbol = $brand['badge_symbol'] !== '' ? $brand['badge_symbol'] : '◆';
+        $escapedBadgeSymbol = $this->escape($logoBadgeSymbol);
 
+        $badgeContent = !empty($brand['icon']) ? $this->headerIconHtml($brand['icon']) : $escapedBadgeSymbol;
         $logoHtml = $logoSrc !== ''
             ? '<img src="' . $logoSrc . '" alt="' . $escapedBrand . '" class="tb-header-nimbus__logo size-8 rounded-[10px] object-contain">'
-            : '<span aria-hidden="true" class="tb-header-nimbus__badge grid size-8 place-items-center rounded-[10px] bg-gradient-to-br from-[var(--color-tgn01-cta1)] to-[var(--color-tgn01-cta2)] text-xs text-white shadow-[0_4px_12px_-2px_var(--color-tgn01-cta2)]">' . $escapedBadgeSymbol . '</span>';
+            : '<span aria-hidden="true" class="tb-header-nimbus__badge grid size-8 place-items-center rounded-[10px] bg-gradient-to-br from-[var(--color-tgn01-cta1)] to-[var(--color-tgn01-cta2)] text-xs text-white shadow-[0_4px_12px_-2px_var(--color-tgn01-cta2)]">' . $badgeContent . '</span>';
 
-        $rawCtaStart = trim($this->stringify($props['cta_color_start'] ?? '#e20c35'));
-        $rawCtaEnd = trim($this->stringify($props['cta_color_end'] ?? '#c4008d'));
-        $rawInk = trim($this->stringify($props['ink_color'] ?? '#211c48'));
+        $rawCtaStart = trim($this->stringify($actions['cta']['color_start'] ?? '#e20c35'));
+        $rawCtaEnd = trim($this->stringify($actions['cta']['color_end'] ?? '#c4008d'));
+        $rawInk = trim($this->stringify($style['ink_color'] ?? '#211c48'));
 
         $ctaColor1 = $this->cssColor($rawCtaStart, '#e20c35');
         $ctaColor2 = $this->cssColor($rawCtaEnd, '#c4008d');
@@ -4711,60 +4726,62 @@ class BlockRenderer
             . ';--tgn01-cta1:' . $this->escapeAttr($ctaColor1)
             . ';--tgn01-cta2:' . $this->escapeAttr($ctaColor2) . ';';
 
-        $currentPath = parse_url($this->context['current_url'] ?? (request()->getRequestUri() ?? '/'), PHP_URL_PATH) ?? '/';
-        $currentPath = rtrim($currentPath, '/') ?: '/';
-
-        $rawMenuItems = $props['menu_items'] ?? [
-            ['label' => 'صفحه اصلی', 'url' => '/'],
-            ['label' => 'محصولات', 'url' => '/products'],
-            ['label' => 'تعرفه‌ها', 'url' => '/pricing'],
-            ['label' => 'وبلاگ', 'url' => '/blog'],
-        ];
-
         $desktopMenuHtml = '';
         $mobileMenuHtml = '';
 
-        foreach (is_array($rawMenuItems) ? $rawMenuItems : [] as $item) {
-            if (!is_array($item)) {
-                continue;
-            }
+        foreach ($nav['items'] as $item) {
             $label = trim($this->stringify($item['label'] ?? ''));
             if ($label === '') {
                 continue;
             }
             $url = $this->linkHref($item['url'] ?? '#', '#');
             $escapedLabel = $this->escape($label);
-            $itemPath = parse_url($url, PHP_URL_PATH) ?? '';
-            $itemPath = rtrim($itemPath, '/') ?: '/';
-            $isActive = ($url !== '#' && $itemPath !== '' && $itemPath === $currentPath);
-            $ariaCurrent = $isActive ? ' aria-current="page"' : '';
+            $iconHtml = !empty($item['icon']) ? $this->headerIconHtml($item['icon']) . ' ' : '';
+            $badgeHtml = !empty($item['badge']) ? ' <span class="ms-1 rounded bg-white/50 px-1 text-xs">' . $this->escape($item['badge']) . '</span>' : '';
+            $ariaCurrent = !empty($item['is_active']) ? ' aria-current="page"' : '';
 
-            $desktopMenuHtml .= '<li><a href="' . $url . '"' . $ariaCurrent . ' class="tb-header-nimbus__link flex h-11 items-center rounded-xl px-3.5 text-sm font-semibold text-[var(--color-tgn01-ink)]/80 transition-colors hover:bg-white/55 hover:text-[var(--color-tgn01-ink)] aria-[current=page]:bg-white/70 aria-[current=page]:text-[var(--color-tgn01-ink)]">' . $escapedLabel . '</a></li>';
-            $mobileMenuHtml .= '<a href="' . $url . '"' . $ariaCurrent . ' class="tb-header-nimbus__mobile-link flex h-12 items-center rounded-xl px-4 text-[15px] font-semibold hover:bg-white/60">' . $escapedLabel . '</a>';
+            $desktopMenuHtml .= '<li><a href="' . $url . '"' . $ariaCurrent . ' class="tb-header-nimbus__link flex h-11 items-center gap-1.5 rounded-xl px-3.5 text-sm font-semibold text-[var(--color-tgn01-ink)]/80 transition-colors hover:bg-white/55 hover:text-[var(--color-tgn01-ink)] aria-[current=page]:bg-white/70 aria-[current=page]:text-[var(--color-tgn01-ink)]">' . $iconHtml . $escapedLabel . $badgeHtml . '</a></li>';
+            $mobileMenuHtml .= '<a href="' . $url . '"' . $ariaCurrent . ' class="tb-header-nimbus__mobile-link flex h-12 items-center gap-2 rounded-xl px-4 text-[15px] font-semibold hover:bg-white/60">' . $iconHtml . $escapedLabel . $badgeHtml . '</a>';
         }
 
-        $secondaryLabel = trim($this->stringify($props['secondary_label'] ?? 'ورود'));
-        $secondaryUrl = $this->linkHref($props['secondary_url'] ?? '/login', '/login');
+        // Action buttons (search, cart, account)
+        $actionButtonsHtml = '';
+        if (!empty($actions['show_search'])) {
+            $actionButtonsHtml .= '<a href="/shop" class="tb-header-nimbus__action-btn" aria-label="جستجو">' . $this->headerIconHtml('search') . '</a>';
+        }
+        if (!empty($actions['show_cart'])) {
+            $actionButtonsHtml .= '<a href="/cart" class="tb-header-nimbus__action-btn" aria-label="سبد خرید">' . $this->headerIconHtml('shopping-bag') . '<span class="tb-header-nimbus__cart-badge" data-tb-cart-count>0</span></a>';
+        }
+        if (!empty($actions['show_account'])) {
+            $actionButtonsHtml .= '<a href="/login" class="tb-header-nimbus__action-btn" aria-label="حساب کاربری">' . $this->headerIconHtml('user') . '</a>';
+        }
+
+        $secondaryLabel = trim($this->stringify($actions['cta2']['text'] ?? ''));
+        $secondaryUrl = $this->linkHref($actions['cta2']['url'] ?? '/login', '/login');
         $secondaryHtml = '';
         $mobileSecondaryHtml = '';
         if ($secondaryLabel !== '') {
             $escapedSec = $this->escape($secondaryLabel);
-            $secondaryHtml = '<a href="' . $secondaryUrl . '" class="tb-header-nimbus__secondary flex h-11 items-center rounded-xl px-3.5 text-sm font-semibold text-[var(--color-tgn01-ink)]/80 transition-colors hover:bg-white/55 hover:text-[var(--color-tgn01-ink)] max-sm:hidden">' . $escapedSec . '</a>';
-            $mobileSecondaryHtml = '<a href="' . $secondaryUrl . '" class="tb-header-nimbus__mobile-secondary mt-1 flex h-12 items-center rounded-xl rounded-t-none border-t border-[var(--color-tgn01-ink)]/10 px-4 text-[15px] font-semibold hover:bg-white/60">' . $escapedSec . '</a>';
+            $secIcon = !empty($actions['cta2']['icon']) ? $this->headerIconHtml($actions['cta2']['icon']) . ' ' : '';
+            $secondaryHtml = '<a href="' . $secondaryUrl . '" class="tb-header-nimbus__secondary flex h-11 items-center gap-1.5 rounded-xl px-3.5 text-sm font-semibold text-[var(--color-tgn01-ink)]/80 transition-colors hover:bg-white/55 hover:text-[var(--color-tgn01-ink)] max-sm:hidden">' . $secIcon . $escapedSec . '</a>';
+            $mobileSecondaryHtml = '<a href="' . $secondaryUrl . '" class="tb-header-nimbus__mobile-secondary mt-1 flex h-12 items-center gap-2 rounded-xl rounded-t-none border-t border-[var(--color-tgn01-ink)]/10 px-4 text-[15px] font-semibold hover:bg-white/60">' . $secIcon . $escapedSec . '</a>';
         }
 
-        $ctaLabel = trim($this->stringify($props['cta_label'] ?? 'شروع رایگان'));
-        $ctaUrl = $this->linkHref($props['cta_url'] ?? '/register', '/register');
+        $ctaLabel = trim($this->stringify($actions['cta']['text'] ?? ''));
+        $ctaUrl = $this->linkHref($actions['cta']['url'] ?? '/register', '/register');
         $ctaHtml = '';
         if ($ctaLabel !== '') {
             $escapedCta = $this->escape($ctaLabel);
+            $ctaIcon = !empty($actions['cta']['icon']) ? $this->headerIconHtml($actions['cta']['icon']) . ' ' : '';
             $ctaHtml = '<a href="' . $ctaUrl . '" class="tb-header-nimbus__cta group flex h-11 items-center gap-1.5 rounded-xl bg-gradient-to-br from-[var(--color-tgn01-cta1)] to-[var(--color-tgn01-cta2)] px-4 text-sm font-bold text-white shadow-[0_8px_20px_-4px_var(--color-tgn01-cta2)] transition-[translate,box-shadow] duration-150 hover:-translate-y-0.5 hover:shadow-[0_12px_26px_-4px_var(--color-tgn01-cta2)] sm:px-5">'
+                . $ctaIcon
                 . '<span>' . $escapedCta . '</span>'
                 . '<span aria-hidden="true" class="transition-transform group-hover:-translate-x-0.5">←</span>'
                 . '</a>';
         }
 
-        $versionAttr = !empty($props['asset_version']) ? ' data-asset-version="' . $this->escapeAttr((string) $props['asset_version']) . '"' : '';
+        $version = !empty($data['asset_version']) ? (string) $data['asset_version'] : '1.2.0';
+        $versionAttr = ' data-asset-version="' . $this->escapeAttr($version) . '"';
 
         $script = '<script>(function(){'
             . 'var h=document.getElementById("' . $rootId . '");if(!h||h.dataset.nimbusInit)return;h.dataset.nimbusInit="1";'
@@ -4789,6 +4806,7 @@ class BlockRenderer
             . '</ul>'
             . '</nav>'
             . '<div class="tb-header-nimbus__actions flex items-center gap-1.5 max-md:ms-auto">'
+            . $actionButtonsHtml
             . $secondaryHtml
             . $ctaHtml
             . '<button type="button" popovertarget="' . $menuId . '" data-nimbus-toggle="' . $menuId . '" aria-controls="' . $menuId . '" aria-expanded="false" aria-label="باز کردن منو" class="tb-header-nimbus__burger grid size-11 cursor-pointer place-items-center rounded-xl text-[var(--color-tgn01-ink)] hover:bg-white/55 md:hidden">'
@@ -4915,21 +4933,11 @@ class BlockRenderer
         $hasMegaMenu = false;
         if (trim($inner) !== '') {
             $menuHtml = $inner;
-        } elseif (($props['nav_source'] ?? 'custom') === 'menu' && is_string($this->context['menu_html'] ?? null) && trim($this->context['menu_html']) !== '') {
+        } elseif (($props['nav_source'] ?? '') === 'menu' && is_string($this->context['menu_html'] ?? null) && trim($this->context['menu_html']) !== '') {
             $menuHtml = $this->context['menu_html'];
         } else {
-            $links = $props['nav_links'] ?? $props['links'] ?? [];
-            if (is_string($links)) {
-                $decodedLinks = json_decode($links, true);
-                $links = is_array($decodedLinks) ? $decodedLinks : [];
-            }
-            if (!is_array($links) || $links === []) {
-                $links = [
-                    ['label' => 'خانه', 'url' => '/'],
-                    ['label' => 'فروشگاه', 'url' => '/shop'],
-                    ['label' => 'تماس با ما', 'url' => '/contact'],
-                ];
-            }
+            $resolvedHeader = \SaaSPlatform\ThemeRuntime\Header\HeaderDataResolver::resolve($props, $this->context);
+            $links = $resolvedHeader['navigation']['items'];
             foreach ($links as $link) {
                 if (!is_array($link)) {
                     continue;
@@ -4939,7 +4947,7 @@ class BlockRenderer
                     continue;
                 }
                 $url = $this->linkHref($link['url'] ?? '#', '#');
-                // ADR-084: an optional icon before the item's label.
+                // ADR-084: an optional icon before the item's label with bounding-box lock.
                 $linkIcon = trim($this->stringify($link['icon'] ?? ''));
                 $linkIconHtml = $linkIcon !== '' ? '<span class="tb-nav-header-link-icon" aria-hidden="true">' . $this->iconHtml($linkIcon) . '</span>' : '';
                 $mega = $this->normalizeMegaMenuData($link);

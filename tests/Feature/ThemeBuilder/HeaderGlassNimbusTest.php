@@ -147,16 +147,16 @@ class HeaderGlassNimbusTest extends TestCase
         $this->assertSame('paid', $preset->access_type, 'Must NOT be free');
         $this->assertSame(490000, $preset->price);
         $this->assertTrue((bool) $preset->is_active);
-        $this->assertSame('1.0.0', $preset->current_version);
+        $this->assertSame('1.2.0', $preset->current_version);
         $this->assertIsArray($preset->blocks);
         $this->assertSame('header_glass_nimbus', $preset->blocks[0]['type']);
 
         $version = CanvasAssetVersion::where('asset_kind', AssetRef::KIND_HEADER)
             ->where('asset_slug', 'header-glass-nimbus')
-            ->where('version', '1.0.0')
+            ->where('version', '1.2.0')
             ->first();
 
-        $this->assertNotNull($version, 'Initial asset version record must exist');
-        $this->assertStringContainsString('انتشار اولیه هدر شناور شیشه‌ای مدرن', $version->changelog);
+        $this->assertNotNull($version, 'Asset version 1.2.0 record must exist');
+        $this->assertStringContainsString('ارتقا به هسته مشترک هدرها', $version->changelog);
     }
 }

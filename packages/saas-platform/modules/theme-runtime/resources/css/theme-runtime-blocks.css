@@ -1563,6 +1563,82 @@ a.tb-slide-link { display: block; color: inherit; text-decoration: none; width: 
   }
 }
 
+/* ─── Icon Bounding-Box Lock & Nimbus Actions ─────────────────────────────── */
+.tb-header-icon-slot,
+.tb-nav-header-link-icon,
+.tb-nav-header-cta-icon {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  min-height: 18px !important;
+  max-width: 18px !important;
+  max-height: 18px !important;
+  flex-shrink: 0 !important;
+  line-height: 1 !important;
+  overflow: hidden !important;
+  vertical-align: middle !important;
+}
+.tb-header-icon-slot > svg,
+.tb-header-icon-slot > .tb-icon-svg,
+.tb-nav-header-link-icon > svg,
+.tb-nav-header-link-icon > .tb-icon-svg,
+.tb-nav-header-cta-icon > svg,
+.tb-nav-header-cta-icon > .tb-icon-svg {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain !important;
+  display: block !important;
+}
+.tb-header-icon-slot > i,
+.tb-nav-header-link-icon > i,
+.tb-nav-header-cta-icon > i {
+  font-size: 16px !important;
+  line-height: 1 !important;
+}
+
+.tb-header-nimbus__action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background-color: rgba(255, 255, 255, 0.38);
+  color: var(--color-tgn01-ink);
+  text-decoration: none;
+  position: relative;
+  transition: background-color 150ms ease, transform 150ms ease;
+  cursor: pointer;
+}
+.tb-header-nimbus__action-btn:hover {
+  background-color: rgba(255, 255, 255, 0.65);
+  transform: translateY(-1px);
+}
+.tb-header-nimbus__cart-badge {
+  position: absolute;
+  top: -0.25rem;
+  inset-inline-end: -0.25rem;
+  display: grid;
+  place-items: center;
+  min-width: 1.125rem;
+  height: 1.125rem;
+  padding: 0 0.25rem;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, var(--color-tgn01-cta1), var(--color-tgn01-cta2));
+  color: #ffffff;
+  font-size: 0.65rem;
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: 0 2px 6px -1px var(--color-tgn01-cta2);
+}
+
+
 /* ─── PLATFORM-THEME-SPEC-v1 commercial widgets (ADR-083) ────────────────
    CommercialBlockRendererTrait. Every colour is a --tb-* token (fallbacks
    are the platform defaults), so the same markup is dark under solar-dark

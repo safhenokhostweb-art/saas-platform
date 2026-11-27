@@ -58,6 +58,13 @@
     ],
     "reviewed": [
       {
+        "path": "database/migrations/2026_11_27_130000_update_header_glass_nimbus_version_1_2_0.php",
+        "sha256": "04b77e7873368f9e45a6600470f1e0c447b4b3e760cc277c51c01efd7db96f10",
+        "reviewed_by": "Owner (approved in session 2026-11-27 for Header Core 1.2.0: header_glass_nimbus)",
+        "reviewed_at": "2026-11-27",
+        "reason": "Idempotent update migration: updates header-glass-nimbus preset to version 1.2.0 and inserts 1.2.0 version record into canvas_asset_versions; access_type = paid is preserved."
+      },
+      {
         "path": "database/migrations/2026_11_27_110000_seed_header_glass_nimbus_preset.php",
         "sha256": "65f00c1ad57e01c2c984c9fcc903686ffff264ecc38c7c450003a2c466e1f4d1",
         "reviewed_by": "Owner (approved in session 2026-11-27 for Header Project: header_glass_nimbus)",
