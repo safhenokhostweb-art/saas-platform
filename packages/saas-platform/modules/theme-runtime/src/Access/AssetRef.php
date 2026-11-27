@@ -23,6 +23,10 @@ final class AssetRef
 
     public const KIND_HEADER = 'header';
 
+    public const KIND_FOOTER = 'footer';
+
+    public const KIND_SECTION = 'section';
+
     public const KIND_BUTTON_PACK = 'button_pack';
 
     public const KIND_ICON_PACK = 'icon_pack';
@@ -32,6 +36,8 @@ final class AssetRef
         self::KIND_WIDGET,
         self::KIND_MOTION,
         self::KIND_HEADER,
+        self::KIND_FOOTER,
+        self::KIND_SECTION,
         self::KIND_BUTTON_PACK,
         self::KIND_ICON_PACK,
     ];
@@ -41,6 +47,8 @@ final class AssetRef
         self::KIND_WIDGET => 'ویجت',
         self::KIND_MOTION => 'موشن گرافیک (تکی)',
         self::KIND_HEADER => 'قالب هدر (تکی و دسته‌ای)',
+        self::KIND_FOOTER => 'قالب فوتر (تکی و دسته‌ای)',
+        self::KIND_SECTION => 'سکشن آماده (تکی و دسته‌ای)',
         self::KIND_BUTTON_PACK => 'کتابخانه دکمه‌ها (دسته‌ای/پکیجی)',
         self::KIND_ICON_PACK => 'کتابخانه آیکن‌های اختصاصی (دسته‌ای/پکیجی)',
     ];
@@ -59,7 +67,7 @@ final class AssetRef
      */
     public static function isIndividualKind(string $kind): bool
     {
-        return in_array($kind, [self::KIND_MOTION, self::KIND_HEADER, self::KIND_TEMPLATE, self::KIND_WIDGET], true);
+        return in_array($kind, [self::KIND_MOTION, self::KIND_HEADER, self::KIND_FOOTER, self::KIND_SECTION, self::KIND_TEMPLATE, self::KIND_WIDGET], true);
     }
 
     /** Library keys and widget types, e.g. "solar-header", "module:motion", "solar_calculator". */

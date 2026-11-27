@@ -100,6 +100,7 @@ class Theme extends Model
         'status',
         'published_at',
         'is_marketplace',
+        'is_free_public',
         'marketplace_price',
         'license_type',
         'distribution_model',
@@ -117,6 +118,7 @@ class Theme extends Model
         'settings'         => 'array',
         'published_at'     => 'datetime',
         'is_marketplace'   => 'boolean',
+        'is_free_public'   => 'boolean',
         'marketplace_price'=> 'integer',
         'installs_count'   => 'integer',
     ];
@@ -306,14 +308,29 @@ class Theme extends Model
 
     // ─── Page Management ────────────────────────────────────────────────────
 
+    public const STANDARD_PAGES = [
+        'home'           => ['title' => 'صفحه اصلی', 'slug' => '', 'blocks' => []],
+        'shop'           => ['title' => 'فروشگاه', 'slug' => 'shop', 'blocks' => []],
+        'product_detail' => ['title' => 'محصول تکی', 'slug' => 'product_detail', 'blocks' => []],
+        'cart'           => ['title' => 'سبد خرید', 'slug' => 'cart', 'blocks' => []],
+        'checkout'       => ['title' => 'تسویه حساب', 'slug' => 'checkout', 'blocks' => []],
+        'blog'           => ['title' => 'وبلاگ', 'slug' => 'blog', 'blocks' => []],
+        'post_detail'    => ['title' => 'مطلب تکی', 'slug' => 'post_detail', 'blocks' => []],
+    ];
+
     public function getPageList(): array
     {
         $pages = $this->pages ?? [];
         if (empty($pages)) {
-            return [
-                'home' => ['title' => 'صفحه اصلی', 'slug' => '', 'blocks' => []],
-            ];
+            return self::STANDARD_PAGES;
         }
+
+        foreach (self::STANDARD_PAGES as $key => $defaultPage) {
+            if (!isset($pages[$key])) {
+                $pages[$key] = $defaultPage;
+            }
+        }
+
         return $pages;
     }
 
@@ -348,10 +365,9 @@ class Theme extends Model
 
     public function scopeMarketplace($query)
     {
-        return $query->where(function ($q) {
-            $q->where('is_marketplace', true)
-              ->orWhere('distribution_model', self::DISTRIBUTION_MARKETPLACE);
-        })->published();
+        return $query->where('is_marketplace', true)
+            ->where('distribution_model', self::DISTRIBUTION_MARKETPLACE)
+            ->published();
     }
 
     public function marketplaceMeta()

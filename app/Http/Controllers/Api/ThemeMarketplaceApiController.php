@@ -54,6 +54,20 @@ class ThemeMarketplaceApiController extends Controller
             ->orderBy('name')
             ->get()
             ->filter(fn (Theme $t) => $t->isCommerciallyEligible())
+            ->filter(function (Theme $t) use ($site) {
+                if (\Illuminate\Support\Facades\Schema::hasTable('platform_asset_policies')) {
+                    $policy = \Illuminate\Support\Facades\DB::table('platform_asset_policies')
+                        ->where('asset_kind', 'theme')
+                        ->where('asset_key', $t->slug)
+                        ->first();
+                    if ($policy && !empty($policy->required_vertical)) {
+                        if ($site->business_vertical !== $policy->required_vertical && !$t->hasLicenseForSite($site->id)) {
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            })
             ->map(fn ($t) => $this->formatTheme($t, $site->id));
 
         return response()->json(['success' => true, 'themes' => $themes->values()->all()]);
@@ -135,7 +149,9 @@ class ThemeMarketplaceApiController extends Controller
             'redirect_back_url' => 'required|string|url|max:500',
         ]);
 
-        if ($theme->marketplace_price === 0) {
+        $isFree = ((bool) ($theme->is_free_public ?? false)) && ($theme->license_type === 'free') && ($theme->marketplace_price === 0);
+
+        if ($isFree) {
             $assignment = $this->assignments->assign(
                 $site,
                 $theme,
@@ -148,6 +164,13 @@ class ThemeMarketplaceApiController extends Controller
                 'license_key' => $assignment->themeLicense->license_key,
                 'release_id'  => $assignment->release->id,
             ]);
+        }
+
+        if ($theme->marketplace_price <= 0) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'theme_not_available_for_purchase',
+            ], 422);
         }
 
         // Pending order already exists?
@@ -282,6 +305,7 @@ class ThemeMarketplaceApiController extends Controller
     {
         $meta = $theme->marketplaceMeta;
         $release = $theme->currentRelease;
+        $isFree = ((bool) ($theme->is_free_public ?? false)) && ($theme->license_type === 'free') && ($theme->marketplace_price === 0);
 
         return [
             // Core
@@ -295,8 +319,8 @@ class ThemeMarketplaceApiController extends Controller
             'price_rial'     => $theme->marketplace_price,
             'annual_price'   => $meta?->annual_price,
             'lifetime_price' => $meta?->lifetime_price,
-            'is_free'        => $theme->marketplace_price === 0,
-            'license_type'   => $theme->license_type ?? 'free',
+            'is_free'        => $isFree,
+            'license_type'   => $theme->license_type ?? ($isFree ? 'free' : 'commercial'),
             // Taxonomy (Sprint 10)
             'category'       => $theme->category,
             // Badges (Sprint 10)

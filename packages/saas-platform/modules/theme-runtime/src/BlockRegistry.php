@@ -599,10 +599,10 @@ class BlockRegistry
                     // site's former `outline` option rendered as primary.
                     'style' => ['type' => 'select', 'label' => 'استایل', 'options' => ['primary' => 'اصلی', 'secondary' => 'ثانویه'], 'default' => 'primary'],
                     'style_mode' => ['type' => 'select', 'label' => 'نحوه اعمال استایل', 'options' => ['inherit' => 'پیش‌فرض قالب سایت (ارث‌بری)', 'custom' => 'استایل اختصاصی فقط این دکمه'], 'default' => 'inherit'],
-                    'pack_slug' => ['type' => 'string', 'label' => 'شناسه دسته دکمه', 'default' => ''],
-                    'preset_slug' => ['type' => 'string', 'label' => 'شناسه پریست دکمه', 'default' => ''],
-                    'asset_version' => ['type' => 'string', 'label' => 'نسخه دارایی', 'default' => ''],
-                    'preset_snapshot' => ['type' => 'array', 'label' => 'نسخه ذخیره‌شده استایل', 'default' => null],
+                    'pack_slug' => ['type' => 'string', 'label' => 'شناسه دسته دکمه', 'default' => '', 'hidden' => true],
+                    'preset_slug' => ['type' => 'string', 'label' => 'شناسه پریست دکمه', 'default' => '', 'hidden' => true],
+                    'asset_version' => ['type' => 'string', 'label' => 'نسخه دارایی', 'default' => '', 'hidden' => true],
+                    'preset_snapshot' => ['type' => 'array', 'label' => 'نسخه ذخیره‌شده استایل', 'default' => null, 'hidden' => true],
                 ],
                 'defaultProps' => [
                     'text' => '',

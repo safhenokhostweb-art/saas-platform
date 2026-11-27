@@ -58,6 +58,13 @@
     ],
     "reviewed": [
       {
+        "path": "database/migrations/2026_11_26_140000_update_canvas_and_theme_marketplace_assets.php",
+        "sha256": "10b389e94582e8488fb9ca8e9b4be69d347dd897ffd1fcbcadc6f1017ab21ead",
+        "reviewed_by": "Owner (approved in session 2026-11-26 for Canvas Asset Management Phase 1/2)",
+        "reviewed_at": "2026-11-26",
+        "reason": "Additive migration: up() creates canvas_footer_presets, canvas_section_presets, adds is_free_public to themes, and adds blocks to canvas_header_presets; down() cleanly drops only these tables and columns."
+      },
+      {
         "path": "database/migrations/2026_11_26_100000_create_canvas_unified_asset_management_tables.php",
         "sha256": "5cc9ace96e92d52aecd4352d320c57d9bb620b76ac02863d6a18139a45ae080b",
         "reviewed_by": "Owner (approved in session 2026-11-26 for Canvas Asset Management)",

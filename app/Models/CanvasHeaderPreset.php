@@ -16,6 +16,7 @@ class CanvasHeaderPreset extends Model
         'description',
         'category_label',
         'preview_image',
+        'blocks',
         'access_type',
         'price',
         'discount_price',
@@ -27,6 +28,7 @@ class CanvasHeaderPreset extends Model
     protected $casts = [
         'price' => 'integer',
         'discount_price' => 'integer',
+        'blocks' => 'array',
         'is_active' => 'boolean',
         'sort_order' => 'integer',
     ];

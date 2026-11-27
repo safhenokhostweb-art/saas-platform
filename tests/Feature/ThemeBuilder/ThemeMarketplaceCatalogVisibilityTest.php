@@ -186,4 +186,43 @@ class ThemeMarketplaceCatalogVisibilityTest extends TestCase
         $response->assertStatus(403);
         $this->assertSame('domain_mismatch', $response->json('error'));
     }
+
+    public function test_bespoke_or_unlisted_themes_are_never_in_public_marketplace(): void
+    {
+        $site = $this->makeSite('bespoke-check.test');
+
+        // Theme 1: unlisted (like solar-industry was with is_marketplace = 0)
+        $unlisted = $this->publishedTheme('unlisted-solar', 'Unlisted Solar');
+        $unlisted->update(['is_marketplace' => false]);
+
+        // Theme 2: bespoke / private distribution model
+        $bespoke = $this->publishedTheme('bespoke-theme', 'Bespoke Theme');
+        $bespoke->update(['distribution_model' => Theme::DISTRIBUTION_PRIVATE_LICENSE, 'is_marketplace' => false]);
+
+        // Theme 3: marketplace theme without explicit is_free_public flag
+        $untagged = $this->publishedTheme('commercial-theme', 'Commercial Theme');
+        $untagged->update(['is_free_public' => false, 'marketplace_price' => 0]);
+
+        // Theme 4: explicitly free public theme
+        $explicitFree = $this->publishedTheme('explicit-free-theme', 'Explicit Free Theme');
+        $explicitFree->update(['is_free_public' => true, 'marketplace_price' => 0, 'license_type' => 'free']);
+
+        $res = $this->getJson('/api/theme-marketplace', $this->licenseHeaders($site, 'bespoke-check.test'));
+        $res->assertOk();
+
+        $slugs = collect($res->json('themes'))->pluck('slug')->all();
+
+        // 1. Unlisted and bespoke themes must NOT appear
+        $this->assertNotContains('unlisted-solar', $slugs);
+        $this->assertNotContains('bespoke-theme', $slugs);
+
+        // 2. Both marketplace themes appear
+        $this->assertContains('commercial-theme', $slugs);
+        $this->assertContains('explicit-free-theme', $slugs);
+
+        // 3. Only explicitFree has is_free = true; untagged commercial-theme must NOT be free!
+        $themeMap = collect($res->json('themes'))->keyBy('slug');
+        $this->assertFalse($themeMap['commercial-theme']['is_free'], 'Theme without is_free_public must NEVER be free');
+        $this->assertTrue($themeMap['explicit-free-theme']['is_free'], 'Explicit free theme is free');
+    }
 }

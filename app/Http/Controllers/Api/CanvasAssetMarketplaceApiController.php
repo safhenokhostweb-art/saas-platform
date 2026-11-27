@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\CanvasAssetPurchaseOrder;
 use App\Models\CanvasAssetVersion;
 use App\Models\CanvasButtonPack;
+use App\Models\CanvasFooterPreset;
 use App\Models\CanvasHeaderPreset;
 use App\Models\CanvasIconPack;
+use App\Models\CanvasSectionPreset;
 use App\Models\Invoice;
 use App\Models\PaymentGateway;
 use App\Models\Site;
@@ -184,9 +186,10 @@ class CanvasAssetMarketplaceApiController extends Controller
                     'kind' => AssetRef::KIND_HEADER,
                     'slug' => $h->slug,
                     'title' => $h->title,
-                    'category_label' => $h->category_label ?: 'عمومی',
+                    'description' => $h->description,
+                    'category_label' => $h->category_label ?: 'ناوبری',
                     'preview_image' => $h->preview_image,
-                    'component_alias' => $h->component_alias,
+                    'blocks' => $h->blocks,
                     'access_type' => $h->access_type,
                     'price' => (int) $h->price,
                     'discount_price' => $h->discount_price !== null ? (int) $h->discount_price : null,
@@ -197,7 +200,61 @@ class CanvasAssetMarketplaceApiController extends Controller
                 ];
             });
 
-        // 4. Motion Graphics
+        // 4. Footer Presets
+        $footerPresets = CanvasFooterPreset::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->get()
+            ->map(function (CanvasFooterPreset $f) use ($activeGrants, $formatVersions) {
+                $ref = AssetRef::KIND_FOOTER . ':' . $f->slug;
+                $grant = $activeGrants->get($ref);
+                $curVer = $f->current_version ?: '1.0.0';
+                return [
+                    'kind' => AssetRef::KIND_FOOTER,
+                    'slug' => $f->slug,
+                    'title' => $f->title,
+                    'description' => $f->description,
+                    'category_label' => $f->category_label ?: 'فوتر',
+                    'preview_image' => $f->preview_image,
+                    'blocks' => $f->blocks,
+                    'access_type' => $f->access_type,
+                    'price' => (int) $f->price,
+                    'discount_price' => $f->discount_price !== null ? (int) $f->discount_price : null,
+                    'current_version' => $curVer,
+                    'versions_history' => $formatVersions(AssetRef::KIND_FOOTER, $f->slug, $curVer),
+                    'is_granted' => $grant !== null,
+                    'granted_version' => $grant?->granted_version,
+                ];
+            });
+
+        // 5. Section Presets
+        $sectionPresets = CanvasSectionPreset::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->get()
+            ->map(function (CanvasSectionPreset $s) use ($activeGrants, $formatVersions) {
+                $ref = AssetRef::KIND_SECTION . ':' . $s->slug;
+                $grant = $activeGrants->get($ref);
+                $curVer = $s->current_version ?: '1.0.0';
+                return [
+                    'kind' => AssetRef::KIND_SECTION,
+                    'slug' => $s->slug,
+                    'title' => $s->title,
+                    'description' => $s->description,
+                    'category_label' => $s->category_label ?: 'سکشن',
+                    'preview_image' => $s->preview_image,
+                    'blocks' => $s->blocks,
+                    'access_type' => $s->access_type,
+                    'price' => (int) $s->price,
+                    'discount_price' => $s->discount_price !== null ? (int) $s->discount_price : null,
+                    'current_version' => $curVer,
+                    'versions_history' => $formatVersions(AssetRef::KIND_SECTION, $s->slug, $curVer),
+                    'is_granted' => $grant !== null,
+                    'granted_version' => $grant?->granted_version,
+                ];
+            });
+
+        // 6. Motion Graphics
         $motions = collect();
         if (class_exists(MotionGraphic::class)) {
             $motions = MotionGraphic::query()
@@ -232,6 +289,8 @@ class CanvasAssetMarketplaceApiController extends Controller
                 'buttons' => $buttonPacks->values()->all(),
                 'icons' => $iconPacks->values()->all(),
                 'headers' => $headerPresets->values()->all(),
+                'footers' => $footerPresets->values()->all(),
+                'sections' => $sectionPresets->values()->all(),
                 'motions' => $motions->values()->all(),
             ],
             'site' => [
@@ -478,6 +537,16 @@ class CanvasAssetMarketplaceApiController extends Controller
             })(),
             AssetRef::KIND_HEADER => (function () use ($key) {
                 $preset = CanvasHeaderPreset::where('slug', $key)->firstOrFail();
+                $price = $preset->discount_price !== null ? (int) $preset->discount_price : (int) $preset->price;
+                return [$preset->access_type === 'free', $preset->current_version ?: '1.0.0', $price, $preset->title];
+            })(),
+            AssetRef::KIND_FOOTER => (function () use ($key) {
+                $preset = CanvasFooterPreset::where('slug', $key)->firstOrFail();
+                $price = $preset->discount_price !== null ? (int) $preset->discount_price : (int) $preset->price;
+                return [$preset->access_type === 'free', $preset->current_version ?: '1.0.0', $price, $preset->title];
+            })(),
+            AssetRef::KIND_SECTION => (function () use ($key) {
+                $preset = CanvasSectionPreset::where('slug', $key)->firstOrFail();
                 $price = $preset->discount_price !== null ? (int) $preset->discount_price : (int) $preset->price;
                 return [$preset->access_type === 'free', $preset->current_version ?: '1.0.0', $price, $preset->title];
             })(),

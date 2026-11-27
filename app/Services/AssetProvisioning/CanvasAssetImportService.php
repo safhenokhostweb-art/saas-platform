@@ -5,9 +5,11 @@ namespace App\Services\AssetProvisioning;
 use App\Models\CanvasAssetVersion;
 use App\Models\CanvasButtonPack;
 use App\Models\CanvasButtonPreset;
+use App\Models\CanvasFooterPreset;
 use App\Models\CanvasHeaderPreset;
 use App\Models\CanvasIconItem;
 use App\Models\CanvasIconPack;
+use App\Models\CanvasSectionPreset;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -30,6 +32,8 @@ class CanvasAssetImportService
             'icon_packs'      => 0,
             'icon_items'      => 0,
             'header_presets'  => 0,
+            'footer_presets'  => 0,
+            'section_presets' => 0,
             'motion_graphics' => 0,
             'versions'        => 0,
         ];
@@ -153,6 +157,7 @@ class CanvasAssetImportService
                             'title'           => $hData['title'] ?? $slug,
                             'category_label'  => $hData['category_label'] ?? 'عمومی',
                             'preview_image'   => $hData['preview_image'] ?? null,
+                            'blocks'          => $hData['blocks'] ?? null,
                             'component_alias' => $hData['component_alias'] ?? $slug,
                             'access_type'     => in_array($hData['access_type'] ?? '', ['free', 'paid'], true) ? $hData['access_type'] : 'free',
                             'price'           => (int) ($hData['price'] ?? 0),
@@ -171,7 +176,71 @@ class CanvasAssetImportService
                 }
             }
 
-            // 4. Motion Graphics
+            // 4. Footer Presets
+            if (!empty($payload['footer_presets']) && is_array($payload['footer_presets'])) {
+                foreach ($payload['footer_presets'] as $fData) {
+                    $slug = trim($fData['slug'] ?? '');
+                    if ($slug === '') continue;
+
+                    $version = trim($fData['version'] ?? '1.0.0');
+                    CanvasFooterPreset::query()->updateOrCreate(
+                        ['slug' => $slug],
+                        [
+                            'title'           => $fData['title'] ?? $slug,
+                            'description'     => $fData['description'] ?? null,
+                            'category_label'  => $fData['category_label'] ?? 'فوتر',
+                            'preview_image'   => $fData['preview_image'] ?? null,
+                            'blocks'          => $fData['blocks'] ?? null,
+                            'access_type'     => in_array($fData['access_type'] ?? '', ['free', 'paid'], true) ? $fData['access_type'] : 'free',
+                            'price'           => (int) ($fData['price'] ?? 0),
+                            'discount_price'  => isset($fData['discount_price']) && $fData['discount_price'] !== null ? (int) $fData['discount_price'] : null,
+                            'current_version' => $version,
+                            'is_active'       => (bool) ($fData['is_active'] ?? true),
+                            'sort_order'      => (int) ($fData['sort_order'] ?? 0),
+                        ]
+                    );
+                    $summary['footer_presets']++;
+
+                    if (!empty($version)) {
+                        $this->recordVersion(AssetRef::KIND_FOOTER, $slug, $version, $fData['changelog'] ?? 'وارد شده از فایل دسته‌ای');
+                        $summary['versions']++;
+                    }
+                }
+            }
+
+            // 5. Section Presets
+            if (!empty($payload['section_presets']) && is_array($payload['section_presets'])) {
+                foreach ($payload['section_presets'] as $sData) {
+                    $slug = trim($sData['slug'] ?? '');
+                    if ($slug === '') continue;
+
+                    $version = trim($sData['version'] ?? '1.0.0');
+                    CanvasSectionPreset::query()->updateOrCreate(
+                        ['slug' => $slug],
+                        [
+                            'title'           => $sData['title'] ?? $slug,
+                            'description'     => $sData['description'] ?? null,
+                            'category_label'  => $sData['category_label'] ?? 'سکشن',
+                            'preview_image'   => $sData['preview_image'] ?? null,
+                            'blocks'          => $sData['blocks'] ?? null,
+                            'access_type'     => in_array($sData['access_type'] ?? '', ['free', 'paid'], true) ? $sData['access_type'] : 'free',
+                            'price'           => (int) ($sData['price'] ?? 0),
+                            'discount_price'  => isset($sData['discount_price']) && $sData['discount_price'] !== null ? (int) $sData['discount_price'] : null,
+                            'current_version' => $version,
+                            'is_active'       => (bool) ($sData['is_active'] ?? true),
+                            'sort_order'      => (int) ($sData['sort_order'] ?? 0),
+                        ]
+                    );
+                    $summary['section_presets']++;
+
+                    if (!empty($version)) {
+                        $this->recordVersion(AssetRef::KIND_SECTION, $slug, $version, $sData['changelog'] ?? 'وارد شده از فایل دسته‌ای');
+                        $summary['versions']++;
+                    }
+                }
+            }
+
+            // 6. Motion Graphics
             if (!empty($payload['motion_graphics']) && is_array($payload['motion_graphics']) && class_exists(MotionGraphic::class)) {
                 foreach ($payload['motion_graphics'] as $mData) {
                     $slug = trim($mData['slug'] ?? '');

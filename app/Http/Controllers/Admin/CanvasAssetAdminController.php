@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\CanvasAssetVersion;
 use App\Models\CanvasButtonPack;
 use App\Models\CanvasButtonPreset;
+use App\Models\CanvasFooterPreset;
 use App\Models\CanvasHeaderPreset;
 use App\Models\CanvasIconItem;
 use App\Models\CanvasIconPack;
+use App\Models\CanvasSectionPreset;
 use App\Models\Site;
 use App\Models\SiteAssetGrant;
 use App\Services\AssetProvisioning\CanvasAssetProvisioningService;
@@ -58,6 +60,16 @@ class CanvasAssetAdminController extends Controller
             ->orderBy('id')
             ->get();
 
+        $footerPresets = CanvasFooterPreset::query()
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get();
+
+        $sectionPresets = CanvasSectionPreset::query()
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get();
+
         $motions = class_exists(MotionGraphic::class)
             ? MotionGraphic::query()->whereNull('archived_at')->orderBy('id')->get()
             : collect();
@@ -81,6 +93,8 @@ class CanvasAssetAdminController extends Controller
             'buttonPacks' => $buttonPacks,
             'iconPacks' => $iconPacks,
             'headerPresets' => $headerPresets,
+            'footerPresets' => $footerPresets,
+            'sectionPresets' => $sectionPresets,
             'motions' => $motions,
             'sites' => $sites,
             'grantCounts' => $grantCounts,
@@ -414,7 +428,8 @@ class CanvasAssetAdminController extends Controller
             'access_type' => ['required', Rule::in(['free', 'paid'])],
             'price' => 'nullable|required_if:access_type,paid|numeric|min:0',
             'discount_price' => 'nullable|numeric|min:0',
-            'component_alias' => 'required|string|max:100',
+            'component_alias' => 'nullable|string|max:100',
+            'blocks' => 'nullable',
             'current_version' => 'nullable|string|max:20',
             'default_config' => 'nullable',
             'is_active' => 'nullable|boolean',
@@ -429,6 +444,11 @@ class CanvasAssetAdminController extends Controller
         if (isset($data['default_config']) && is_string($data['default_config'])) {
             $decoded = json_decode($data['default_config'], true);
             $data['default_config'] = json_last_error() === JSON_ERROR_NONE ? $decoded : [];
+        }
+
+        if (isset($data['blocks']) && is_string($data['blocks'])) {
+            $decoded = json_decode($data['blocks'], true);
+            $data['blocks'] = json_last_error() === JSON_ERROR_NONE ? $decoded : [];
         }
 
         $preset = CanvasHeaderPreset::create($data);
@@ -461,7 +481,8 @@ class CanvasAssetAdminController extends Controller
             'access_type' => ['required', Rule::in(['free', 'paid'])],
             'price' => 'nullable|required_if:access_type,paid|numeric|min:0',
             'discount_price' => 'nullable|numeric|min:0',
-            'component_alias' => 'required|string|max:100',
+            'component_alias' => 'nullable|string|max:100',
+            'blocks' => 'nullable',
             'default_config' => 'nullable',
             'is_active' => 'nullable|boolean',
             'sort_order' => 'nullable|integer',
@@ -474,6 +495,11 @@ class CanvasAssetAdminController extends Controller
         if (isset($data['default_config']) && is_string($data['default_config'])) {
             $decoded = json_decode($data['default_config'], true);
             $data['default_config'] = json_last_error() === JSON_ERROR_NONE ? $decoded : [];
+        }
+
+        if (isset($data['blocks']) && is_string($data['blocks'])) {
+            $decoded = json_decode($data['blocks'], true);
+            $data['blocks'] = json_last_error() === JSON_ERROR_NONE ? $decoded : [];
         }
 
         $preset->update($data);
@@ -519,6 +545,242 @@ class CanvasAssetAdminController extends Controller
 
         return redirect()->route('admin.canvas-assets.index', ['tab' => 'headers'])
             ->with('success', "نسخه {$newVer} هدر «{$preset->title}» منتشر شد.");
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // FOOTER PRESETS
+    // ─────────────────────────────────────────────────────────────
+
+    public function storeFooterPreset(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'title' => 'required|string|max:191',
+            'slug' => 'required|string|max:100|unique:canvas_footer_presets,slug',
+            'category_label' => 'nullable|string|max:100',
+            'preview_image' => 'nullable|string|max:255',
+            'access_type' => ['required', Rule::in(['free', 'paid'])],
+            'price' => 'nullable|required_if:access_type,paid|numeric|min:0',
+            'discount_price' => 'nullable|numeric|min:0',
+            'blocks' => 'nullable',
+            'current_version' => 'nullable|string|max:20',
+            'is_active' => 'nullable|boolean',
+            'sort_order' => 'nullable|integer',
+        ]);
+
+        $data['slug'] = Str::slug($data['slug']);
+        $data['current_version'] = ($data['current_version'] ?? null) ?: '1.0.0';
+        $data['is_active'] = $request->has('is_active');
+        $data['price'] = $data['price'] ?? 0;
+
+        if (isset($data['blocks']) && is_string($data['blocks'])) {
+            $decoded = json_decode($data['blocks'], true);
+            $data['blocks'] = json_last_error() === JSON_ERROR_NONE ? $decoded : [];
+        }
+
+        $preset = CanvasFooterPreset::create($data);
+
+        CanvasAssetVersion::firstOrCreate(
+            [
+                'asset_kind' => AssetRef::KIND_FOOTER,
+                'asset_slug' => $preset->slug,
+                'version' => $preset->current_version,
+            ],
+            [
+                'changelog' => 'نسخه اولیه قالب فوتر',
+                'published_by_admin_id' => Auth::id(),
+                'published_at' => now(),
+            ]
+        );
+
+        return redirect()->route('admin.canvas-assets.index', ['tab' => 'footers'])
+            ->with('success', "قالب فوتر «{$preset->title}» ایجاد شد.");
+    }
+
+    public function updateFooterPreset(Request $request, CanvasFooterPreset $preset): RedirectResponse
+    {
+        $data = $request->validate([
+            'title' => 'required|string|max:191',
+            'slug' => ['required', 'string', 'max:100', Rule::unique('canvas_footer_presets', 'slug')->ignore($preset->id)],
+            'category_label' => 'nullable|string|max:100',
+            'preview_image' => 'nullable|string|max:255',
+            'access_type' => ['required', Rule::in(['free', 'paid'])],
+            'price' => 'nullable|required_if:access_type,paid|numeric|min:0',
+            'discount_price' => 'nullable|numeric|min:0',
+            'blocks' => 'nullable',
+            'is_active' => 'nullable|boolean',
+            'sort_order' => 'nullable|integer',
+        ]);
+
+        $data['slug'] = Str::slug($data['slug']);
+        $data['is_active'] = $request->has('is_active');
+        $data['price'] = $data['price'] ?? 0;
+
+        if (isset($data['blocks']) && is_string($data['blocks'])) {
+            $decoded = json_decode($data['blocks'], true);
+            $data['blocks'] = json_last_error() === JSON_ERROR_NONE ? $decoded : [];
+        }
+
+        $preset->update($data);
+
+        return redirect()->route('admin.canvas-assets.index', ['tab' => 'footers'])
+            ->with('success', "قالب فوتر «{$preset->title}» بروزرسانی شد.");
+    }
+
+    public function destroyFooterPreset(CanvasFooterPreset $preset): RedirectResponse
+    {
+        $title = $preset->title;
+        $preset->delete();
+
+        return redirect()->route('admin.canvas-assets.index', ['tab' => 'footers'])
+            ->with('success', "قالب فوتر «{$title}» حذف شد.");
+    }
+
+    public function publishFooterPresetVersion(Request $request, CanvasFooterPreset $preset): RedirectResponse
+    {
+        $data = $request->validate([
+            'version' => 'required|string|max:20|regex:/^\d+\.\d+\.\d+$/',
+            'changelog' => 'required|string|max:2000',
+        ]);
+
+        $newVer = $data['version'];
+        $current = $preset->current_version;
+
+        if (version_compare($newVer, $current, '<=')) {
+            return redirect()->back()
+                ->withErrors(['version' => "نسخه جدید ({$newVer}) باید بزرگتر از نسخه فعلی ({$current}) باشد."]);
+        }
+
+        CanvasAssetVersion::create([
+            'asset_kind' => AssetRef::KIND_FOOTER,
+            'asset_slug' => $preset->slug,
+            'version' => $newVer,
+            'changelog' => $data['changelog'],
+            'published_by_admin_id' => Auth::id(),
+            'published_at' => now(),
+        ]);
+
+        $preset->update(['current_version' => $newVer]);
+
+        return redirect()->route('admin.canvas-assets.index', ['tab' => 'footers'])
+            ->with('success', "نسخه {$newVer} فوتر «{$preset->title}» منتشر شد.");
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // SECTION PRESETS
+    // ─────────────────────────────────────────────────────────────
+
+    public function storeSectionPreset(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'title' => 'required|string|max:191',
+            'slug' => 'required|string|max:100|unique:canvas_section_presets,slug',
+            'category_label' => 'nullable|string|max:100',
+            'preview_image' => 'nullable|string|max:255',
+            'access_type' => ['required', Rule::in(['free', 'paid'])],
+            'price' => 'nullable|required_if:access_type,paid|numeric|min:0',
+            'discount_price' => 'nullable|numeric|min:0',
+            'blocks' => 'nullable',
+            'current_version' => 'nullable|string|max:20',
+            'is_active' => 'nullable|boolean',
+            'sort_order' => 'nullable|integer',
+        ]);
+
+        $data['slug'] = Str::slug($data['slug']);
+        $data['current_version'] = ($data['current_version'] ?? null) ?: '1.0.0';
+        $data['is_active'] = $request->has('is_active');
+        $data['price'] = $data['price'] ?? 0;
+
+        if (isset($data['blocks']) && is_string($data['blocks'])) {
+            $decoded = json_decode($data['blocks'], true);
+            $data['blocks'] = json_last_error() === JSON_ERROR_NONE ? $decoded : [];
+        }
+
+        $preset = CanvasSectionPreset::create($data);
+
+        CanvasAssetVersion::firstOrCreate(
+            [
+                'asset_kind' => AssetRef::KIND_SECTION,
+                'asset_slug' => $preset->slug,
+                'version' => $preset->current_version,
+            ],
+            [
+                'changelog' => 'نسخه اولیه سکشن آماده',
+                'published_by_admin_id' => Auth::id(),
+                'published_at' => now(),
+            ]
+        );
+
+        return redirect()->route('admin.canvas-assets.index', ['tab' => 'sections'])
+            ->with('success', "سکشن آماده «{$preset->title}» ایجاد شد.");
+    }
+
+    public function updateSectionPreset(Request $request, CanvasSectionPreset $preset): RedirectResponse
+    {
+        $data = $request->validate([
+            'title' => 'required|string|max:191',
+            'slug' => ['required', 'string', 'max:100', Rule::unique('canvas_section_presets', 'slug')->ignore($preset->id)],
+            'category_label' => 'nullable|string|max:100',
+            'preview_image' => 'nullable|string|max:255',
+            'access_type' => ['required', Rule::in(['free', 'paid'])],
+            'price' => 'nullable|required_if:access_type,paid|numeric|min:0',
+            'discount_price' => 'nullable|numeric|min:0',
+            'blocks' => 'nullable',
+            'is_active' => 'nullable|boolean',
+            'sort_order' => 'nullable|integer',
+        ]);
+
+        $data['slug'] = Str::slug($data['slug']);
+        $data['is_active'] = $request->has('is_active');
+        $data['price'] = $data['price'] ?? 0;
+
+        if (isset($data['blocks']) && is_string($data['blocks'])) {
+            $decoded = json_decode($data['blocks'], true);
+            $data['blocks'] = json_last_error() === JSON_ERROR_NONE ? $decoded : [];
+        }
+
+        $preset->update($data);
+
+        return redirect()->route('admin.canvas-assets.index', ['tab' => 'sections'])
+            ->with('success', "سکشن آماده «{$preset->title}» بروزرسانی شد.");
+    }
+
+    public function destroySectionPreset(CanvasSectionPreset $preset): RedirectResponse
+    {
+        $title = $preset->title;
+        $preset->delete();
+
+        return redirect()->route('admin.canvas-assets.index', ['tab' => 'sections'])
+            ->with('success', "سکشن آماده «{$title}» حذف شد.");
+    }
+
+    public function publishSectionPresetVersion(Request $request, CanvasSectionPreset $preset): RedirectResponse
+    {
+        $data = $request->validate([
+            'version' => 'required|string|max:20|regex:/^\d+\.\d+\.\d+$/',
+            'changelog' => 'required|string|max:2000',
+        ]);
+
+        $newVer = $data['version'];
+        $current = $preset->current_version;
+
+        if (version_compare($newVer, $current, '<=')) {
+            return redirect()->back()
+                ->withErrors(['version' => "نسخه جدید ({$newVer}) باید بزرگتر از نسخه فعلی ({$current}) باشد."]);
+        }
+
+        CanvasAssetVersion::create([
+            'asset_kind' => AssetRef::KIND_SECTION,
+            'asset_slug' => $preset->slug,
+            'version' => $newVer,
+            'changelog' => $data['changelog'],
+            'published_by_admin_id' => Auth::id(),
+            'published_at' => now(),
+        ]);
+
+        $preset->update(['current_version' => $newVer]);
+
+        return redirect()->route('admin.canvas-assets.index', ['tab' => 'sections'])
+            ->with('success', "نسخه {$newVer} سکشن «{$preset->title}» منتشر شد.");
     }
 
     // ─────────────────────────────────────────────────────────────

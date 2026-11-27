@@ -579,6 +579,18 @@ Route::prefix('admin')
             Route::delete('header-presets/{preset}', [\App\Http\Controllers\Admin\CanvasAssetAdminController::class, 'destroyHeaderPreset'])->name('header-presets.destroy');
             Route::post('header-presets/{preset}/publish-version', [\App\Http\Controllers\Admin\CanvasAssetAdminController::class, 'publishHeaderPresetVersion'])->name('header-presets.publish-version');
 
+            // Footers
+            Route::post('footer-presets', [\App\Http\Controllers\Admin\CanvasAssetAdminController::class, 'storeFooterPreset'])->name('footer-presets.store');
+            Route::put('footer-presets/{preset}', [\App\Http\Controllers\Admin\CanvasAssetAdminController::class, 'updateFooterPreset'])->name('footer-presets.update');
+            Route::delete('footer-presets/{preset}', [\App\Http\Controllers\Admin\CanvasAssetAdminController::class, 'destroyFooterPreset'])->name('footer-presets.destroy');
+            Route::post('footer-presets/{preset}/publish-version', [\App\Http\Controllers\Admin\CanvasAssetAdminController::class, 'publishFooterPresetVersion'])->name('footer-presets.publish-version');
+
+            // Sections
+            Route::post('section-presets', [\App\Http\Controllers\Admin\CanvasAssetAdminController::class, 'storeSectionPreset'])->name('section-presets.store');
+            Route::put('section-presets/{preset}', [\App\Http\Controllers\Admin\CanvasAssetAdminController::class, 'updateSectionPreset'])->name('section-presets.update');
+            Route::delete('section-presets/{preset}', [\App\Http\Controllers\Admin\CanvasAssetAdminController::class, 'destroySectionPreset'])->name('section-presets.destroy');
+            Route::post('section-presets/{preset}/publish-version', [\App\Http\Controllers\Admin\CanvasAssetAdminController::class, 'publishSectionPresetVersion'])->name('section-presets.publish-version');
+
             // Motions
             Route::put('motions/{id}/commercial', [\App\Http\Controllers\Admin\CanvasAssetAdminController::class, 'updateMotionCommercial'])->name('motions.commercial.update');
             Route::post('motions/{id}/publish-version', [\App\Http\Controllers\Admin\CanvasAssetAdminController::class, 'publishMotionVersion'])->name('motions.publish-version');

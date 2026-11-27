@@ -84,8 +84,24 @@
                     :class="activeTab === 'headers' ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'"
                     class="px-4 py-2.5 rounded-xl text-sm font-medium transition flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
-                <span>قالب‌های هدر (تکی/دسته‌ای)</span>
+                <span>قالب‌های هدر</span>
                 <span class="text-xs px-2 py-0.5 rounded-full" :class="activeTab === 'headers' ? 'bg-indigo-700 text-indigo-100' : 'bg-gray-100 text-gray-600'">{{ $headerPresets->count() }}</span>
+            </button>
+
+            <button type="button" @click="activeTab = 'footers'"
+                    :class="activeTab === 'footers' ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'"
+                    class="px-4 py-2.5 rounded-xl text-sm font-medium transition flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 18h16M4 12h16m-7-6h7"></path></svg>
+                <span>قالب‌های فوتر</span>
+                <span class="text-xs px-2 py-0.5 rounded-full" :class="activeTab === 'footers' ? 'bg-indigo-700 text-indigo-100' : 'bg-gray-100 text-gray-600'">{{ $footerPresets->count() }}</span>
+            </button>
+
+            <button type="button" @click="activeTab = 'sections'"
+                    :class="activeTab === 'sections' ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'"
+                    class="px-4 py-2.5 rounded-xl text-sm font-medium transition flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                <span>سکشن‌های آماده</span>
+                <span class="text-xs px-2 py-0.5 rounded-full" :class="activeTab === 'sections' ? 'bg-indigo-700 text-indigo-100' : 'bg-gray-100 text-gray-600'">{{ $sectionPresets->count() }}</span>
             </button>
 
             <button type="button" @click="activeTab = 'motions'"
@@ -740,6 +756,10 @@
                     <input type="text" name="current_version" value="1.0.0" class="w-full text-sm rounded-xl border-gray-200 font-mono" dir="ltr">
                 </div>
             </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">ساختار بلوک‌های Canvas (JSON - اختیاری)</label>
+                <textarea name="blocks" rows="3" placeholder='[{"type":"section","props":{...}}]' class="w-full text-xs rounded-xl border-gray-200 font-mono" dir="ltr"></textarea>
+            </div>
             <div class="flex items-center gap-2">
                 <input type="checkbox" name="is_active" id="create-hdr-active" value="1" checked class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
                 <label for="create-hdr-active" class="text-xs text-gray-700">قالب فعال و در دسترس باشد</label>
@@ -747,6 +767,282 @@
             <div class="flex justify-end gap-2 pt-3 border-t border-gray-100">
                 <button type="button" onclick="document.getElementById('modal-create-header').close()" class="px-4 py-2 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-xl">انصراف</button>
                 <button type="submit" class="px-4 py-2 text-xs font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl">ایجاد قالب هدر</button>
+            </div>
+        </form>
+    </dialog>
+
+    <!-- ===================================================================== -->
+    <!-- TAB 4: FOOTER PRESETS -->
+    <!-- ===================================================================== -->
+    <div x-show="activeTab === 'footers'" class="space-y-6">
+        <div class="flex items-center justify-between flex-wrap gap-4">
+            <div>
+                <h2 class="text-lg font-bold text-gray-900">قالب‌های آماده فوتر (Footer Presets)</h2>
+                <p class="text-xs text-gray-500 mt-0.5">مدیریت قالب‌های فوتر استاندارد با پشتیبانی از بلوک‌های Canvas و واگذاری به سایت‌ها.</p>
+            </div>
+            <button type="button" onclick="document.getElementById('modal-create-footer').showModal()"
+                    class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-medium transition shadow-sm flex items-center gap-1.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                <span>افزودن قالب فوتر جدید</span>
+            </button>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <table class="w-full text-right text-sm">
+                <thead class="bg-gray-50 border-b border-gray-100 text-xs text-gray-500">
+                    <tr>
+                        <th class="py-3.5 px-4 font-semibold">عنوان و شناسه فوتر</th>
+                        <th class="py-3.5 px-4 font-semibold">دسته‌بندی</th>
+                        <th class="py-3.5 px-4 font-semibold">نوع دسترسی / قیمت</th>
+                        <th class="py-3.5 px-4 font-semibold">نسخه فعال</th>
+                        <th class="py-3.5 px-4 font-semibold">اختصاص‌های فعال</th>
+                        <th class="py-3.5 px-4 font-semibold text-left">عملیات</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse($footerPresets as $footer)
+                        @php
+                            $grantCount = $grantCounts->get(AssetRef::KIND_FOOTER . ':' . $footer->slug, 0);
+                        @endphp
+                        <tr class="hover:bg-gray-50/60 transition">
+                            <td class="py-3.5 px-4">
+                                <div class="font-bold text-gray-900">{{ $footer->title }}</div>
+                                <div class="text-xs text-gray-400 font-mono">{{ $footer->slug }}</div>
+                            </td>
+                            <td class="py-3.5 px-4 text-xs text-gray-600">
+                                {{ $footer->category_label }}
+                            </td>
+                            <td class="py-3.5 px-4">
+                                @if($footer->access_type === 'free')
+                                    <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium">رایگان</span>
+                                @else
+                                    <span class="text-xs px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200 font-medium">{{ number_format($footer->price) }} تومان</span>
+                                @endif
+                            </td>
+                            <td class="py-3.5 px-4">
+                                <span class="text-xs px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 font-mono font-bold" dir="ltr">v{{ $footer->current_version }}</span>
+                            </td>
+                            <td class="py-3.5 px-4 text-xs text-gray-700 font-bold">
+                                {{ $grantCount }} سایت
+                            </td>
+                            <td class="py-3.5 px-4 text-left">
+                                <div class="flex items-center justify-end gap-1.5">
+                                    <button type="button" @click="openGrantModal('{{ AssetRef::KIND_FOOTER }}', '{{ $footer->slug }}', '{{ $footer->title }}', '{{ $footer->current_version }}')"
+                                            class="text-xs px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-medium transition">
+                                        اختصاص
+                                    </button>
+                                    <button type="button" @click="openVersionModal('{{ AssetRef::KIND_FOOTER }}', '{{ $footer->slug }}', '{{ route('admin.canvas-assets.footer-presets.publish-version', $footer) }}', '{{ $footer->current_version }}')"
+                                            class="text-xs px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition">
+                                        انتشار نسخه
+                                    </button>
+                                    <form method="POST" action="{{ route('admin.canvas-assets.footer-presets.destroy', $footer) }}" onsubmit="return confirm('این فوتر حذف شود؟')" class="inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="p-1 text-gray-400 hover:text-rose-600">✕</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6" class="py-8 text-center text-xs text-gray-400">هنوز قالب فوتری ثبت نشده است.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal: Create Footer Preset -->
+    <dialog id="modal-create-footer" class="modal rounded-2xl p-6 bg-white shadow-xl backdrop:bg-black/40 w-full max-w-lg border border-gray-100">
+        <form method="POST" action="{{ route('admin.canvas-assets.footer-presets.store') }}" class="space-y-4">
+            @csrf
+            <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+                <h3 class="font-bold text-gray-900 text-base">افزودن قالب فوتر جدید</h3>
+                <button type="button" onclick="document.getElementById('modal-create-footer').close()" class="text-gray-400 hover:text-gray-600 text-lg">✕</button>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">عنوان فوتر</label>
+                    <input type="text" name="title" required placeholder="مثلاً: فوتر جامع شرکتی" class="w-full text-sm rounded-xl border-gray-200">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">شناسه یکتا (Slug)</label>
+                    <input type="text" name="slug" required placeholder="مثلاً: footer-corporate-v1" class="w-full text-sm rounded-xl border-gray-200 font-mono" dir="ltr">
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">دسته‌بندی</label>
+                    <input type="text" name="category_label" value="فوتر" class="w-full text-sm rounded-xl border-gray-200">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">نوع دسترسی</label>
+                    <select name="access_type" class="w-full text-sm rounded-xl border-gray-200">
+                        <option value="free">رایگان (عمومی)</option>
+                        <option value="paid" selected>پولی (مارکت‌پلیس / اختصاصی)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">قیمت فوتر (تومان)</label>
+                    <input type="number" name="price" value="69000" class="w-full text-sm rounded-xl border-gray-200">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">نسخه اولیه</label>
+                    <input type="text" name="current_version" value="1.0.0" class="w-full text-sm rounded-xl border-gray-200 font-mono" dir="ltr">
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">ساختار بلوک‌های Canvas (JSON - اختیاری)</label>
+                <textarea name="blocks" rows="3" placeholder='[{"type":"footer_block","props":{...}}]' class="w-full text-xs rounded-xl border-gray-200 font-mono" dir="ltr"></textarea>
+            </div>
+            <div class="flex items-center gap-2">
+                <input type="checkbox" name="is_active" id="create-ftr-active" value="1" checked class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                <label for="create-ftr-active" class="text-xs text-gray-700">قالب فعال و در دسترس باشد</label>
+            </div>
+            <div class="flex justify-end gap-2 pt-3 border-t border-gray-100">
+                <button type="button" onclick="document.getElementById('modal-create-footer').close()" class="px-4 py-2 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-xl">انصراف</button>
+                <button type="submit" class="px-4 py-2 text-xs font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl">ایجاد قالب فوتر</button>
+            </div>
+        </form>
+    </dialog>
+
+    <!-- ===================================================================== -->
+    <!-- TAB 5: SECTION PRESETS -->
+    <!-- ===================================================================== -->
+    <div x-show="activeTab === 'sections'" class="space-y-6">
+        <div class="flex items-center justify-between flex-wrap gap-4">
+            <div>
+                <h2 class="text-lg font-bold text-gray-900">سکشن‌های آماده (Section Presets)</h2>
+                <p class="text-xs text-gray-500 mt-0.5">مدیریت بخش‌های آماده از پیش طراحی‌شده (Hero، ویژگی‌ها، فراخوان، تعرفه‌ها و...).</p>
+            </div>
+            <button type="button" onclick="document.getElementById('modal-create-section').showModal()"
+                    class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-medium transition shadow-sm flex items-center gap-1.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                <span>افزودن سکشن جدید</span>
+            </button>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <table class="w-full text-right text-sm">
+                <thead class="bg-gray-50 border-b border-gray-100 text-xs text-gray-500">
+                    <tr>
+                        <th class="py-3.5 px-4 font-semibold">عنوان و شناسه سکشن</th>
+                        <th class="py-3.5 px-4 font-semibold">دسته‌بندی</th>
+                        <th class="py-3.5 px-4 font-semibold">نوع دسترسی / قیمت</th>
+                        <th class="py-3.5 px-4 font-semibold">نسخه فعال</th>
+                        <th class="py-3.5 px-4 font-semibold">اختصاص‌های فعال</th>
+                        <th class="py-3.5 px-4 font-semibold text-left">عملیات</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse($sectionPresets as $section)
+                        @php
+                            $grantCount = $grantCounts->get(AssetRef::KIND_SECTION . ':' . $section->slug, 0);
+                        @endphp
+                        <tr class="hover:bg-gray-50/60 transition">
+                            <td class="py-3.5 px-4">
+                                <div class="font-bold text-gray-900">{{ $section->title }}</div>
+                                <div class="text-xs text-gray-400 font-mono">{{ $section->slug }}</div>
+                            </td>
+                            <td class="py-3.5 px-4 text-xs text-gray-600">
+                                {{ $section->category_label }}
+                            </td>
+                            <td class="py-3.5 px-4">
+                                @if($section->access_type === 'free')
+                                    <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium">رایگان</span>
+                                @else
+                                    <span class="text-xs px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200 font-medium">{{ number_format($section->price) }} تومان</span>
+                                @endif
+                            </td>
+                            <td class="py-3.5 px-4">
+                                <span class="text-xs px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 font-mono font-bold" dir="ltr">v{{ $section->current_version }}</span>
+                            </td>
+                            <td class="py-3.5 px-4 text-xs text-gray-700 font-bold">
+                                {{ $grantCount }} سایت
+                            </td>
+                            <td class="py-3.5 px-4 text-left">
+                                <div class="flex items-center justify-end gap-1.5">
+                                    <button type="button" @click="openGrantModal('{{ AssetRef::KIND_SECTION }}', '{{ $section->slug }}', '{{ $section->title }}', '{{ $section->current_version }}')"
+                                            class="text-xs px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-medium transition">
+                                        اختصاص
+                                    </button>
+                                    <button type="button" @click="openVersionModal('{{ AssetRef::KIND_SECTION }}', '{{ $section->slug }}', '{{ route('admin.canvas-assets.section-presets.publish-version', $section) }}', '{{ $section->current_version }}')"
+                                            class="text-xs px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition">
+                                        انتشار نسخه
+                                    </button>
+                                    <form method="POST" action="{{ route('admin.canvas-assets.section-presets.destroy', $section) }}" onsubmit="return confirm('این سکشن حذف شود؟')" class="inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="p-1 text-gray-400 hover:text-rose-600">✕</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6" class="py-8 text-center text-xs text-gray-400">هنوز سکشنی ثبت نشده است.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal: Create Section Preset -->
+    <dialog id="modal-create-section" class="modal rounded-2xl p-6 bg-white shadow-xl backdrop:bg-black/40 w-full max-w-lg border border-gray-100">
+        <form method="POST" action="{{ route('admin.canvas-assets.section-presets.store') }}" class="space-y-4">
+            @csrf
+            <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+                <h3 class="font-bold text-gray-900 text-base">افزودن سکشن جدید</h3>
+                <button type="button" onclick="document.getElementById('modal-create-section').close()" class="text-gray-400 hover:text-gray-600 text-lg">✕</button>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">عنوان سکشن</label>
+                    <input type="text" name="title" required placeholder="مثلاً: هیرو سکشن معرفی محصول" class="w-full text-sm rounded-xl border-gray-200">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">شناسه یکتا (Slug)</label>
+                    <input type="text" name="slug" required placeholder="مثلاً: section-hero-intro-v1" class="w-full text-sm rounded-xl border-gray-200 font-mono" dir="ltr">
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">دسته‌بندی</label>
+                    <input type="text" name="category_label" value="هیرو" class="w-full text-sm rounded-xl border-gray-200">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">نوع دسترسی</label>
+                    <select name="access_type" class="w-full text-sm rounded-xl border-gray-200">
+                        <option value="free">رایگان (عمومی)</option>
+                        <option value="paid" selected>پولی (مارکت‌پلیس / اختصاصی)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">قیمت سکشن (تومان)</label>
+                    <input type="number" name="price" value="49000" class="w-full text-sm rounded-xl border-gray-200">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">نسخه اولیه</label>
+                    <input type="text" name="current_version" value="1.0.0" class="w-full text-sm rounded-xl border-gray-200 font-mono" dir="ltr">
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">ساختار بلوک‌های Canvas (JSON - اختیاری)</label>
+                <textarea name="blocks" rows="3" placeholder='[{"type":"hero","props":{...}}]' class="w-full text-xs rounded-xl border-gray-200 font-mono" dir="ltr"></textarea>
+            </div>
+            <div class="flex items-center gap-2">
+                <input type="checkbox" name="is_active" id="create-sec-active" value="1" checked class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                <label for="create-sec-active" class="text-xs text-gray-700">سکشن فعال و در دسترس باشد</label>
+            </div>
+            <div class="flex justify-end gap-2 pt-3 border-t border-gray-100">
+                <button type="button" onclick="document.getElementById('modal-create-section').close()" class="px-4 py-2 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-xl">انصراف</button>
+                <button type="submit" class="px-4 py-2 text-xs font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl">ایجاد سکشن</button>
             </div>
         </form>
     </dialog>

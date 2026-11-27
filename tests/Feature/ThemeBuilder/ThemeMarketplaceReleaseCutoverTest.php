@@ -70,6 +70,8 @@ class ThemeMarketplaceReleaseCutoverTest extends TestCase
             'global_styles' => [],
             'settings' => [],
             'is_marketplace' => true,
+            'is_free_public' => true,
+            'license_type' => 'free',
             'marketplace_price' => 0,
         ], $overrides));
 

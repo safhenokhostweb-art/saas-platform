@@ -52,6 +52,8 @@ class IconRegistry
 
         'grid' => '<rect fill="currentColor" fill-opacity="0.12" x="3" y="3" width="7" height="7" rx="1.5"/><rect fill="currentColor" fill-opacity="0.12" x="14" y="3" width="7" height="7" rx="1.5"/><rect fill="currentColor" fill-opacity="0.12" x="3" y="14" width="7" height="7" rx="1.5"/><rect fill="currentColor" fill-opacity="0.12" x="14" y="14" width="7" height="7" rx="1.5"/><rect stroke="currentColor" fill="none" stroke-width="2" stroke-linejoin="round" x="3" y="3" width="7" height="7" rx="1.5"/><rect stroke="currentColor" fill="none" stroke-width="2" stroke-linejoin="round" x="14" y="3" width="7" height="7" rx="1.5"/><rect stroke="currentColor" fill="none" stroke-width="2" stroke-linejoin="round" x="3" y="14" width="7" height="7" rx="1.5"/><rect stroke="currentColor" fill="none" stroke-width="2" stroke-linejoin="round" x="14" y="14" width="7" height="7" rx="1.5"/>',
 
+        'palette' => '<circle fill="currentColor" fill-opacity="0.12" cx="12" cy="12" r="9"/><circle stroke="currentColor" fill="none" stroke-width="2" cx="12" cy="12" r="9"/><circle fill="currentColor" cx="8" cy="10" r="1.5"/><circle fill="currentColor" cx="12" cy="8" r="1.5"/><circle fill="currentColor" cx="16" cy="10" r="1.5"/><circle fill="currentColor" cx="16" cy="14" r="1.5"/><circle fill="currentColor" cx="12" cy="16" r="2"/>',
+
         'list' => '<path stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
 
         'sort' => '<path stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3 9h8M3 15h5m7-9v12m-4-4 4 4 4-4"/>',
