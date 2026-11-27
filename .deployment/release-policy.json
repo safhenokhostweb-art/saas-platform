@@ -58,6 +58,13 @@
     ],
     "reviewed": [
       {
+        "path": "database/migrations/2026_11_27_110000_seed_header_glass_nimbus_preset.php",
+        "sha256": "65f00c1ad57e01c2c984c9fcc903686ffff264ecc38c7c450003a2c466e1f4d1",
+        "reviewed_by": "Owner (approved in session 2026-11-27 for Header Project: header_glass_nimbus)",
+        "reviewed_at": "2026-11-27",
+        "reason": "Idempotent seed migration: up() seeds header-glass-nimbus with access_type = paid and initial version in canvas_asset_versions; down() deletes only these records."
+      },
+      {
         "path": "database/migrations/2026_11_26_140000_update_canvas_and_theme_marketplace_assets.php",
         "sha256": "10b389e94582e8488fb9ca8e9b4be69d347dd897ffd1fcbcadc6f1017ab21ead",
         "reviewed_by": "Owner (approved in session 2026-11-26 for Canvas Asset Management Phase 1/2)",

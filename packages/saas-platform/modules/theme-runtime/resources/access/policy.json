@@ -26,6 +26,14 @@
                 "safhenokhost_exclusive"
             ],
             "locked_display": "hidden"
+        },
+        "header-glass-nimbus": {
+            "label": "هدر شناور شیشه‌ای مدرن",
+            "visibility": "restricted",
+            "entitlement_keys": [
+                "header_glass_nimbus"
+            ],
+            "locked_display": "hidden"
         }
     },
     "templates": {
@@ -111,6 +119,7 @@
         "flex_container": "public",
         "gallery": "public",
         "grid": "public",
+        "header_glass_nimbus": "header-glass-nimbus",
         "header_modern_v1": "public",
         "heading": "public",
         "hero": "public",

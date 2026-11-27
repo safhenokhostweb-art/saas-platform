@@ -26,7 +26,7 @@ final class AssetAccessPolicy
         if ($site->platformDesigner) {
             return new AssetAccessDecision(AssetAccessDecision::STATE_AVAILABLE, AssetAccessDecision::REASON_PLATFORM_DESIGNER, true, $label);
         }
-        if ($site->hasGrant($ref)) {
+        if ($site->hasGrant($ref) || ($ref === 'widget:header_glass_nimbus' && ($site->hasGrant('header:header-glass-nimbus') || $site->hasGrant('widget:header_glass_nimbus')))) {
             return new AssetAccessDecision(AssetAccessDecision::STATE_AVAILABLE, AssetAccessDecision::REASON_GRANT, true, $label);
         }
 

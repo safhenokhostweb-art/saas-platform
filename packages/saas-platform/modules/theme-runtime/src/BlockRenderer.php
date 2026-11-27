@@ -4673,6 +4673,136 @@ class BlockRenderer
             . '<script data-tb-block-asset="header_modern_v1">' . $js . '</script>';
     }
 
+    protected function renderHeaderGlassNimbus(array $props, string $inner, string $id): string
+    {
+        $safeId = $this->escapeAttr(preg_replace('/[^A-Za-z0-9_-]/', '-', $id) ?: 'nimbus');
+        $rootId = 'tb-header-nimbus-' . $safeId;
+        $menuId = 'tgn01-menu-' . $safeId;
+
+        $brandName = trim($this->stringify($props['brand_name'] ?? ''));
+        if ($brandName === '') {
+            $brandName = trim($this->stringify($this->context['site_title'] ?? ''));
+        }
+        $escapedBrand = $this->escape($brandName !== '' ? $brandName : 'برند شما');
+
+        $homeUrl = $this->linkHref($props['home_url'] ?? '/', '/');
+
+        $logoUrl = trim($this->stringify($props['logo_url'] ?? ''));
+        $logoSrc = $logoUrl !== '' ? $this->escapeUrl($this->mediaSrc($logoUrl), '') : '';
+        $logoBadgeSymbol = trim($this->stringify($props['logo_badge_symbol'] ?? '◆'));
+        $escapedBadgeSymbol = $this->escape($logoBadgeSymbol !== '' ? $logoBadgeSymbol : '◆');
+
+        $logoHtml = $logoSrc !== ''
+            ? '<img src="' . $logoSrc . '" alt="' . $escapedBrand . '" class="tb-header-nimbus__logo size-8 rounded-[10px] object-contain">'
+            : '<span aria-hidden="true" class="tb-header-nimbus__badge grid size-8 place-items-center rounded-[10px] bg-gradient-to-br from-[var(--color-tgn01-cta1)] to-[var(--color-tgn01-cta2)] text-xs text-white shadow-[0_4px_12px_-2px_var(--color-tgn01-cta2)]">' . $escapedBadgeSymbol . '</span>';
+
+        $rawCtaStart = trim($this->stringify($props['cta_color_start'] ?? '#e20c35'));
+        $rawCtaEnd = trim($this->stringify($props['cta_color_end'] ?? '#c4008d'));
+        $rawInk = trim($this->stringify($props['ink_color'] ?? '#211c48'));
+
+        $ctaColor1 = $this->cssColor($rawCtaStart, '#e20c35');
+        $ctaColor2 = $this->cssColor($rawCtaEnd, '#c4008d');
+        $inkColor = $this->cssColor($rawInk, '#211c48');
+
+        $styleVars = '--color-tgn01-ink:' . $this->escapeAttr($inkColor)
+            . ';--color-tgn01-cta1:' . $this->escapeAttr($ctaColor1)
+            . ';--color-tgn01-cta2:' . $this->escapeAttr($ctaColor2)
+            . ';--tgn01-ink:' . $this->escapeAttr($inkColor)
+            . ';--tgn01-cta1:' . $this->escapeAttr($ctaColor1)
+            . ';--tgn01-cta2:' . $this->escapeAttr($ctaColor2) . ';';
+
+        $currentPath = parse_url($this->context['current_url'] ?? (request()->getRequestUri() ?? '/'), PHP_URL_PATH) ?? '/';
+        $currentPath = rtrim($currentPath, '/') ?: '/';
+
+        $rawMenuItems = $props['menu_items'] ?? [
+            ['label' => 'صفحه اصلی', 'url' => '/'],
+            ['label' => 'محصولات', 'url' => '/products'],
+            ['label' => 'تعرفه‌ها', 'url' => '/pricing'],
+            ['label' => 'وبلاگ', 'url' => '/blog'],
+        ];
+
+        $desktopMenuHtml = '';
+        $mobileMenuHtml = '';
+
+        foreach (is_array($rawMenuItems) ? $rawMenuItems : [] as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            $label = trim($this->stringify($item['label'] ?? ''));
+            if ($label === '') {
+                continue;
+            }
+            $url = $this->linkHref($item['url'] ?? '#', '#');
+            $escapedLabel = $this->escape($label);
+            $itemPath = parse_url($url, PHP_URL_PATH) ?? '';
+            $itemPath = rtrim($itemPath, '/') ?: '/';
+            $isActive = ($url !== '#' && $itemPath !== '' && $itemPath === $currentPath);
+            $ariaCurrent = $isActive ? ' aria-current="page"' : '';
+
+            $desktopMenuHtml .= '<li><a href="' . $url . '"' . $ariaCurrent . ' class="tb-header-nimbus__link flex h-11 items-center rounded-xl px-3.5 text-sm font-semibold text-[var(--color-tgn01-ink)]/80 transition-colors hover:bg-white/55 hover:text-[var(--color-tgn01-ink)] aria-[current=page]:bg-white/70 aria-[current=page]:text-[var(--color-tgn01-ink)]">' . $escapedLabel . '</a></li>';
+            $mobileMenuHtml .= '<a href="' . $url . '"' . $ariaCurrent . ' class="tb-header-nimbus__mobile-link flex h-12 items-center rounded-xl px-4 text-[15px] font-semibold hover:bg-white/60">' . $escapedLabel . '</a>';
+        }
+
+        $secondaryLabel = trim($this->stringify($props['secondary_label'] ?? 'ورود'));
+        $secondaryUrl = $this->linkHref($props['secondary_url'] ?? '/login', '/login');
+        $secondaryHtml = '';
+        $mobileSecondaryHtml = '';
+        if ($secondaryLabel !== '') {
+            $escapedSec = $this->escape($secondaryLabel);
+            $secondaryHtml = '<a href="' . $secondaryUrl . '" class="tb-header-nimbus__secondary flex h-11 items-center rounded-xl px-3.5 text-sm font-semibold text-[var(--color-tgn01-ink)]/80 transition-colors hover:bg-white/55 hover:text-[var(--color-tgn01-ink)] max-sm:hidden">' . $escapedSec . '</a>';
+            $mobileSecondaryHtml = '<a href="' . $secondaryUrl . '" class="tb-header-nimbus__mobile-secondary mt-1 flex h-12 items-center rounded-xl rounded-t-none border-t border-[var(--color-tgn01-ink)]/10 px-4 text-[15px] font-semibold hover:bg-white/60">' . $escapedSec . '</a>';
+        }
+
+        $ctaLabel = trim($this->stringify($props['cta_label'] ?? 'شروع رایگان'));
+        $ctaUrl = $this->linkHref($props['cta_url'] ?? '/register', '/register');
+        $ctaHtml = '';
+        if ($ctaLabel !== '') {
+            $escapedCta = $this->escape($ctaLabel);
+            $ctaHtml = '<a href="' . $ctaUrl . '" class="tb-header-nimbus__cta group flex h-11 items-center gap-1.5 rounded-xl bg-gradient-to-br from-[var(--color-tgn01-cta1)] to-[var(--color-tgn01-cta2)] px-4 text-sm font-bold text-white shadow-[0_8px_20px_-4px_var(--color-tgn01-cta2)] transition-[translate,box-shadow] duration-150 hover:-translate-y-0.5 hover:shadow-[0_12px_26px_-4px_var(--color-tgn01-cta2)] sm:px-5">'
+                . '<span>' . $escapedCta . '</span>'
+                . '<span aria-hidden="true" class="transition-transform group-hover:-translate-x-0.5">←</span>'
+                . '</a>';
+        }
+
+        $versionAttr = !empty($props['asset_version']) ? ' data-asset-version="' . $this->escapeAttr((string) $props['asset_version']) . '"' : '';
+
+        $script = '<script>(function(){'
+            . 'var h=document.getElementById("' . $rootId . '");if(!h||h.dataset.nimbusInit)return;h.dataset.nimbusInit="1";'
+            . 'var btn=h.querySelector("[data-nimbus-toggle]");var m=document.getElementById("' . $menuId . '");if(!btn||!m)return;'
+            . 'btn.addEventListener("click",function(e){'
+            . 'if(typeof m.showPopover==="function"){try{if(m.matches(":popover-open")){m.hidePopover();}else{m.showPopover();}return;}catch(x){}}'
+            . 'var open=m.classList.toggle("is-open");btn.setAttribute("aria-expanded",open?"true":"false");'
+            . '});'
+            . 'document.addEventListener("click",function(e){if(!h.contains(e.target)&&!m.contains(e.target)){m.classList.remove("is-open");btn.setAttribute("aria-expanded","false");}});'
+            . 'var here=location.pathname.replace(/\/+$/,"")||"/";'
+            . 'm.querySelectorAll("a").forEach(function(a){if(a.hasAttribute("aria-current"))return;try{var u=new URL(a.getAttribute("href")||"",location.href);if(u.origin===location.origin&&(u.pathname.replace(/\/+$/,"")||"/")===here)a.setAttribute("aria-current","page");}catch(x){}});'
+            . '})();</script>';
+
+        return '<header id="' . $rootId . '" class="tb-header-nimbus sticky top-3 z-30 flex h-16 items-center gap-4 rounded-2xl border border-white/60 bg-white/50 py-2.5 px-4 shadow-[0_8px_30px_-6px_oklch(0.25_0.1_285/0.35)] backdrop-blur-lg backdrop-saturate-[1.8] sm:px-5" style="' . $styleVars . '"' . $versionAttr . ' dir="rtl">'
+            . '<a class="tb-header-nimbus__brand flex items-center gap-2.5 rounded-lg text-lg font-extrabold text-[var(--color-tgn01-ink)]" href="' . $homeUrl . '">'
+            . $logoHtml
+            . '<span>' . $escapedBrand . '</span>'
+            . '</a>'
+            . '<nav class="tb-header-nimbus__nav mx-auto max-md:hidden" aria-label="منوی اصلی">'
+            . '<ul class="tb-header-nimbus__menu flex gap-1">'
+            . $desktopMenuHtml
+            . '</ul>'
+            . '</nav>'
+            . '<div class="tb-header-nimbus__actions flex items-center gap-1.5 max-md:ms-auto">'
+            . $secondaryHtml
+            . $ctaHtml
+            . '<button type="button" popovertarget="' . $menuId . '" data-nimbus-toggle="' . $menuId . '" aria-controls="' . $menuId . '" aria-expanded="false" aria-label="باز کردن منو" class="tb-header-nimbus__burger grid size-11 cursor-pointer place-items-center rounded-xl text-[var(--color-tgn01-ink)] hover:bg-white/55 md:hidden">'
+            . '<svg class="size-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h14M3 10h14M3 14h14"/></svg>'
+            . '</button>'
+            . '</div>'
+            . '</header>'
+            . '<nav id="' . $menuId . '" popover aria-label="منوی موبایل" class="tb-header-nimbus-mobile fixed inset-x-3 top-20 bottom-auto m-0 w-auto rounded-2xl border border-white/70 bg-white/75 p-2 text-[var(--color-tgn01-ink)] shadow-[0_20px_50px_-12px_oklch(0.25_0.1_285/0.45)] backdrop-blur-xl backdrop-saturate-[1.8]" style="' . $styleVars . '" dir="rtl">'
+            . $mobileMenuHtml
+            . $mobileSecondaryHtml
+            . '</nav>'
+            . $script;
+    }
+
     public function renderNavHeader(array $props, string $inner, string $id): string
     {
         $safeId = preg_replace('/[^A-Za-z0-9_-]/', '-', $id) ?: 'header';

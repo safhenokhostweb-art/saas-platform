@@ -24,6 +24,7 @@ class AssetAccessCatalogContractTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        BlockRegistry::resetHostTypes();
         AssetAccessCatalog::flush();
     }
 
@@ -95,6 +96,10 @@ class AssetAccessCatalogContractTest extends TestCase
             $this->assertTrue(AssetAccessCatalog::decide(AssetRef::KIND_TEMPLATE, $key, $nobody)->allowed(), $key);
         }
         foreach (array_keys(BlockRegistry::all()) as $type) {
+            if ($type === 'header_glass_nimbus') {
+                $this->assertFalse(AssetAccessCatalog::decide(AssetRef::KIND_WIDGET, $type, $nobody)->allowed(), $type);
+                continue;
+            }
             $this->assertTrue(AssetAccessCatalog::decide(AssetRef::KIND_WIDGET, $type, $nobody)->allowed(), $type);
         }
     }
