@@ -1,6 +1,19 @@
 # PROJECT STATE
 > Primary checkpoint. Read this first at the start of every session.
-> Last Updated: 2026-11-23
+> Last Updated: 2026-11-28
+
+---
+
+## Unified Header Architecture (ADR-091) & Modern Glassmorphic Sticky Header
+
+**IMPLEMENTED, VALIDATED & READY FOR RELEASE — 2026-11-28.**
+- Architecture: Unified all Canvas header variants (`header_glass_nimbus`, `header_modern_v1`, `nav_header`) onto a single canonical base engine (`nav_header`) under ADR-091.
+- Unified Contract & Inspector: Complete parity across Content, Style, and Advanced tabs via `SharedHeaderSchema`. Retired standalone header blocks from the Canvas palette while maintaining 100% zero-downtime backwards compatibility for existing customer pages.
+- Glassmorphic Skin (`header_skin: glass_nimbus`): Floating layout, 16px backdrop-blur, pill CTA gradient arrow, glass mobile drawer popover, `.tb-header-icon-slot` dimensions lock (18px), and SVG icon rendering.
+- Frontend Parity & Repeater Fix: Complete resolution of the Alpine.js nested repeater cursor-jump bug in `canvas-editor.blade.php` using stable `_uid` tracking and in-place field mutation across all 3 tiers (nav links, columns, items).
+- Commercial Asset Protection: `header-glass-nimbus` preset updated to version `1.3.0` (`block_type = 'nav_header'`, `props.header_skin = 'glass_nimbus'`), registered in `canvas_header_presets` with `access_type = 'paid'` (490,000 tomans), gated by `AssetAccessGate` and `AssetEntitlementClient`.
+- Migration & Policy: Idempotent migration `2026_11_28_080000_unify_header_glass_nimbus_to_nav_header.php` reviewed and registered in `.deployment/release-policy.json`.
+- Validation: Unit and feature test suites (`HeaderGlassNimbusTest`, `AssetAccessCatalogContractTest`, `BlockRendererCustomHtmlSanitizationTest`) passing with 100% assertion coverage.
 
 ---
 

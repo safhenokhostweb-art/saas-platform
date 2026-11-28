@@ -134,7 +134,7 @@
   function visibleFields(schema, props, panel, states) {
     const out = {};
     Object.entries(schema || {}).forEach(([key, def]) => {
-      if (!def || def.type === 'blocks' || panelOf(def) !== panel) return;
+      if (!def || def.hidden === true || def.type === 'blocks' || panelOf(def) !== panel) return;
       if (!conditionMet(def, props, schema)) return;
       if (def.state_group && (def.state || 'normal') !== activeState(states, def.state_group)) return;
       out[key] = def;

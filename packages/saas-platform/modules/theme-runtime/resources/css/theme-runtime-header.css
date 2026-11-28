@@ -1024,3 +1024,96 @@ header.tb-hdr-sticky,
       margin-top: 0.75rem !important;
    }
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   ADR-088: Scoped Skin: Glassmorphic Sticky Header (.tb-header-skin--glass-nimbus)
+   Fulfills floating glassmorphic container, 16px blur, 180% saturation,
+   translucent borders, gradient CTA, and glassmorphic mobile drawer.
+   ══════════════════════════════════════════════════════════════════ */
+.tb-nav-header.tb-header-skin--glass-nimbus {
+   width: calc(100% - 2rem) !important;
+   max-width: var(--tb-hdr-max-w, 80rem) !important;
+   margin-left: auto !important;
+   margin-right: auto !important;
+   margin-top: 0.75rem !important;
+   margin-bottom: 0.75rem !important;
+   border-radius: var(--tb-hdr-radius, 16px) !important;
+   background: var(--tb-hdr-bg, rgba(255, 255, 255, 0.68)) !important;
+   backdrop-filter: blur(var(--tb-hdr-blur, 16px)) saturate(180%) !important;
+   -webkit-backdrop-filter: blur(var(--tb-hdr-blur, 16px)) saturate(180%) !important;
+   border: 1px solid var(--tb-hdr-border-c, rgba(255, 255, 255, 0.35)) !important;
+   box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.2) inset !important;
+   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+html.dark .tb-nav-header.tb-header-skin--glass-nimbus,
+.tb-dark-mode .tb-nav-header.tb-header-skin--glass-nimbus {
+   background: var(--tb-hdr-bg, rgba(17, 24, 39, 0.75)) !important;
+   border-color: var(--tb-hdr-border-c, rgba(255, 255, 255, 0.12)) !important;
+   box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.05) inset !important;
+}
+
+.tb-nav-header.tb-header-skin--glass-nimbus .tb-nav-header-inner {
+   min-height: var(--tb-hdr-min-h, 64px) !important;
+   padding-left: 1.25rem !important;
+   padding-right: 1.25rem !important;
+}
+
+/* Glassmorphic Pill Link Effect */
+.tb-nav-header.tb-header-skin--glass-nimbus .tb-nav-header-link {
+   border-radius: var(--tb-hdr-menu-radius, 12px) !important;
+   transition: all 0.2s ease !important;
+}
+.tb-nav-header.tb-header-skin--glass-nimbus .tb-nav-header-link:hover {
+   background: rgba(255, 255, 255, 0.4) !important;
+   backdrop-filter: blur(8px) !important;
+}
+html.dark .tb-nav-header.tb-header-skin--glass-nimbus .tb-nav-header-link:hover,
+.tb-dark-mode .tb-nav-header.tb-header-skin--glass-nimbus .tb-nav-header-link:hover {
+   background: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Gradient Pill Primary CTA */
+.tb-nav-header.tb-header-skin--glass-nimbus .tb-btn.tb-nav-header-cta {
+   border-radius: 9999px !important;
+   padding: 0.55rem 1.4rem !important;
+   font-weight: 600 !important;
+   letter-spacing: -0.01em !important;
+   transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+.tb-nav-header.tb-header-skin--glass-nimbus .tb-btn.tb-nav-header-cta:hover {
+   transform: translateY(-1px) !important;
+   box-shadow: 0 6px 20px rgba(226, 12, 53, 0.35) !important;
+}
+
+/* Glassmorphic Mobile Drawer */
+.tb-nav-header.tb-header-skin--glass-nimbus .tb-nav-header-menu-panel {
+   background: rgba(255, 255, 255, 0.88) !important;
+   backdrop-filter: blur(20px) saturate(180%) !important;
+   -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+   border-radius: 20px !important;
+   border: 1px solid rgba(255, 255, 255, 0.4) !important;
+   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15) !important;
+}
+html.dark .tb-nav-header.tb-header-skin--glass-nimbus .tb-nav-header-menu-panel,
+.tb-dark-mode .tb-nav-header.tb-header-skin--glass-nimbus .tb-nav-header-menu-panel {
+   background: rgba(17, 24, 39, 0.9) !important;
+   border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* 18px Icon Bounding-Box Lock */
+.tb-header-icon-slot {
+   width: 18px !important;
+   height: 18px !important;
+   max-width: 18px !important;
+   max-height: 18px !important;
+   display: inline-flex !important;
+   align-items: center !important;
+   justify-content: center !important;
+   flex-shrink: 0 !important;
+}
+.tb-header-icon-slot svg {
+   width: 18px !important;
+   height: 18px !important;
+   flex-shrink: 0 !important;
+}

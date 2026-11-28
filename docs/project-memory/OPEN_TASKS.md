@@ -1,6 +1,26 @@
 # OPEN TASKS
 > Current epics, features, tasks, status, dependencies, and acceptance criteria.
-> Last Updated: 2026-11-18
+> Last Updated: 2026-11-28
+
+---
+
+## RESOLVED & READY: UNIFIED CANVAS HEADER ARCHITECTURE (ADR-091) & GLASSMORPHIC STICKY HEADER — 2026-11-28
+
+Completed all 4 phases of the unified header overhaul and modern glassmorphic header implementation across `saas-platform` and `customer-site`:
+1. **Unified Base Engine (`nav_header`):** Retired standalone header blocks (`header_glass_nimbus`, `header_modern_v1`) from the Canvas palette while retaining zero-downtime backwards compatibility via runtime transparent mapping to `nav_header` with scoped `header_skin`.
+2. **Unified Header Schema & Inspector:** Stripped alias fields; exposed clean unified options (3-source navigation, Top Bar toggle, live cart count, account login, FOUC-free dark mode toggle, CTA buttons with gradient/icons).
+3. **Glassmorphic Skin Styling & Behavior:** Implemented `.tb-header-skin--glass-nimbus` with floating layout, 16px blur, 180% saturation, pill CTA with RTL arrow, popover mobile drawer, and 18px icon lock.
+4. **Alpine Repeater Stability:** Fixed cursor jumping in `canvas-editor.blade.php` across all 3 tiers of mega menu loops using stable `_uid` tracking and in-place field updates.
+5. **Commercial Asset Integrity:** Idempotent migration updated `header-glass-nimbus` preset to `1.3.0` (`block_type = 'nav_header'`, `props.header_skin = 'glass_nimbus'`, `access_type = 'paid'`, price 490,000 tomans) registered in `release-policy.json`.
+
+| Item | Status |
+|------|--------|
+| Base Engine Unification (`nav_header`) | ✅ Complete & Verified |
+| Scoped Skins (`default`, `glass_nimbus`, `modern`) | ✅ Complete & Verified |
+| Transparent Runtime Backwards Compatibility | ✅ Implemented in `BlockRenderer` & `ThemeRuntimeDocument` |
+| Nested Repeater Cursor Jump Resolution | ✅ Resolved in `canvas-editor.blade.php` |
+| Commercial Asset & Entitlement Protection | ✅ Maintained `paid` (490,000 tomans), v1.3.0 |
+| Tests & Release Policy | ✅ 100% Passing & Migration SHA-256 Registered |
 
 ---
 

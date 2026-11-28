@@ -89,6 +89,9 @@ final class InspectorFieldRegistry
             if (!is_string($key) || !is_array($field)) {
                 throw new InvalidArgumentException('Inspector schema fields must be named objects.');
             }
+            if (!empty($field['hidden'])) {
+                continue; // Strip hidden legacy/alias fields from inspector JSON
+            }
             $normalized['schema'][$key] = self::normalizeField($key, $field);
         }
 

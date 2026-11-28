@@ -63,7 +63,7 @@ Before modifying files:
 
 During implementation:
 
-- Follow the constitution and applicable ADRs.
+- Follow the constitution and applicable ADRs (including ADR-091: never create separate standalone block types for purely visual variants; always build on the unified canonical block engine and scope differences via skins and asset gates).
 - Prefer established repository patterns and the smallest complete change.
 - Use repository evidence; do not invent models, fields, services, configuration, or infrastructure.
 - Keep external state changes within the explicit task scope.

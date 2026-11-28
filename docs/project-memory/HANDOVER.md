@@ -1,7 +1,18 @@
 # HANDOVER DOCUMENT
 > Reading this file alone is sufficient to resume development from any future session.
 > If context is lost, read this file first, then PROJECT_STATE.md.
-> Last Updated: 2026-10-12
+> Last Updated: 2026-11-28
+
+---
+
+## CURRENT TASK (2026-11-28 — UNIFIED HEADER ARCHITECTURE & GLASSMORPHIC STICKY HEADER — COMPLETED & READY FOR RELEASE)
+
+All 4 phases of the unified header architecture and modern glassmorphic header implementation have been completed and verified across both repositories:
+- **Phase 1: Unified Base Engine & Palette Consolidation:** Standalone headers `header_glass_nimbus` and `header_modern_v1` were retired from the block palette in `BlockRegistry`. All headers share `SharedHeaderSchema`. Alias fields stripped from Inspector JSON. Zero-downtime backwards compatibility maps legacy header types on-the-fly to `nav_header` with `header_skin` in `BlockRenderer` and `ThemeRuntimeDocument`.
+- **Phase 2: Skin Support & Parity in BlockRenderer:** Added full native support for `header_skin = 'glass_nimbus'` (`.tb-header-skin--glass-nimbus`) and `'modern'`, Top Bar fallback/toggle parity, multi-column/item Mega Menu rendering, SVG icon slots with 18px lock, independent 4 action toggles, and FOUC-free dark mode toggle.
+- **Phase 3: Alpine.js Repeater Key Identity & In-Place Mutation:** Solved the cursor jumping defect in `canvas-editor.blade.php` across all 3 tiers (`nav_links`, `columns`, `items`) using stable `_uid` tracking and direct in-place property modification.
+- **Phase 4: Commercial Gating, Migration & ADR-091:** Idempotent migration `2026_11_28_080000_unify_header_glass_nimbus_to_nav_header.php` created and registered with SHA-256 in `.deployment/release-policy.json`. Commercial status preserved as `paid` (490,000 tomans, v1.3.0). ADR-091 recorded in `DECISIONS.md`, `AGENTS.md`, `PROJECT_STATE.md`, `OPEN_TASKS.md`, and `ARCHITECTURE.md`.
+- **Validation:** Test suites passing (4/4 tests, 52 assertions in `HeaderGlassNimbusTest`, 8/8 in `AssetAccessCatalogContractTest`, 10/10 in `BlockRendererCustomHtmlSanitizationTest`).
 
 ---
 

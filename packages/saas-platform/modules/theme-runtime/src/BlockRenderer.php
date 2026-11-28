@@ -225,12 +225,16 @@ class BlockRenderer
         $id = $block['id'] ?? Str::random(8);
         $props = $block['props'] ?? $block['data'] ?? [];
         if (!is_array($props)) {
-            // Same class of defect as above, one level down: a legacy
-            // block whose props is a scalar (e.g. Theme ID=56's
-            // header_blocks) crashed every render*($props, ...) method
-            // with a TypeError instead of just that block's own markup
-            // failing to render.
             $props = [];
+        }
+
+        // ADR-088: Transparent migration and 100% backwards compatibility for legacy standalone header blocks
+        if ($type === 'header_glass_nimbus') {
+            $type = 'nav_header';
+            $props['header_skin'] = 'glass_nimbus';
+        } elseif ($type === 'header_modern_v1') {
+            $type = 'nav_header';
+            $props['header_skin'] = 'modern';
         }
         // TB4: children may be at top-level (block.children), legacy top-level (block.blocks),
         // or inside props (block.props.blocks) — check all three for backward compat.
@@ -5047,9 +5051,12 @@ class BlockRenderer
         $glowEnabled = $this->flag($props['cta_glow_enabled'] ?? false) || $rawGlowColor !== '';
         $glowColor = $this->escapeAttr($this->cssColor($rawGlowColor, 'var(--tb-primary, #c2410c)'));
 
-        $logoText = $this->escape($props['logo_text'] ?? '');
-        $logoAlt = $this->escapeAttr($props['logo_alt'] ?? ($props['logo_text'] ?? 'لوگو'));
-        $logoUrl = $this->linkHref($props['logo_url'] ?? '/', '/');
+        $logoText = trim($this->stringify($props['logo_text'] ?? ($props['brand_name'] ?? '')));
+        $escapedLogoText = $this->escape($logoText);
+        $badgeSymbol = trim($this->stringify($props['logo_badge_symbol'] ?? ''));
+        $badgeSymbolHtml = $badgeSymbol !== '' ? '<span class="tb-nav-header-logo-badge tb-header-nimbus__badge" aria-hidden="true">' . $this->escape($badgeSymbol) . '</span>' : '';
+        $logoAlt = $this->escapeAttr($props['logo_alt'] ?? ($logoText !== '' ? $logoText : 'لوگو'));
+        $logoUrl = $this->linkHref($props['logo_url'] ?? ($props['home_url'] ?? '/'), '/');
         $desktopLogoImage = $this->escapeUrl($this->mediaSrc($props['logo_image'] ?? ''), '');
         $mobileLogoImage = $this->escapeUrl($this->mediaSrc($props['mobile_logo'] ?? ''), '');
         $rawLogoHeight = $props['logo_height'] ?? 40;
@@ -5112,16 +5119,18 @@ class BlockRenderer
         $logoLockup = $logoText !== '' && ($logoIconName !== '' || $logoAccent !== '' || $logoTagline !== '');
         if ($logoLockup) {
             $desktopLogoContent = $logoImageHtml
+                . ($badgeSymbolHtml !== '' && $desktopLogoImage === '' ? $badgeSymbolHtml : '')
                 . ($desktopLogoImage === '' && $logoIconName !== '' ? '<span class="tb-nav-header-logo-icon' . $logoAnimClass . '"' . $animDurStyle . ' aria-hidden="true">' . $this->iconHtml($logoIconName) . '</span>' : '')
                 . '<span class="tb-nav-header-logo-text tb-nav-header-logo-lockup">'
-                . '<span class="tb-nav-header-logo-title">' . $logoText . ($logoAccent !== '' ? ' <span class="tb-nav-header-logo-accent">' . $logoAccent . '</span>' : '') . '</span>'
+                . '<span class="tb-nav-header-logo-title">' . $escapedLogoText . ($logoAccent !== '' ? ' <span class="tb-nav-header-logo-accent">' . $logoAccent . '</span>' : '') . '</span>'
                 . ($logoTagline !== '' ? '<span class="tb-nav-header-logo-tagline">' . $logoTagline . '</span>' : '')
                 . '</span>';
         } else {
             $desktopLogoContent = $logoImageHtml
+                . ($badgeSymbolHtml !== '' && $desktopLogoImage === '' ? $badgeSymbolHtml : '')
                 . ($logoIconName !== '' && $desktopLogoImage === '' ? '<span class="tb-nav-header-logo-icon' . $logoAnimClass . '"' . $animDurStyle . ' aria-hidden="true">' . $this->iconHtml($logoIconName) . '</span>' : '')
-                . ($logoText !== '' && $desktopLogoImage !== '' ? '<span class="tb-nav-header-logo-text">' . $logoText . '</span>' : '')
-                . ($logoImageHtml === '' && $siteLogoHtml === '' ? ($logoIconName !== '' ? '<span class="tb-nav-header-logo-icon' . $logoAnimClass . '"' . $animDurStyle . ' aria-hidden="true">' . $this->iconHtml($logoIconName) . '</span>' : '') . $logoText : '');
+                . ($escapedLogoText !== '' && $desktopLogoImage !== '' ? '<span class="tb-nav-header-logo-text">' . $escapedLogoText . '</span>' : '')
+                . ($logoImageHtml === '' && $siteLogoHtml === '' ? ($logoIconName !== '' ? '<span class="tb-nav-header-logo-icon' . $logoAnimClass . '"' . $animDurStyle . ' aria-hidden="true">' . $this->iconHtml($logoIconName) . '</span>' : '') . $escapedLogoText : '');
         }
         $desktopLogo = '';
         if ($siteLogoHtml !== '') {
@@ -5161,13 +5170,17 @@ class BlockRenderer
                 $url = $this->linkHref($link['url'] ?? '#', '#');
                 // ADR-084: an optional icon before the item's label with bounding-box lock.
                 $linkIcon = trim($this->stringify($link['icon'] ?? ''));
-                $linkIconHtml = $linkIcon !== '' ? '<span class="tb-nav-header-link-icon" aria-hidden="true">' . $this->iconHtml($linkIcon) . '</span>' : '';
+                $linkIconHtml = $linkIcon !== '' ? '<span class="tb-nav-header-link-icon tb-header-icon-slot" aria-hidden="true">' . $this->iconHtml($linkIcon) . '</span>' : '';
                 $mega = $this->normalizeMegaMenuData($link);
                 if ($mega !== null) {
                     $menuHtml .= $this->renderMegaMenuItem($safeId, $url, $label, $mega, $linkIconHtml);
                     $hasMegaMenu = true;
                 } else {
-                    $menuHtml .= '<a href="' . $url . '" class="tb-nav-header-link"' . $this->deadLinkMark($url) . '>' . $linkIconHtml . $label . '</a>';
+                    $currentUrl = trim($this->stringify($this->context['current_url'] ?? ''));
+                $isCurrentPage = !empty($link['is_active']) || ($currentUrl !== '' && rtrim($url, '/') === rtrim($currentUrl, '/'));
+                $ariaCurrent = $isCurrentPage ? ' aria-current="page"' : '';
+                $activeClass = $isCurrentPage ? ' is-active' : '';
+                $menuHtml .= '<a href="' . $url . '" class="tb-nav-header-link' . $activeClass . '"' . $ariaCurrent . $this->deadLinkMark($url) . '>' . $linkIconHtml . '<span>' . $label . '</span></a>';
                 }
             }
         }
@@ -5223,8 +5236,10 @@ class BlockRenderer
 
         $socialLinks = is_array($props['social_links'] ?? null) ? $props['social_links'] : [];
         $socialStyle = ($props['social_style'] ?? '') === 'brand';
+        $socialDisplay = $props['header_social_display'] ?? ($this->flag($props['show_social_in_main_header'] ?? false) ? 'main_header' : 'topbar');
+        $showInMainHeader = in_array($socialDisplay, ['main_header', 'all'], true) || $this->flag($props['show_social_in_main_header'] ?? false);
         $socialClasses = 'tb-nav-header-social' . ($this->flag($props['social_show_mobile'] ?? false) ? ' tb-nav-header-social--mobile' : '');
-        $socialHtml = $this->socialIconsHtml($socialLinks, $safeId . '-quick', 'quick-access', $socialStyle, $socialClasses, true);
+        $socialHtml = ($showInMainHeader && !empty($socialLinks)) ? $this->socialIconsHtml($socialLinks, $safeId . '-quick', 'quick-access', $socialStyle, $socialClasses, true) : '';
 
         $phoneHtml = '';
         $phone = trim($this->stringify($props['phone'] ?? ''));
@@ -5258,7 +5273,7 @@ class BlockRenderer
 
         $ctaHtml = '';
         $ctaPlainHtml = '';
-        $ctaText = $this->escape($props['cta_text'] ?? '');
+        $ctaText = $this->escape($props['cta_text'] ?? $props['cta_label'] ?? '');
         if ($ctaText === '' && filter_var($props['show_register_btn'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
             $ctaText = 'ثبت‌نام';
         }
@@ -5269,21 +5284,22 @@ class BlockRenderer
             $ctaGlowColor = $this->escapeAttr($this->cssColor($rawCtaGlowColor, 'var(--tb-primary, #c2410c)'));
             $ctaGlowClass = $ctaGlow ? ' tb-cta--glow tb-nav-header-glow' : '';
             $ctaGlowStyle = $ctaGlow ? ' style="--tb-nav-header-glow:' . $ctaGlowColor . ';--cta-glow-color:' . $ctaGlowColor . '"' : '';
-            // ADR-084: an icon, and the outline look (the filled one is the default and unchanged).
+            $skin = trim($this->stringify($props['header_skin'] ?? 'default'));
+            $ctaArrow = ($skin === 'glass_nimbus' || $skin === 'header_glass_nimbus' || !empty($props['cta_arrow'])) ? ' <span class="tb-btn-arrow" aria-hidden="true">←</span>' : '';
             $ctaOutline = ($props['cta_style'] ?? 'primary') === 'outline';
-            $ctaInner = $this->headerButtonIcon($props['cta_icon'] ?? '') . $ctaText;
+            $ctaInner = $this->headerButtonIcon($props['cta_icon'] ?? '') . '<span>' . $ctaText . '</span>' . $ctaArrow;
             $ctaClass = 'tb-btn ' . ($ctaOutline ? 'tb-nav-header-cta--outline' : 'tb-btn-primary') . ' tb-nav-header-cta';
             $ctaHtml = '<a href="' . $ctaUrl . '" class="' . $ctaClass . $ctaGlowClass . '"' . $ctaGlowStyle . $this->deadLinkMark($ctaUrl) . '>' . $ctaInner . '</a>';
             $ctaPlainHtml = '<a href="' . $ctaUrl . '" class="' . $ctaClass . '"' . $this->deadLinkMark($ctaUrl) . '>' . $ctaInner . '</a>';
         }
         // ADR-084: the second button sits before the first one in the same slot.
         $cta2Html = '';
-        $cta2Text = $this->escape(mb_substr(trim($this->stringify($props['cta2_text'] ?? '')), 0, 40));
+        $cta2Text = $this->escape(mb_substr(trim($this->stringify($props['cta2_text'] ?? $props['secondary_label'] ?? '')), 0, 40));
         if ($cta2Text === '' && filter_var($props['show_login_btn'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
             $cta2Text = 'ورود';
         }
         if ($cta2Text !== '') {
-            $cta2Url = $this->linkHref($props['cta2_url'] ?? '', '#');
+            $cta2Url = $this->linkHref($props['cta2_url'] ?? $props['secondary_url'] ?? '', '#');
             $cta2Class = 'tb-btn ' . (($props['cta2_style'] ?? 'outline') === 'primary' ? 'tb-btn-primary' : 'tb-nav-header-cta--outline') . ' tb-nav-header-cta tb-nav-header-cta--second';
             $cta2Html = '<a href="' . $cta2Url . '" class="' . $cta2Class . '"' . $this->deadLinkMark($cta2Url) . '>' . $this->headerButtonIcon($props['cta2_icon'] ?? '') . $cta2Text . '</a>';
         }
@@ -5338,9 +5354,13 @@ class BlockRenderer
                 . '</div></nav>'
             : '';
         $drawerClasses = ($drawerSearch !== '' ? ' tb-nav-header--drawer-search' : '') . ($drawerCtas !== '' ? ' tb-nav-header--drawer-ctas' : '');
+        $skin = trim($this->stringify($props['header_skin'] ?? 'default'));
+        if ($skin === 'glass_nimbus' || $skin === 'header_glass_nimbus') {
+            $drawerClasses .= ' tb-header-nimbus-mobile popover';
+        }
 
         $burger = $menuHtml !== ''
-            ? '<button type="button" class="tb-nav-header-toggle tb-nav-header-icon-link" aria-label="باز کردن منو" aria-expanded="false" aria-controls="' . $this->escapeAttr($menuPanelId) . '">' . $this->iconHtml('menu') . '</button>'
+            ? '<button type="button" class="tb-nav-header-toggle tb-nav-header-icon-link" aria-label="باز کردن منو" aria-expanded="false" aria-controls="' . $this->escapeAttr($menuPanelId) . '" data-nimbus-toggle="tgn01-menu-' . $safeId . '">' . $this->iconHtml('menu') . '</button>'
             : '';
 
         $headerOrderRaw = $props['header_order'] ?? null;
@@ -5459,8 +5479,16 @@ class BlockRenderer
         // (theme-runtime-header.css, shipped by theme-runtime::css.blocks and
         // css.header), driven by --tb-hdr-* properties; no per-header <style>.
 
+        $skin = trim($this->stringify($props['header_skin'] ?? 'default'));
+        $skinClass = '';
+        if ($skin === 'glass_nimbus' || $skin === 'header_glass_nimbus') {
+            $skinClass = ' tb-header-skin--glass-nimbus tb-header-nimbus';
+        } elseif ($skin === 'modern' || $skin === 'header_modern_v1') {
+            $skinClass = ' tb-header-skin--modern tb-header-modern';
+        }
+
         $rootClass = 'tb-nav-header-root' . ($mobileLogo !== '' ? ' tb-nav-header-root--has-mobile-logo' : '');
-        $headerClass = 'tb-nav-header' . $menuAlignment . $drawerClasses . $iconsAnimClass;
+        $headerClass = 'tb-nav-header' . $skinClass . $menuAlignment . $drawerClasses . $iconsAnimClass;
         $variantClass = trim($this->stringify($props['variant'] ?? $props['custom_class'] ?? ''));
         if ($variantClass !== '') {
             $headerClass .= ' ' . $this->escapeAttr($variantClass);
@@ -5474,7 +5502,7 @@ class BlockRenderer
         $headerSetAttr = $headerStyle['set'] !== [] ? ' data-tb-hdr-set="' . implode(' ', $headerStyle['set']) . '"' : '';
 
         $topbarHtml = $this->renderTopBarHtml([
-            'enabled' => $this->flag($props['topbar_enable'] ?? false),
+            'enabled' => $this->flag($props['topbar_enable'] ?? ($props['show_topbar'] ?? false)),
             'hide_mobile' => $this->flag($props['topbar_hide_mobile'] ?? false),
             'bg' => $props['topbar_bg'] ?? '',
             'color' => $props['topbar_color'] ?? '',
@@ -5487,9 +5515,16 @@ class BlockRenderer
         ], $socialLinks);
 
         $animStyleVar = $logoAnimClass !== '' ? ';--tb-hdr-logo-anim-dur:' . $logoAnimDur : '';
+        $colorVars = '';
+        if ($skin === 'glass_nimbus' || $skin === 'header_glass_nimbus') {
+            $cta1 = $this->escapeAttr($props['cta_color_start'] ?? '#e20c35');
+            $cta2 = $this->escapeAttr($props['cta_color_end'] ?? '#c4008d');
+            $ink = $this->escapeAttr($props['ink_color'] ?? '#211c48');
+            $colorVars = ";--color-tgn01-cta1:{$cta1};--color-tgn01-cta2:{$cta2};--color-tgn01-ink:{$ink};";
+        }
 
         return $headerStyle['style']
-            . '<div id="' . $this->escapeAttr($rootId) . '" class="' . $headerClass . '"' . $headerSetAttr . ' style="background:' . $background . ';color:' . $textColor . ';--tb-nav-header-glow:' . $glowColor . $animStyleVar . ';" data-tb-block-id="' . $this->escapeAttr($id) . '" data-canvas-block-id="' . $this->escapeAttr($id) . '" data-tb-block-type="nav_header"' . $headerAttrs . '>'
+            . '<div id="' . $this->escapeAttr($rootId) . '" class="' . $headerClass . '"' . $headerSetAttr . ' dir="rtl" style="background:' . $background . ';color:' . $textColor . ';--tb-nav-header-glow:' . $glowColor . $animStyleVar . $colorVars . ';" data-tb-block-id="' . $this->escapeAttr($id) . '" data-canvas-block-id="' . $this->escapeAttr($id) . '" data-tb-block-type="nav_header"' . $headerAttrs . '>'
             . '<div class="' . $rootClass . '">'
             . $topbarHtml
             . '<div class="tb-nav-header-inner">'
@@ -5621,23 +5656,26 @@ class BlockRenderer
                 document.documentElement.setAttribute('data-theme', res);
                 document.documentElement.setAttribute('data-theme-pref', p);
                 if (res === 'dark') {
-                    document.documentElement.classList.add('tb-dark-mode');
-                    if (document.body) document.body.classList.add('tb-dark-mode');
+                    document.documentElement.classList.add('dark', 'tb-dark-mode');
+                    if (document.body) document.body.classList.add('dark', 'tb-dark-mode');
                 } else {
-                    document.documentElement.classList.remove('tb-dark-mode');
-                    if (document.body) document.body.classList.remove('tb-dark-mode');
+                    document.documentElement.classList.remove('dark', 'tb-dark-mode');
+                    if (document.body) document.body.classList.remove('dark', 'tb-dark-mode');
                 }
+                try {
+                    localStorage.setItem('theme', res);
+                    localStorage.setItem(KEY, p);
+                } catch(e) {}
             }
             if (!window.__tbTheme) {
                 var pref = 'system';
-                try { pref = localStorage.getItem(KEY) || 'system'; } catch (e) {}
+                try { pref = localStorage.getItem('theme') || localStorage.getItem(KEY) || 'system'; } catch (e) {}
                 applyTheme(pref);
                 window.__tbTheme = {
                     get: function () { return pref; },
                     set: function (p) {
                         pref = (p === 'light' || p === 'dark' || p === 'system') ? p : 'system';
                         applyTheme(pref);
-                        try { localStorage.setItem(KEY, pref); } catch (e) {}
                         document.dispatchEvent(new CustomEvent('tb-theme-change', { detail: { pref: pref, resolved: resolvePref(pref) } }));
                     },
                     cycle: function () {

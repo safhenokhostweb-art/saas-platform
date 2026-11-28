@@ -185,6 +185,18 @@ final class SharedHeaderSchema
             'dark_mode_icon'     => ['type' => 'icon', 'label' => 'آیکون حالت شب (Dark Mode)', 'default' => 'moon', 'group' => 'دسترسی سریع و اکشن‌ها', 'condition' => ['show_dark_toggle' => true]],
             'light_mode_icon'    => ['type' => 'icon', 'label' => 'آیکون حالت روز (Light Mode)', 'default' => 'sun', 'group' => 'دسترسی سریع و اکشن‌ها', 'condition' => ['show_dark_toggle' => true]],
             'show_social_in_main_header' => ['type' => 'boolean', 'label' => 'نمایش شبکه‌های اجتماعی در هدر اصلی', 'default' => false, 'group' => 'دسترسی سریع و اکشن‌ها'],
+            'header_social_display' => [
+                'type' => 'select',
+                'label' => 'محل نمایش شبکه‌های اجتماعی',
+                'options' => [
+                    'topbar' => 'نوار بالایی (Top Bar)',
+                    'main_header' => 'بدنه اصلی هدر',
+                    'mobile_drawer' => 'منوی موبایل (Drawer)',
+                    'all' => 'همه بخش‌ها (نوار بالا، بدنه و موبایل)',
+                ],
+                'default' => 'topbar',
+                'group' => 'دسترسی سریع و اکشن‌ها',
+            ],
             'ctaText'            => ['type' => 'string', 'label' => 'متن دکمه اصلی (قدیمی)', 'default' => '', 'group' => 'دسترسی سریع و اکشن‌ها', 'hidden' => true],
             'ctaUrl'             => ['type' => 'string', 'label' => 'لینک دکمه اصلی (قدیمی)', 'default' => '', 'group' => 'دسترسی سریع و اکشن‌ها', 'hidden' => true],
             'secondary_text'     => ['type' => 'string', 'label' => 'متن دکمه ثانویه (قدیمی)', 'default' => '', 'group' => 'دسترسی سریع و اکشن‌ها', 'hidden' => true],
@@ -218,6 +230,18 @@ final class SharedHeaderSchema
             'header_icons_animation' => ['type' => 'select', 'label' => 'انیمیشن آیکون‌های اکشن هدر', 'options' => ['none' => 'بدون انیمیشن', 'rotate_pop' => 'چرخش و جهش (Rotate & Pop 360°)', 'pulse' => 'پالس (Pulse)', 'float' => 'شناور (Float)', 'bounce' => 'پرش (Bounce)', 'spin' => 'چرخش مداوم (Spin)'], 'default' => 'none', 'group' => 'دسترسی سریع و اکشن‌ها'],
 
             // ─── Style: Colors, Spacing & Container ──────────────────────────────────
+            'header_skin'        => [
+                'type' => 'select',
+                'label' => 'پوسته ظاهری هدر',
+                'options' => [
+                    'default' => 'کلاسیک / استاندارد',
+                    'glass_nimbus' => 'شناور شیشه‌ای مدرن (Glassmorphic)',
+                    'modern' => 'مدرن مینیمال',
+                ],
+                'default' => 'default',
+                'panel' => 'style',
+                'group' => 'رنگ‌ها و کانتینر',
+            ],
             'bg_color'           => ['type' => 'color', 'label' => 'رنگ پس‌زمینه', 'default' => '#ffffff', 'panel' => 'style', 'group' => 'رنگ‌ها و کانتینر'],
             'text_color'         => ['type' => 'color', 'label' => 'رنگ متن و لینک‌ها', 'default' => '#111827', 'panel' => 'style', 'group' => 'رنگ‌ها و کانتینر'],
             'ink_color'          => ['type' => 'color', 'label' => 'رنگ قلم و المان‌های شناور (Ink)', 'default' => '#211c48', 'panel' => 'style', 'group' => 'رنگ‌ها و کانتینر'],
@@ -303,7 +327,8 @@ final class SharedHeaderSchema
     public static function defaultProps(string $skin = 'nav_header'): array
     {
         $base = [
-            'asset_version' => '1.2.0',
+            'header_skin' => 'default',
+            'asset_version' => '1.3.0',
             'logo_text' => 'برند شما',
             'logo_url' => '/',
             'logo_badge_symbol' => '◆',
@@ -329,8 +354,9 @@ final class SharedHeaderSchema
             'header_order' => ['logo', 'menu', 'search', 'social', 'phone', 'cta', 'cart', 'account', 'dark_toggle', 'burger'],
         ];
 
-        if ($skin === 'header_glass_nimbus') {
+        if ($skin === 'header_glass_nimbus' || $skin === 'glass_nimbus') {
             return array_merge($base, [
+                'header_skin' => 'glass_nimbus',
                 'bg_color' => 'rgba(255, 255, 255, 0.5)',
                 'text_color' => '#211c48',
                 'ink_color' => '#211c48',
@@ -345,8 +371,9 @@ final class SharedHeaderSchema
             ]);
         }
 
-        if ($skin === 'header_modern_v1') {
+        if ($skin === 'header_modern_v1' || $skin === 'modern') {
             return array_merge($base, [
+                'header_skin' => 'modern',
                 'bg_color' => '#ffffff',
                 'text_color' => '#172033',
                 'cta_style' => 'primary',

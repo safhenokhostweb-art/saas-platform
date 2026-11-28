@@ -2671,6 +2671,11 @@ class BlockRegistry
         $filtered = [];
 
         foreach ($all as $type => $def) {
+            // ADR-088: Standalone header variants are unified into nav_header with skins; exclude them from canvas palette
+            if (in_array($type, ['header_glass_nimbus', 'header_modern_v1'], true)) {
+                continue;
+            }
+
             $scope = $def['theme_scope'] ?? null;
             if ($scope !== null && $scope !== '') {
                 $allowed = ($themeSlug !== null && $scope === $themeSlug)

@@ -6039,3 +6039,39 @@ The panel's «حذف» button (`SiteController::destroy` → `SiteDeletionServic
 - Media deletion uses the dedicated `TENANT_MEDIA_*` key; if that config is incomplete the media stage fails (retryable) and the site is kept.
 
 **Amendment (2026-11-21):** `platform_licenses` stores no plaintext key (only `license_key_prefix` + `license_key_hash`, see `LicenseServerService::findByKey()`), so the released code's `where('license_key', …)` failed with SQLSTATE 42S22 on every licensed site (preview 500 in production). A site's licences are now selected by `site_id`: the plan counts them, `REMOVE_LICENSE` revokes them (`revoked_at = now`, rows then removed by the `site_id` cascade with the site) and `VERIFY_DELETE` requires zero active licences. The earlier tests never created a `PlatformLicense`, so the query was never executed; `SitePurgeFlowTest` now covers real issued licences (preview, full purge, failed purge) and a neighbour site's licence.
+
+
+## ADR-091 — Unified Block Core with Scoped Skins and Commercial Asset Gates (One Block Family Architecture)
+
+**Status:** Accepted (2026-11-28)  
+**Scope:** `saas-platform` and `customer-site`  
+**Deciders:** Project Owner & Antigravity Agent  
+
+**Context:**
+Prior to this decision, novel visual design variants of Canvas blocks (such as the Glassmorphic Sticky Header, `header_glass_nimbus`, and `header_modern_v1`) were created as standalone block types with separate inspector schemas, separate render methods, and disconnected prop sets. This fragmented architecture caused severe issues:
+1. Feature drift: improvements to the reference header (`nav_header` / solar industry kit) did not propagate to `header_glass_nimbus` or `header_modern_v1`.
+2. Redundant alias fields (`nav_links`, `cta_label`, `brand_name`) bloated inspectors and created customer confusion.
+3. Nested repeater state bugs in Alpine.js caused cursor jump on every keystroke when editing mega menus.
+4. Canvas block palettes became cluttered with duplicate blocks performing identical structural functions.
+
+**Decision:**
+1. **Single Canonical Base Engine per Block Family:**
+   - All blocks of a family share a single canonical base engine (`nav_header` for headers). No new standalone block types may be introduced for purely visual variants.
+   - All headers inherit 100% of the unified schema defined in `SaaSPlatform\ThemeRuntime\Header\SharedHeaderSchema` (3 tabs: Content, Style, Advanced).
+2. **Visual Presentation via Scoped Skins (`header_skin`):**
+   - Visual variation is achieved purely via the `header_skin` prop (`default`, `glass_nimbus`, `modern`) and scoped CSS classes (`.tb-header-skin--glass-nimbus`, `.tb-header-skin--modern`).
+   - The base renderer `BlockRenderer::renderNavHeader` natively supports all skins, injecting color variables, layout classes, mobile drawer modes, and transitions.
+3. **Safe Retirement & Zero-Downtime Backwards Compatibility:**
+   - Standalone types `header_glass_nimbus` and `header_modern_v1` are retired from the public block palette (`BlockRegistry::forTheme()` and `byCategory()`).
+   - The runtime layer (`BlockRenderer::renderBlock` and `ThemeRuntimeDocument`) provides transparent on-the-fly normalization: existing database blocks with legacy types are mapped directly to `type = 'nav_header'` with `props.header_skin = 'glass_nimbus'` or `'modern'`.
+4. **Alpine.js Repeater Key Identity & Cursor Stability:**
+   - In `canvas-editor.blade.php`, all 3 repeater tiers (`structuredItems`, `nestedItems`, `deepNestedItems`) use stable object identity (`_uid` / `_id`).
+   - Field updates (`updateStructuredField`, `updateNestedField`, `updateDeepNestedField`) mutate the target object in-place without cloning arrays, eliminating Alpine DOM destruction and cursor jumps completely.
+5. **Commercial Asset Integrity:**
+   - The `glass_nimbus` skin and `header-glass-nimbus` preset remain commercial paid assets (`access_type = 'paid'`, price 490,000 tomans, version `1.3.0`), gated by `AssetAccessGate` and `AssetEntitlementClient`.
+
+**Consequences:**
+- All header designs in Canvas now possess 100% feature parity (3-source menu, mega menus, live cart count, account login, FOUC-free dark mode, SVG icons, logo transitions).
+- Zero database breakage for existing customer pages.
+- Future block variants across all families must adhere to this "Base Engine + Scoped Skin" pattern.
+

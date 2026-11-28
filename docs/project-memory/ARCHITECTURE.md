@@ -1,6 +1,17 @@
 # ARCHITECTURE
 > Record of module structure, service boundaries, interfaces, and dependency flow.
-> Last Updated: 2026-09-24
+> Last Updated: 2026-11-28
+
+---
+
+## Unified Block Core & Scoped Skin Architecture (ADR-091) (2026-11-28)
+
+Canvas block families adhere strictly to a single canonical base engine pattern:
+- **Header Block Engine:** All Canvas header variants (`header_glass_nimbus`, `header_modern_v1`, `nav_header`) are unified on `nav_header`. Standalone visual block types are forbidden.
+- **Visual Presentation via Scoped Skins:** The `header_skin` prop (`default`, `glass_nimbus`, `modern`) switches layout and visual skin via scoped CSS (`.tb-header-skin--glass-nimbus`, `.tb-header-skin--modern`) without duplicating inspector schemas or render dispatch pipelines.
+- **Zero-Downtime Backwards Compatibility:** `BlockRenderer::renderBlock` and `ThemeRuntimeDocument` automatically normalize legacy stored block types (`header_glass_nimbus`, `header_modern_v1`) to `type = 'nav_header'` with the matching `header_skin`.
+- **Repeater State Integrity:** In `canvas-editor.blade.php`, all 3 repeater tiers use stable `_uid` tracking and in-place field updates to prevent DOM destruction and cursor jumps in Alpine.js.
+- **Commercial Asset Gate:** Specialized commercial skins (e.g. `glass_nimbus` / `header-glass-nimbus` preset at 490,000 tomans) are protected via `AssetAccessGate` and `AssetEntitlementClient`.
 
 ---
 

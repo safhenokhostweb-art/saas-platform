@@ -91,7 +91,8 @@ class HeaderGlassNimbusTest extends TestCase
         $html = $renderer->renderBlock($block);
 
         // Glassmorphic header class and attributes
-        $this->assertStringContainsString('class="tb-header-nimbus', $html);
+        $this->assertStringContainsString('tb-header-nimbus', $html);
+        $this->assertStringContainsString('tb-header-skin--glass-nimbus', $html);
         $this->assertStringContainsString('dir="rtl"', $html);
         $this->assertStringContainsString('data-asset-version="1.0.0"', $html);
 
@@ -105,15 +106,15 @@ class HeaderGlassNimbusTest extends TestCase
         $this->assertStringContainsString('--color-tgn01-ink:#112233', $html);
 
         // Active link detection for /products
-        $this->assertStringContainsString('href="/products" aria-current="page"', $html);
-        $this->assertStringNotContainsString('href="/pricing" aria-current="page"', $html);
+        $this->assertStringContainsString('href="/products" class="tb-nav-header-link is-active" aria-current="page"', $html);
+        $this->assertStringNotContainsString('href="/pricing" class="tb-nav-header-link is-active"', $html);
 
         // RTL arrow in CTA button
         $this->assertStringContainsString('←', $html);
         $this->assertStringContainsString('شروع رایگان', $html);
 
         // Popover mobile menu
-        $this->assertStringContainsString('class="tb-header-nimbus-mobile', $html);
+        $this->assertStringContainsString('tb-header-nimbus-mobile', $html);
         $this->assertStringContainsString('popover', $html);
         $this->assertStringContainsString('data-nimbus-toggle="tgn01-menu-nimbus_test_1"', $html);
     }
@@ -147,16 +148,17 @@ class HeaderGlassNimbusTest extends TestCase
         $this->assertSame('paid', $preset->access_type, 'Must NOT be free');
         $this->assertSame(490000, $preset->price);
         $this->assertTrue((bool) $preset->is_active);
-        $this->assertSame('1.2.0', $preset->current_version);
+        $this->assertSame('1.3.0', $preset->current_version);
         $this->assertIsArray($preset->blocks);
-        $this->assertSame('header_glass_nimbus', $preset->blocks[0]['type']);
+        $this->assertSame('nav_header', $preset->blocks[0]['type']);
+        $this->assertSame('glass_nimbus', $preset->blocks[0]['props']['header_skin'] ?? null);
 
         $version = CanvasAssetVersion::where('asset_kind', AssetRef::KIND_HEADER)
             ->where('asset_slug', 'header-glass-nimbus')
-            ->where('version', '1.2.0')
+            ->where('version', '1.3.0')
             ->first();
 
-        $this->assertNotNull($version, 'Asset version 1.2.0 record must exist');
-        $this->assertStringContainsString('ارتقا به هسته مشترک هدرها', $version->changelog);
+        $this->assertNotNull($version, 'Asset version 1.3.0 record must exist');
+        $this->assertStringContainsString('یکپارچه‌سازی هدر شیشه‌ای', $version->changelog);
     }
 }
