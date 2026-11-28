@@ -55,6 +55,32 @@ final class AssetAccessGate
     }
 
     /**
+     * Checks if a visual skin is allowed for the given site entitlements.
+     * Standard skins ('default', 'modern', etc.) are public; commercial/restricted
+     * skins (such as 'glass_nimbus') require a valid site grant or purchase.
+     */
+    public static function isSkinAllowed(string $skin, ?SiteAssetEntitlements $site = null): bool
+    {
+        $skin = trim($skin);
+        if ($skin === 'glass_nimbus' || $skin === 'header_glass_nimbus') {
+            if ($site === null) {
+                return false;
+            }
+            if ($site->platformDesigner) {
+                return true;
+            }
+            if ($site->hasGrant('header:header-glass-nimbus') || $site->holdsAny(['header_glass_nimbus'])) {
+                return true;
+            }
+            $decision = self::decideHeader('header-glass-nimbus', $site);
+
+            return $decision !== null && $decision->allowed();
+        }
+
+        return true;
+    }
+
+    /**
      * Theme scopes unlocked by site entitlements or explicit site_asset_grants.
      *
      * @return list<string>

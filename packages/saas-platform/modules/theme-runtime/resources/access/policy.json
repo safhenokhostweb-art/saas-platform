@@ -215,5 +215,8 @@
         "video": "public",
         "solar-energy-cycle": "solar-industry",
         "solar_calculator": "solar-calculator"
+    },
+    "headers": {
+        "header-glass-nimbus": "header-glass-nimbus"
     }
 }

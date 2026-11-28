@@ -58,6 +58,13 @@
     ],
     "reviewed": [
       {
+        "path": "database/migrations/2026_11_28_170000_enhance_site_updates_for_changelog.php",
+        "sha256": "e409bcc7a1316a8eea72501bd48269b87a4d5dcba9ad214118a67a130b5944ad",
+        "reviewed_by": "Owner (approved in session 2026-11-28 for Persian update history and changelog system)",
+        "reviewed_at": "2026-11-28",
+        "reason": "Enhances site_updates table to make site_id nullable for fleet updates, adds title, version, shamsi_date, release_date, update_type, features, is_published, and idempotently seeds v1.4.0 changelog."
+      },
+      {
         "path": "database/migrations/2026_11_28_110000_ensure_canvas_header_glass_nimbus_preset.php",
         "sha256": "c39e0f3697d73a51ca5e8700725c7082cca7418c695f10c9c8d3fd76ecf8df9e",
         "reviewed_by": "Owner (approved in session 2026-11-28 for ADR-091: Canvas Asset Management Header Preset Provisioning)",

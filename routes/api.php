@@ -40,6 +40,7 @@ Route::prefix('updates')->middleware(['throttle:30,1', 'tenant.api'])->group(fun
     Route::get('check', [ApiUpdateController::class, 'check'])->name('api.updates.check');
     Route::get('modules', [ApiUpdateController::class, 'checkModules'])->name('api.updates.modules');
     Route::get('module-history', [ApiUpdateController::class, 'moduleHistory'])->name('api.updates.module-history');
+    Route::get('history', [ApiUpdateController::class, 'history'])->name('api.updates.history');
     Route::post('report-versions', [ApiUpdateController::class, 'reportVersions'])->name('api.updates.report-versions');
 });
 

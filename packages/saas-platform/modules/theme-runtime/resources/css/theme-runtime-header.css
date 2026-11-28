@@ -1029,7 +1029,7 @@ header.tb-hdr-sticky,
    ADR-088 & ADR-091: Scoped Skin: Glassmorphic Sticky Header (.tb-header-skin--glass-nimbus)
    100% Pure, Explicit, Standard CSS (Zero Tailwind Dependency).
    Fulfills floating glassmorphic container, 16px blur, 180% saturation,
-   translucent borders, gradient CTA, and glassmorphic mobile drawer.
+   translucent borders, gradient CTA, and full responsive RTL mobile drawer.
    ══════════════════════════════════════════════════════════════════ */
 .tb-header-skin--glass-nimbus {
    --color-tgn01-ink: #211c48;
@@ -1039,25 +1039,39 @@ header.tb-hdr-sticky,
    align-items: center !important;
    justify-content: space-between !important;
    gap: 1rem !important;
-   min-height: 4rem !important;
+   min-height: var(--tgn01-glass-min-h, var(--tb-hdr-min-h, 4.25rem)) !important;
    position: sticky !important;
    top: var(--tgn01-glass-top, 0.75rem) !important;
-   z-index: 40 !important;
-   border-radius: 1rem !important;
-   border: 1px solid rgba(255, 255, 255, 0.6) !important;
-   background-color: var(--tgn01-glass-bg, rgba(255, 255, 255, 0.52)) !important;
-   backdrop-filter: blur(var(--tgn01-glass-blur, 16px)) saturate(180%) !important;
-   -webkit-backdrop-filter: blur(var(--tgn01-glass-blur, 16px)) saturate(180%) !important;
-   box-shadow: var(--tgn01-glass-shadow, 0 8px 30px -6px rgba(45, 30, 95, 0.28)) !important;
-   padding: 0.625rem 1.25rem !important;
+   z-index: var(--tgn01-glass-z, 40) !important;
+   border-radius: 1rem;
+   border-radius: var(--tgn01-glass-radius, 1rem) !important;
+   border: var(--tgn01-glass-border-w, 1px) solid var(--tgn01-glass-border-c, rgba(255, 255, 255, 0.6)) !important;
+   background-color: transparent !important;
+   padding: var(--tgn01-glass-pad-y, 0.625rem) var(--tgn01-glass-pad-x, 1.25rem) !important;
    width: calc(100% - 2rem) !important;
-   max-width: 80rem !important;
+   max-width: var(--tgn01-glass-max-w, var(--tb-hdr-max-w, 80rem)) !important;
    margin-left: auto !important;
    margin-right: auto !important;
    margin-top: 0.75rem !important;
    margin-bottom: 0.75rem !important;
    box-sizing: border-box !important;
-   color: var(--color-tgn01-ink, #211c48) !important;
+   color: var(--tgn01-glass-text, var(--color-tgn01-ink, #211c48)) !important;
+   transition: min-height 200ms ease, top 200ms ease, box-shadow 200ms ease !important;
+}
+
+/* Glass background & backdrop-filter on pseudo-element to avoid trapping fixed-position mobile drawers */
+.tb-header-skin--glass-nimbus::before {
+   content: "";
+   position: absolute;
+   inset: 0;
+   z-index: -1;
+   border-radius: inherit;
+   background-color: var(--tgn01-glass-bg, rgba(255, 255, 255, 0.52));
+   backdrop-filter: blur(var(--tgn01-glass-blur, 16px)) saturate(180%);
+   -webkit-backdrop-filter: blur(var(--tgn01-glass-blur, 16px)) saturate(180%);
+   box-shadow: var(--tgn01-glass-shadow, 0 8px 30px -6px rgba(45, 30, 95, 0.28));
+   pointer-events: none;
+   transition: background-color 200ms ease, box-shadow 200ms ease, border-color 200ms ease !important;
 }
 
 /* Nav header nesting compatibility: ensure internal elements flow correctly */
@@ -1071,26 +1085,56 @@ header.tb-hdr-sticky,
    align-items: center !important;
    justify-content: space-between !important;
    gap: 1rem !important;
-   min-height: 4rem !important;
+   min-height: var(--tgn01-glass-min-h, var(--tb-hdr-min-h, 4.25rem)) !important;
    padding: 0 !important;
    width: 100% !important;
    background: transparent !important;
    box-sizing: border-box !important;
 }
 
+/* Dark mode glass styling */
 html.dark .tb-header-skin--glass-nimbus,
 .tb-dark-mode .tb-header-skin--glass-nimbus {
-   background-color: rgba(17, 24, 39, 0.75) !important;
-   border-color: rgba(255, 255, 255, 0.12) !important;
-   box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.05) inset !important;
+   border-color: var(--tgn01-glass-border-c, rgba(255, 255, 255, 0.12)) !important;
    color: #f3f4f6 !important;
+}
+
+html.dark .tb-header-skin--glass-nimbus::before,
+.tb-dark-mode .tb-header-skin--glass-nimbus::before {
+   background-color: var(--tgn01-glass-bg, rgba(17, 24, 39, 0.75)) !important;
+   box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.05) inset !important;
+}
+
+/* Advanced Tab: Scrolled & Sticky Shrink State */
+.tb-nav-header.tb-nav-header--scrolled.tb-header-skin--glass-nimbus {
+   min-height: var(--tgn01-glass-shrink-h, var(--tb-hdr-shrink-h, 3.5rem)) !important;
+   top: 0.25rem !important;
+}
+.tb-nav-header.tb-nav-header--scrolled.tb-header-skin--glass-nimbus .tb-nav-header-inner {
+   min-height: var(--tgn01-glass-shrink-h, var(--tb-hdr-shrink-h, 3.5rem)) !important;
+}
+.tb-nav-header.tb-nav-header--scrolled.tb-header-skin--glass-nimbus::before {
+   background-color: var(--tgn01-glass-scrolled-bg, rgba(255, 255, 255, 0.88)) !important;
+   box-shadow: 0 10px 32px -4px rgba(33, 28, 72, 0.3) !important;
+}
+html.dark .tb-nav-header.tb-nav-header--scrolled.tb-header-skin--glass-nimbus::before,
+.tb-dark-mode .tb-nav-header.tb-nav-header--scrolled.tb-header-skin--glass-nimbus::before {
+   background-color: var(--tgn01-glass-scrolled-bg, rgba(17, 24, 39, 0.92)) !important;
+   box-shadow: 0 10px 32px -4px rgba(0, 0, 0, 0.45) !important;
+}
+
+/* Advanced Tab: Transparent Over Hero */
+.tb-nav-header.tb-nav-header--transparent-hero.tb-header-skin--glass-nimbus:not(.tb-nav-header--scrolled)::before {
+   background-color: transparent !important;
+   box-shadow: none !important;
+   border-color: rgba(255, 255, 255, 0.25) !important;
 }
 
 /* Glassmorphic Pill Link Effect */
 .tb-header-skin--glass-nimbus .tb-nav-header-link {
    border-radius: 0.75rem !important;
    padding: 0.4rem 0.8rem !important;
-   color: var(--color-tgn01-ink, #211c48) !important;
+   color: var(--tgn01-glass-text, var(--color-tgn01-ink, #211c48)) !important;
    transition: background-color 150ms ease, color 150ms ease !important;
 }
 .tb-header-skin--glass-nimbus .tb-nav-header-link:hover,
@@ -1136,28 +1180,37 @@ html.dark .tb-header-skin--glass-nimbus .tb-nav-header-link[aria-current="page"]
    box-shadow: 0 12px 26px -4px var(--color-tgn01-cta2, #c4008d) !important;
 }
 
-/* Glassmorphic Mobile Drawer / Menu Panel */
-.tb-header-skin--glass-nimbus .tb-nav-header-menu-panel {
+/* Full Glassmorphic Mobile Drawer (ADR-091) */
+.tb-nav-header.tb-header-skin--glass-nimbus .tb-nav-header-links {
    background: rgba(255, 255, 255, 0.88) !important;
    backdrop-filter: blur(20px) saturate(180%) !important;
    -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
-   border-radius: 1.25rem !important;
-   border: 1px solid rgba(255, 255, 255, 0.4) !important;
-   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15) !important;
+   border-inline-start: 1px solid rgba(255, 255, 255, 0.5) !important;
+   box-shadow: -15px 0 35px rgba(33, 28, 72, 0.15) !important;
 }
-html.dark .tb-header-skin--glass-nimbus .tb-nav-header-menu-panel,
-.tb-dark-mode .tb-header-skin--glass-nimbus .tb-nav-header-menu-panel {
-   background: rgba(17, 24, 39, 0.9) !important;
-   border-color: rgba(255, 255, 255, 0.1) !important;
+
+html.dark .tb-nav-header.tb-header-skin--glass-nimbus .tb-nav-header-links,
+.tb-dark-mode .tb-nav-header.tb-header-skin--glass-nimbus .tb-nav-header-links {
+   background: rgba(17, 24, 39, 0.92) !important;
+   border-inline-start: 1px solid rgba(255, 255, 255, 0.1) !important;
+   box-shadow: -15px 0 35px rgba(0, 0, 0, 0.4) !important;
    color: #f3f4f6 !important;
 }
 
+.tb-header-skin--glass-nimbus .tb-nav-header-menu-panel {
+   background: transparent !important;
+   border: none !important;
+   box-shadow: none !important;
+   backdrop-filter: none !important;
+   -webkit-backdrop-filter: none !important;
+}
+
 @supports not (backdrop-filter: blur(1px)) {
-   .tb-header-skin--glass-nimbus {
+   .tb-header-skin--glass-nimbus::before {
       background-color: rgba(255, 255, 255, 0.92) !important;
    }
-   html.dark .tb-header-skin--glass-nimbus,
-   .tb-dark-mode .tb-header-skin--glass-nimbus {
+   html.dark .tb-header-skin--glass-nimbus::before,
+   .tb-dark-mode .tb-header-skin--glass-nimbus::before {
       background-color: rgba(17, 24, 39, 0.95) !important;
    }
 }

@@ -598,6 +598,8 @@ Route::prefix('admin')
             // Grants (Single & Bulk)
             Route::post('grants', [\App\Http\Controllers\Admin\CanvasAssetAdminController::class, 'grantAsset'])->name('grants.store');
             Route::post('grants/revoke', [\App\Http\Controllers\Admin\CanvasAssetAdminController::class, 'revokeAsset'])->name('grants.revoke');
+            Route::delete('grants/{grant}', [\App\Http\Controllers\Admin\CanvasAssetAdminController::class, 'destroyGrant'])->name('grants.destroy');
+            Route::post('cleanup-orphans', [\App\Http\Controllers\Admin\CanvasAssetAdminController::class, 'cleanupOrphans'])->name('cleanup-orphans');
 
             // Bulk JSON Import
             Route::post('import-json', [\App\Http\Controllers\Admin\CanvasAssetAdminController::class, 'importJson'])->name('import-json');
@@ -615,6 +617,7 @@ Route::prefix('admin')
         Route::delete('sites/{site}/seo/redirects/{redirect}', [SeoController::class, 'destroyRedirect'])->name('sites.seo.redirects.destroy');
         Route::get('sites/{site}/updates', [SiteUpdateController::class, 'index'])->name('sites.updates.index');
         Route::post('sites/{site}/updates', [SiteUpdateController::class, 'store'])->name('sites.updates.store');
+        Route::delete('sites/updates/{update}', [SiteUpdateController::class, 'destroy'])->name('sites.updates.destroy');
         Route::get('sites/{site}/license', [SiteLicenseController::class, 'create'])->name('sites.license.create');
         Route::post('sites/{site}/license', [SiteLicenseController::class, 'store'])->name('sites.license.store');
         Route::get('sites/{site}/license/show', [SiteLicenseController::class, 'show'])->name('sites.license.show');

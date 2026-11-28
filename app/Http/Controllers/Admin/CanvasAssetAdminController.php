@@ -88,6 +88,11 @@ class CanvasAssetAdminController extends Controller
             ->get()
             ->groupBy(fn ($v) => $v->asset_kind . ':' . ($v->asset_slug ?? $v->asset_key));
 
+        $activeGrants = SiteAssetGrant::query()->active()
+            ->with('site:id,title,domain')
+            ->orderByDesc('id')
+            ->get();
+
         return view('admin.canvas-assets.index', [
             'activeTab' => $activeTab,
             'buttonPacks' => $buttonPacks,
@@ -99,6 +104,7 @@ class CanvasAssetAdminController extends Controller
             'sites' => $sites,
             'grantCounts' => $grantCounts,
             'versions' => $versions,
+            'activeGrants' => $activeGrants,
         ]);
     }
 
@@ -175,10 +181,35 @@ class CanvasAssetAdminController extends Controller
     public function destroyButtonPack(CanvasButtonPack $pack): RedirectResponse
     {
         $title = $pack->title;
+        $slug = $pack->slug;
+
+        // Cascade delete presets
+        $pack->presets()->delete();
+
+        // Cascade delete versions
+        CanvasAssetVersion::where('asset_kind', AssetRef::KIND_BUTTON_PACK)
+            ->where(fn ($q) => $q->where('asset_slug', $slug)->orWhere('asset_key', $slug))
+            ->delete();
+
+        // Cascade delete grants & bust site cache
+        $siteIds = SiteAssetGrant::where('asset_kind', AssetRef::KIND_BUTTON_PACK)
+            ->where('asset_key', $slug)
+            ->pluck('site_id')
+            ->unique()
+            ->all();
+
+        SiteAssetGrant::where('asset_kind', AssetRef::KIND_BUTTON_PACK)
+            ->where('asset_key', $slug)
+            ->delete();
+
+        foreach ($siteIds as $siteId) {
+            \App\Services\AssetProvisioning\SiteAssetEntitlementService::bustSiteCache($siteId);
+        }
+
         $pack->delete();
 
         return redirect()->route('admin.canvas-assets.index', ['tab' => 'buttons'])
-            ->with('success', "پک دکمه «{$title}» حذف شد.");
+            ->with('success', "پک دکمه «{$title}» و دسترسی‌ها و نسخه‌های مرتبط با موفقیت حذف شدند.");
     }
 
     public function storeButtonPreset(Request $request, CanvasButtonPack $pack): RedirectResponse
@@ -340,10 +371,35 @@ class CanvasAssetAdminController extends Controller
     public function destroyIconPack(CanvasIconPack $pack): RedirectResponse
     {
         $title = $pack->title;
+        $slug = $pack->slug;
+
+        // Cascade delete items
+        $pack->items()->delete();
+
+        // Cascade delete versions
+        CanvasAssetVersion::where('asset_kind', AssetRef::KIND_ICON_PACK)
+            ->where(fn ($q) => $q->where('asset_slug', $slug)->orWhere('asset_key', $slug))
+            ->delete();
+
+        // Cascade delete grants & bust site cache
+        $siteIds = SiteAssetGrant::where('asset_kind', AssetRef::KIND_ICON_PACK)
+            ->where('asset_key', $slug)
+            ->pluck('site_id')
+            ->unique()
+            ->all();
+
+        SiteAssetGrant::where('asset_kind', AssetRef::KIND_ICON_PACK)
+            ->where('asset_key', $slug)
+            ->delete();
+
+        foreach ($siteIds as $siteId) {
+            \App\Services\AssetProvisioning\SiteAssetEntitlementService::bustSiteCache($siteId);
+        }
+
         $pack->delete();
 
         return redirect()->route('admin.canvas-assets.index', ['tab' => 'icons'])
-            ->with('success', "پک آیکن «{$title}» حذف شد.");
+            ->with('success', "پک آیکن «{$title}» و دسترسی‌ها و نسخه‌های مرتبط با موفقیت حذف شدند.");
     }
 
     public function storeIconItem(Request $request, CanvasIconPack $pack): RedirectResponse
@@ -511,10 +567,32 @@ class CanvasAssetAdminController extends Controller
     public function destroyHeaderPreset(CanvasHeaderPreset $preset): RedirectResponse
     {
         $title = $preset->title;
+        $slug = $preset->slug;
+
+        // Cascade delete versions
+        CanvasAssetVersion::where('asset_kind', AssetRef::KIND_HEADER)
+            ->where(fn ($q) => $q->where('asset_slug', $slug)->orWhere('asset_key', $slug))
+            ->delete();
+
+        // Cascade delete grants & bust site cache
+        $siteIds = SiteAssetGrant::where('asset_kind', AssetRef::KIND_HEADER)
+            ->where('asset_key', $slug)
+            ->pluck('site_id')
+            ->unique()
+            ->all();
+
+        SiteAssetGrant::where('asset_kind', AssetRef::KIND_HEADER)
+            ->where('asset_key', $slug)
+            ->delete();
+
+        foreach ($siteIds as $siteId) {
+            \App\Services\AssetProvisioning\SiteAssetEntitlementService::bustSiteCache($siteId);
+        }
+
         $preset->delete();
 
         return redirect()->route('admin.canvas-assets.index', ['tab' => 'headers'])
-            ->with('success', "قالب هدر «{$title}» حذف شد.");
+            ->with('success', "قالب هدر «{$title}» و تمام دسترسی‌ها و نسخه‌های مرتبط با موفقیت حذف شدند.");
     }
 
     public function publishHeaderPresetVersion(Request $request, CanvasHeaderPreset $preset): RedirectResponse
@@ -629,10 +707,32 @@ class CanvasAssetAdminController extends Controller
     public function destroyFooterPreset(CanvasFooterPreset $preset): RedirectResponse
     {
         $title = $preset->title;
+        $slug = $preset->slug;
+
+        // Cascade delete versions
+        CanvasAssetVersion::where('asset_kind', AssetRef::KIND_FOOTER)
+            ->where(fn ($q) => $q->where('asset_slug', $slug)->orWhere('asset_key', $slug))
+            ->delete();
+
+        // Cascade delete grants & bust site cache
+        $siteIds = SiteAssetGrant::where('asset_kind', AssetRef::KIND_FOOTER)
+            ->where('asset_key', $slug)
+            ->pluck('site_id')
+            ->unique()
+            ->all();
+
+        SiteAssetGrant::where('asset_kind', AssetRef::KIND_FOOTER)
+            ->where('asset_key', $slug)
+            ->delete();
+
+        foreach ($siteIds as $siteId) {
+            \App\Services\AssetProvisioning\SiteAssetEntitlementService::bustSiteCache($siteId);
+        }
+
         $preset->delete();
 
         return redirect()->route('admin.canvas-assets.index', ['tab' => 'footers'])
-            ->with('success', "قالب فوتر «{$title}» حذف شد.");
+            ->with('success', "قالب فوتر «{$title}» و تمام دسترسی‌ها و نسخه‌های مرتبط با موفقیت حذف شدند.");
     }
 
     public function publishFooterPresetVersion(Request $request, CanvasFooterPreset $preset): RedirectResponse
@@ -747,10 +847,32 @@ class CanvasAssetAdminController extends Controller
     public function destroySectionPreset(CanvasSectionPreset $preset): RedirectResponse
     {
         $title = $preset->title;
+        $slug = $preset->slug;
+
+        // Cascade delete versions
+        CanvasAssetVersion::where('asset_kind', AssetRef::KIND_SECTION)
+            ->where(fn ($q) => $q->where('asset_slug', $slug)->orWhere('asset_key', $slug))
+            ->delete();
+
+        // Cascade delete grants & bust site cache
+        $siteIds = SiteAssetGrant::where('asset_kind', AssetRef::KIND_SECTION)
+            ->where('asset_key', $slug)
+            ->pluck('site_id')
+            ->unique()
+            ->all();
+
+        SiteAssetGrant::where('asset_kind', AssetRef::KIND_SECTION)
+            ->where('asset_key', $slug)
+            ->delete();
+
+        foreach ($siteIds as $siteId) {
+            \App\Services\AssetProvisioning\SiteAssetEntitlementService::bustSiteCache($siteId);
+        }
+
         $preset->delete();
 
         return redirect()->route('admin.canvas-assets.index', ['tab' => 'sections'])
-            ->with('success', "سکشن آماده «{$title}» حذف شد.");
+            ->with('success', "سکشن آماده «{$title}» و تمام دسترسی‌ها و نسخه‌های مرتبط با موفقیت حذف شدند.");
     }
 
     public function publishSectionPresetVersion(Request $request, CanvasSectionPreset $preset): RedirectResponse
@@ -888,6 +1010,64 @@ class CanvasAssetAdminController extends Controller
 
         return redirect()->back()
             ->with('success', "دسترسی دارایی «{$data['asset_key']}» از {$count} سایت لغو شد.");
+    }
+
+    public function destroyGrant(SiteAssetGrant $grant): RedirectResponse
+    {
+        $siteId = $grant->site_id;
+        $ref = AssetRef::make($grant->asset_kind, $grant->asset_key);
+        $grant->delete();
+
+        \App\Services\AssetProvisioning\SiteAssetEntitlementService::bustSiteCache($siteId);
+
+        return redirect()->back()
+            ->with('success', "دسترسی دارایی «{$ref}» از سایت با موفقیت لغو و حذف شد.");
+    }
+
+    public function cleanupOrphans(): RedirectResponse
+    {
+        $deletedCount = 0;
+
+        // Headers
+        $validHeaders = CanvasHeaderPreset::pluck('slug')->filter()->all();
+        $deletedCount += SiteAssetGrant::where('asset_kind', AssetRef::KIND_HEADER)
+            ->whereNotIn('asset_key', $validHeaders)
+            ->delete();
+
+        // Footers
+        $validFooters = CanvasFooterPreset::pluck('slug')->filter()->all();
+        $deletedCount += SiteAssetGrant::where('asset_kind', AssetRef::KIND_FOOTER)
+            ->whereNotIn('asset_key', $validFooters)
+            ->delete();
+
+        // Sections
+        $validSections = CanvasSectionPreset::pluck('slug')->filter()->all();
+        $deletedCount += SiteAssetGrant::where('asset_kind', AssetRef::KIND_SECTION)
+            ->whereNotIn('asset_key', $validSections)
+            ->delete();
+
+        // Button Packs
+        $validButtons = CanvasButtonPack::pluck('slug')->filter()->all();
+        $deletedCount += SiteAssetGrant::where('asset_kind', AssetRef::KIND_BUTTON_PACK)
+            ->whereNotIn('asset_key', $validButtons)
+            ->delete();
+
+        // Icon Packs
+        $validIcons = CanvasIconPack::pluck('slug')->filter()->all();
+        $deletedCount += SiteAssetGrant::where('asset_kind', AssetRef::KIND_ICON_PACK)
+            ->whereNotIn('asset_key', $validIcons)
+            ->delete();
+
+        // Motions
+        if (class_exists(MotionGraphic::class)) {
+            $validMotions = MotionGraphic::whereNull('archived_at')->pluck('key')->filter()->all();
+            $deletedCount += SiteAssetGrant::where('asset_kind', AssetRef::KIND_MOTION)
+                ->whereNotIn('asset_key', $validMotions)
+                ->delete();
+        }
+
+        return redirect()->back()
+            ->with('success', "پاک‌سازی رکوردهای یتیم انجام شد. تعداد {$deletedCount} رکورد حذف شد.");
     }
 
     // ─────────────────────────────────────────────────────────────

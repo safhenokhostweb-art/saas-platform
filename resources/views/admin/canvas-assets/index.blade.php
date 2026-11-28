@@ -10,6 +10,7 @@
 @section('content')
 <div class="max-w-7xl mx-auto space-y-6" x-data="{
     activeTab: '{{ $activeTab ?? 'buttons' }}',
+    grantSearch: '',
     importModalOpen: false,
     grantModalOpen: false,
     grantAssetKind: '',
@@ -111,9 +112,24 @@
                 <span>ویجت‌های موشن گرافیک (تکی)</span>
                 <span class="text-xs px-2 py-0.5 rounded-full" :class="activeTab === 'motions' ? 'bg-indigo-700 text-indigo-100' : 'bg-gray-100 text-gray-600'">{{ $motions->count() }}</span>
             </button>
+
+            <button type="button" @click="activeTab = 'grants'"
+                    :class="activeTab === 'grants' ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'"
+                    class="px-4 py-2.5 rounded-xl text-sm font-medium transition flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                <span>سایت‌های دارای دسترسی (Active Grants)</span>
+                <span class="text-xs px-2 py-0.5 rounded-full" :class="activeTab === 'grants' ? 'bg-indigo-700 text-indigo-100' : 'bg-gray-100 text-gray-600'">{{ $activeGrants->count() }}</span>
+            </button>
         </div>
 
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2">
+            <form method="POST" action="{{ route('admin.canvas-assets.cleanup-orphans') }}" onsubmit="return confirm('آیا از پاک‌سازی تمام رکوردهای گرنت یتیم که دارایی والد آن‌ها حذف شده است اطمینان دارید؟');" class="inline">
+                @csrf
+                <button type="submit" class="px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-xl text-xs font-semibold transition flex items-center gap-1.5" title="حذف گرنت‌هایی که دارایی مربوط به آن‌ها از سیستم پاک شده است">
+                    <svg class="w-3.5 h-3.5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    <span>پاک‌سازی گرنت‌های یتیم</span>
+                </button>
+            </form>
             <button type="button" @click="importModalOpen = true"
                     class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold transition shadow-sm flex items-center gap-1.5">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
@@ -1163,6 +1179,85 @@
                     @endforelse
                 </tbody>
             </table>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- TAB 7: ACTIVE SITE GRANTS & REVOCATION -->
+    <!-- ===================================================================== -->
+    <div x-show="activeTab === 'grants'" class="space-y-6" style="display: none;">
+        <div class="flex items-center justify-between flex-wrap gap-4">
+            <div>
+                <h2 class="text-lg font-bold text-gray-900">سایت‌های دارای دسترسی به دارایی‌های Canvas</h2>
+                <p class="text-xs text-gray-500 mt-0.5">مشاهده، بررسی و لغو فوری دسترسی سایت‌های مشتری به هدرها، فوترها، دکمه‌ها، آیکن‌ها و موشن‌های تجاری.</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <input type="text" x-model="grantSearch" placeholder="جستجوی سایت یا دارایی..." class="text-xs px-3 py-2 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 w-64">
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            @if($activeGrants->isEmpty())
+                <div class="p-8 text-center text-gray-400 text-sm">
+                    در حال حاضر هیچ دارایی اختصاص‌یافته‌ای برای سایت‌ها ثبت نشده است.
+                </div>
+            @else
+                <div class="overflow-x-auto">
+                    <table class="w-full text-right text-xs">
+                        <thead class="bg-gray-50 border-b border-gray-100 text-gray-500">
+                            <tr>
+                                <th class="py-3 px-4 font-semibold">شناسه</th>
+                                <th class="py-3 px-4 font-semibold">نوع دارایی</th>
+                                <th class="py-3 px-4 font-semibold">کلید دارایی</th>
+                                <th class="py-3 px-4 font-semibold">سایت هدف</th>
+                                <th class="py-3 px-4 font-semibold">دامنه</th>
+                                <th class="py-3 px-4 font-semibold">نسخه</th>
+                                <th class="py-3 px-4 font-semibold">تاریخ اعطا</th>
+                                <th class="py-3 px-4 font-semibold text-center">عملیات لغو دسترسی</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            @foreach($activeGrants as $grant)
+                                @php
+                                    $kindBadges = [
+                                        'header' => ['bg' => 'bg-purple-50 text-purple-700 border-purple-200', 'label' => 'قالب هدر'],
+                                        'footer' => ['bg' => 'bg-blue-50 text-blue-700 border-blue-200', 'label' => 'قالب فوتر'],
+                                        'section' => ['bg' => 'bg-emerald-50 text-emerald-700 border-emerald-200', 'label' => 'سکشن آماده'],
+                                        'button_pack' => ['bg' => 'bg-pink-50 text-pink-700 border-pink-200', 'label' => 'پک دکمه'],
+                                        'icon_pack' => ['bg' => 'bg-amber-50 text-amber-700 border-amber-200', 'label' => 'پک آیکن'],
+                                        'motion' => ['bg' => 'bg-indigo-50 text-indigo-700 border-indigo-200', 'label' => 'موشن گرافیک'],
+                                        'template' => ['bg' => 'bg-teal-50 text-teal-700 border-teal-200', 'label' => 'قالب صفحه'],
+                                    ];
+                                    $kBadge = $kindBadges[$grant->asset_kind] ?? ['bg' => 'bg-gray-50 text-gray-700 border-gray-200', 'label' => $grant->asset_kind];
+                                @endphp
+                                <tr class="hover:bg-gray-50 transition" x-show="!grantSearch || '{{ strtolower($grant->asset_key . ' ' . ($grant->site?->title ?? '') . ' ' . ($grant->site?->domain ?? '')) }}'.includes(grantSearch.toLowerCase())">
+                                    <td class="py-3 px-4 font-mono text-gray-400">#{{ $grant->id }}</td>
+                                    <td class="py-3 px-4">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold border {{ $kBadge['bg'] }}">
+                                            {{ $kBadge['label'] }}
+                                        </span>
+                                    </td>
+                                    <td class="py-3 px-4 font-bold text-gray-800 font-mono">{{ $grant->asset_key }}</td>
+                                    <td class="py-3 px-4 font-medium text-gray-900">{{ $grant->site?->title ?? '—' }}</td>
+                                    <td class="py-3 px-4 font-mono text-gray-500 dir-ltr text-right">{{ $grant->site?->domain ?? '—' }}</td>
+                                    <td class="py-3 px-4 font-mono text-gray-600">{{ $grant->granted_version ?: '1.0.0' }}</td>
+                                    <td class="py-3 px-4 text-gray-500">{{ $grant->granted_at ? \App\Helpers\Jalali::formatFa($grant->granted_at) : '—' }}</td>
+                                    <td class="py-3 px-4 text-center">
+                                        <form method="POST" action="{{ route('admin.canvas-assets.grants.destroy', $grant) }}" onsubmit="return confirm('آیا از لغو اختصاص این دارایی از سایت «{{ $grant->site?->title ?? $grant->site_id }}» اطمینان دارید؟ با این کار کش دسترسی سایت فوراً باطل خواهد شد.');" class="inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-medium transition inline-flex items-center gap-1">
+                                                <svg class="w-3.5 h-3.5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                <span>لغو اختصاص از سایت</span>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
         </div>
     </div>
 

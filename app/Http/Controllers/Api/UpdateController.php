@@ -40,7 +40,12 @@ class UpdateController extends Controller
             ], 403);
         }
 
-        $latest = SiteUpdate::where('site_id', $site->id)->orderByDesc('distributed_at')->first();
+        $latest = SiteUpdate::query()
+            ->forSite($site->id)
+            ->published()
+            ->orderByDesc('release_date')
+            ->orderByDesc('distributed_at')
+            ->first();
 
         if (!$latest) {
             return response()->json([
@@ -50,15 +55,64 @@ class UpdateController extends Controller
             ]);
         }
 
-        $current = $request->input('current_version', '0');
-        $updateAvailable = version_compare($latest->version_label, $current, '>');
+        $current = (string) $request->input('current_version', '0');
+        $targetVersion = $latest->version ?: $latest->version_label;
+        $cleanTarget = ltrim($targetVersion, 'vV');
+        $cleanCurrent = ltrim($current, 'vV');
+        $updateAvailable = version_compare($cleanTarget, $cleanCurrent, '>');
 
         return response()->json([
             'allowed' => true,
-            'latest_version' => $latest->version_label,
+            'latest_version' => $targetVersion,
+            'title' => $latest->title ?: $targetVersion,
+            'shamsi_date' => $latest->shamsi_date ?: ($latest->distributed_at ? \App\Helpers\Jalali::formatFa($latest->distributed_at) : null),
             'update_available' => $updateAvailable,
             'changelog' => $latest->notes,
+            'features' => $latest->features ?: [],
+            'update_type' => $latest->update_type ?? 'feature',
+            'type_label' => $latest->getTypeLabel(),
             'distributed_at' => $latest->distributed_at?->toIso8601String(),
+        ]);
+    }
+
+    /**
+     * GET /api/updates/history — تاریخچهٔ بروزرسانی‌های سامانه و امکانات جدید برای tenant.
+     */
+    public function history(Request $request): JsonResponse
+    {
+        $site = $this->currentSite();
+
+        $limit = (int) $request->input('limit', 20);
+        $limit = max(1, min($limit, 50));
+
+        $updates = SiteUpdate::query()
+            ->forSite($site->id)
+            ->published()
+            ->orderByDesc('release_date')
+            ->orderByDesc('id')
+            ->limit($limit)
+            ->get();
+
+        $history = $updates->map(function (SiteUpdate $u) {
+            return [
+                'id' => $u->id,
+                'title' => $u->title ?: ($u->version ?: $u->version_label),
+                'version' => $u->version ?: $u->version_label,
+                'version_label' => $u->version_label,
+                'shamsi_date' => $u->shamsi_date ?: ($u->distributed_at ? \App\Helpers\Jalali::formatFa($u->distributed_at) : null),
+                'release_date' => $u->release_date?->format('Y-m-d') ?: $u->distributed_at?->format('Y-m-d'),
+                'update_type' => $u->update_type ?? 'feature',
+                'type_label' => $u->getTypeLabel(),
+                'features' => $u->features ?: [],
+                'notes' => $u->notes,
+                'is_fleet' => $u->isFleet(),
+            ];
+        })->values();
+
+        return response()->json([
+            'allowed' => true,
+            'history' => $history,
+            'latest' => $history->first(),
         ]);
     }
 

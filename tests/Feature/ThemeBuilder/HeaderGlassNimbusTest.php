@@ -113,10 +113,9 @@ class HeaderGlassNimbusTest extends TestCase
         $this->assertStringContainsString('←', $html);
         $this->assertStringContainsString('شروع رایگان', $html);
 
-        // Popover mobile menu
-        $this->assertStringContainsString('tb-header-nimbus-mobile', $html);
-        $this->assertStringContainsString('popover', $html);
-        $this->assertStringContainsString('data-nimbus-toggle="tgn01-menu-nimbus_test_1"', $html);
+        // Full mobile drawer connected (ADR-091)
+        $this->assertStringContainsString('tb-nav-header-menu-panel', $html);
+        $this->assertStringContainsString('tb-nav-header-toggle', $html);
     }
 
     public function test_access_gate_locks_header_glass_nimbus_without_grant_and_unlocks_with_header_grant(): void

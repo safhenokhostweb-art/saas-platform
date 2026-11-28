@@ -5346,6 +5346,13 @@ class BlockRenderer
             ? '<div class="tb-nav-header-drawer-ctas tb-nav-header-drawer-only">' . ($drawerExtraAction !== '' ? $drawerExtraAction . '<div class="tb-nav-header-drawer-btns" style="display:flex;gap:0.5rem;width:100%;">' . $cta2Html . $ctaPlainHtml . '</div>' : $cta2Html . $ctaPlainHtml) . '</div>'
             : '';
 
+        $drawerSocial = ($this->flag($props['social_show_mobile'] ?? false) || in_array($props['header_social_display'] ?? '', ['mobile_drawer', 'all'], true)) && $socialHtml !== ''
+            ? '<div class="tb-nav-header-drawer-social tb-nav-header-drawer-only" style="display:flex;gap:0.5rem;justify-content:center;padding:0.75rem 0;">' . $socialHtml . '</div>'
+            : '';
+        $drawerDark = $this->flag($props['show_dark_toggle'] ?? false) && $darkToggleHtml !== ''
+            ? '<div class="tb-nav-header-drawer-dark tb-nav-header-drawer-only" style="display:flex;justify-content:center;padding:0.5rem 0;">' . $darkToggleHtml . '</div>'
+            : '';
+
         $closeButton = '<button type="button" class="tb-nav-header-menu-close" aria-label="بستن منو">' . $this->iconHtml('x') . '</button>';
         $menuHtml = $hasMenu
             ? '<nav class="tb-nav-header-links" aria-label="' . $menuLabel . '" data-widget-slot="menu">'
@@ -5354,16 +5361,15 @@ class BlockRenderer
                 . $drawerSearch
                 . $menuItemsHtml
                 . $drawerCtas
+                . $drawerSocial
+                . $drawerDark
                 . '</div></nav>'
             : '';
         $drawerClasses = ($drawerSearch !== '' ? ' tb-nav-header--drawer-search' : '') . ($drawerCtas !== '' ? ' tb-nav-header--drawer-ctas' : '');
         $skin = trim($this->stringify($props['header_skin'] ?? 'default'));
-        if ($skin === 'glass_nimbus' || $skin === 'header_glass_nimbus') {
-            $drawerClasses .= ' tb-header-nimbus-mobile popover';
-        }
 
         $burger = $menuHtml !== ''
-            ? '<button type="button" class="tb-nav-header-toggle tb-nav-header-icon-link" aria-label="باز کردن منو" aria-expanded="false" aria-controls="' . $this->escapeAttr($menuPanelId) . '" data-nimbus-toggle="tgn01-menu-' . $safeId . '">' . $this->iconHtml('menu') . '</button>'
+            ? '<button type="button" class="tb-nav-header-toggle tb-nav-header-icon-link" aria-label="باز کردن منو" aria-expanded="false" aria-controls="' . $this->escapeAttr($menuPanelId) . '">' . $this->iconHtml('menu') . '</button>'
             : '';
 
         $headerOrderRaw = $props['header_order'] ?? null;
@@ -5483,6 +5489,20 @@ class BlockRenderer
         // css.header), driven by --tb-hdr-* properties; no per-header <style>.
 
         $skin = trim($this->stringify($props['header_skin'] ?? 'default'));
+        if ($skin === 'glass_nimbus' || $skin === 'header_glass_nimbus') {
+            $entitlements = null;
+            if (class_exists(\SaaSPlatform\ThemeRuntime\Access\AssetAccessGate::class)) {
+                if (function_exists('app') && app()->bound(\SaaSPlatform\ThemeRuntime\Access\SiteAssetEntitlements::class)) {
+                    $entitlements = app(\SaaSPlatform\ThemeRuntime\Access\SiteAssetEntitlements::class);
+                } elseif (function_exists('app') && app()->bound('App\Services\AssetProvisioning\AssetEntitlementClient')) {
+                    $entitlements = app('App\Services\AssetProvisioning\AssetEntitlementClient')->current();
+                }
+                if ($entitlements !== null && !\SaaSPlatform\ThemeRuntime\Access\AssetAccessGate::isSkinAllowed($skin, $entitlements)) {
+                    $skin = 'default';
+                }
+            }
+        }
+
         $skinClass = '';
         if ($skin === 'glass_nimbus' || $skin === 'header_glass_nimbus') {
             $skinClass = ' tb-header-skin--glass-nimbus tb-header-nimbus';
@@ -5534,8 +5554,19 @@ class BlockRenderer
             $background = !empty($props['bg_color']) && $props['bg_color'] !== '#ffffff' && $props['bg_color'] !== 'var(--tb-surface, #fff)'
                 ? $this->escapeAttr($this->cssColor($props['bg_color'], "rgba(255, 255, 255, {$opacityVal})"))
                 : "rgba(255, 255, 255, {$opacityVal})";
-            $textColor = $ink;
-            $colorVars = ";--color-tgn01-cta1:{$cta1};--color-tgn01-cta2:{$cta2};--color-tgn01-ink:{$ink};--tgn01-glass-blur:{$blurVal}px;--tgn01-glass-top:{$offsetVal}px;--tgn01-glass-bg:{$background};--tgn01-glass-shadow:{$glassShadow};";
+            $textColor = !empty($props['text_color']) && $props['text_color'] !== '#111827'
+                ? $this->escapeAttr($props['text_color'])
+                : $ink;
+            $zIndex = isset($props['z_index']) && is_numeric($props['z_index']) ? (int)$props['z_index'] : 40;
+            $radius = isset($props['header_radius']) && is_numeric($props['header_radius']) ? (int)$props['header_radius'] . 'px' : '1rem';
+            $minHeight = isset($props['min_height']) && is_numeric($props['min_height']) ? (int)$props['min_height'] . 'px' : '4rem';
+            $borderWidth = isset($props['border_bottom_width']) && is_numeric($props['border_bottom_width']) ? (int)$props['border_bottom_width'] . 'px' : '1px';
+            $borderColor = !empty($props['border_bottom_color']) ? $this->escapeAttr($props['border_bottom_color']) : 'rgba(255, 255, 255, 0.6)';
+
+            $scrolledBg = !empty($props['scrolled_bg_color']) ? $this->escapeAttr($props['scrolled_bg_color']) : '';
+            $scrolledBgVar = $scrolledBg !== '' ? "--tgn01-glass-scrolled-bg:{$scrolledBg};" : '';
+
+            $colorVars = ";--color-tgn01-cta1:{$cta1};--color-tgn01-cta2:{$cta2};--color-tgn01-ink:{$ink};--tgn01-glass-blur:{$blurVal}px;--tgn01-glass-top:{$offsetVal}px;--tgn01-glass-bg:{$background};--tgn01-glass-shadow:{$glassShadow};--tgn01-glass-z:{$zIndex};--tgn01-glass-radius:{$radius};--tgn01-glass-min-h:{$minHeight};--tgn01-glass-border-w:{$borderWidth};--tgn01-glass-border-c:{$borderColor};--tgn01-glass-text:{$textColor};{$scrolledBgVar}";
         }
 
         return $headerStyle['style']
