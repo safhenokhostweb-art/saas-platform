@@ -58,6 +58,13 @@
     ],
     "reviewed": [
       {
+        "path": "database/migrations/2026_11_28_110000_ensure_canvas_header_glass_nimbus_preset.php",
+        "sha256": "c39e0f3697d73a51ca5e8700725c7082cca7418c695f10c9c8d3fd76ecf8df9e",
+        "reviewed_by": "Owner (approved in session 2026-11-28 for ADR-091: Canvas Asset Management Header Preset Provisioning)",
+        "reviewed_at": "2026-11-28",
+        "reason": "Idempotent seed/ensure migration: creates or updates header-glass-nimbus preset as nav_header with header_skin=glass_nimbus, title=هدر شیشه‌ای مدرن, current_version=1.3.0, access_type=paid (490,000) and registers version in canvas_asset_versions."
+      },
+      {
         "path": "database/migrations/2026_11_28_080000_unify_header_glass_nimbus_to_nav_header.php",
         "sha256": "ac3a9694e2e4dfceb1033a81885eb55482f443ccb500d081a2e3401906d24362",
         "reviewed_by": "Owner (approved in session 2026-11-28 for ADR-088: Unified Header Core on nav_header with glass_nimbus skin)",

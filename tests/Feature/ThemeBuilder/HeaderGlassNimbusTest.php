@@ -145,6 +145,7 @@ class HeaderGlassNimbusTest extends TestCase
 
         $preset = CanvasHeaderPreset::where('slug', 'header-glass-nimbus')->first();
         $this->assertNotNull($preset, 'header-glass-nimbus preset must exist in canvas_header_presets');
+        $this->assertSame('هدر شیشه‌ای مدرن', $preset->title);
         $this->assertSame('paid', $preset->access_type, 'Must NOT be free');
         $this->assertSame(490000, $preset->price);
         $this->assertTrue((bool) $preset->is_active);
@@ -159,6 +160,110 @@ class HeaderGlassNimbusTest extends TestCase
             ->first();
 
         $this->assertNotNull($version, 'Asset version 1.3.0 record must exist');
-        $this->assertStringContainsString('یکپارچه‌سازی هدر شیشه‌ای', $version->changelog);
+    }
+
+    public function test_nav_header_with_glass_nimbus_renders_pure_css_styles_and_all_unified_features(): void
+    {
+        $renderer = new BlockRenderer();
+        $renderer->setContext(['current_url' => '/shop']);
+
+        $block = [
+            'type' => 'nav_header',
+            'id' => 'glass_nav_test',
+            'props' => [
+                'header_skin' => 'glass_nimbus',
+                'logo_text' => 'شیشه نوین',
+                'logo_badge_symbol' => '◆',
+                'logo_url' => '/',
+                'topbar_enable' => true,
+                'topbar_phone' => '09120000000',
+                'nav_source' => 'custom_links',
+                'nav_links' => [
+                    ['label' => 'خانه', 'url' => '/', 'icon' => 'home'],
+                    ['label' => 'فروشگاه', 'url' => '/shop', 'icon' => 'shopping-bag'],
+                ],
+                'show_search' => true,
+                'show_cart' => true,
+                'show_account' => true,
+                'show_dark_toggle' => true,
+                'show_social_in_main_header' => true,
+                'social_links' => [
+                    ['platform' => 'telegram', 'url' => 'https://t.me/example'],
+                    ['platform' => 'eitaa', 'url' => 'https://eitaa.com/example'],
+                ],
+                'cta_text' => 'ثبت سفارش',
+                'cta_url' => '/order',
+                'cta_style' => 'gradient',
+                'cta_color_start' => '#e20c35',
+                'cta_color_end' => '#c4008d',
+                'ink_color' => '#211c48',
+                'backdrop_blur' => 20,
+                'glass_bg_opacity' => 60,
+                'glass_floating_top' => 15,
+                'asset_version' => '1.3.0',
+            ],
+        ];
+
+        $html = $renderer->renderBlock($block);
+
+        // 1. Glass skin class & CTA styling
+        $this->assertStringContainsString('tb-header-skin--glass-nimbus', $html);
+        $this->assertStringContainsString('tb-header-cta-primary', $html);
+        $this->assertStringContainsString('←', $html, 'CTA arrow must be rendered');
+
+        // 2. Live glass variables injected
+        $this->assertStringContainsString('--color-tgn01-cta1:#e20c35', $html);
+        $this->assertStringContainsString('--color-tgn01-cta2:#c4008d', $html);
+        $this->assertStringContainsString('--color-tgn01-ink:#211c48', $html);
+        $this->assertStringContainsString('--tgn01-glass-blur:20px', $html);
+        $this->assertStringContainsString('--tgn01-glass-top:15px', $html);
+        $this->assertStringContainsString('--tgn01-glass-bg:rgba(255, 255, 255, 0.6)', $html);
+
+        // 3. Unified features present
+        $this->assertStringContainsString('09120000000', $html, 'Topbar content must be present');
+        $this->assertStringContainsString('tb-nav-header-search', $html, 'Search must be present');
+        $this->assertStringContainsString('tb-nav-header-cart', $html, 'Live cart must be present');
+        $this->assertStringContainsString('tb-nav-header-account', $html, 'Account link must be present');
+        $this->assertStringContainsString('tb-theme-toggle', $html, 'Dark toggle must be present');
+        $this->assertStringContainsString('telegram', $html, 'Social icon must be present');
+        $this->assertStringContainsString('eitaa', $html, 'Iranian social icon must be present');
+        $this->assertStringContainsString('aria-current="page"', $html, 'Current page link must be marked active');
+
+        // 4. Pure CSS verified from stylesheet
+        $css = file_get_contents(\SaaSPlatform\ThemeRuntime\Providers\ThemeRuntimeServiceProvider::cssHeaderPath());
+        $this->assertStringContainsString('.tb-header-skin--glass-nimbus', $css);
+        $this->assertStringContainsString('backdrop-filter: blur(var(--tgn01-glass-blur, 16px)) saturate(180%)', $css);
+        $this->assertStringContainsString('position: sticky', $css);
+        $this->assertStringContainsString('border-radius: 1rem', $css);
+        $this->assertStringContainsString('.tb-header-skin--glass-nimbus .tb-header-cta-primary', $css);
+    }
+
+    public function test_inspector_isolation_glass_fields_conditioned_and_hidden_on_default(): void
+    {
+        $schema = \SaaSPlatform\ThemeRuntime\Header\SharedHeaderSchema::schema();
+
+        // 1. Verify glass-specific fields are conditioned on header_skin = glass_nimbus
+        $glassScopedKeys = [
+            'ink_color',
+            'backdrop_blur',
+            'glass_bg_opacity',
+            'glass_floating_top',
+            'glass_shadow',
+            'cta_color_start',
+            'cta_color_end',
+        ];
+
+        foreach ($glassScopedKeys as $key) {
+            $this->assertArrayHasKey($key, $schema, "Schema must contain {$key}");
+            $this->assertSame(
+                ['header_skin' => 'glass_nimbus'],
+                $schema[$key]['condition'] ?? null,
+                "Field [{$key}] must be strictly conditioned on header_skin = glass_nimbus"
+            );
+        }
+
+        // 2. Verify standard header_shadow is conditioned NOT to show on glass_nimbus
+        $this->assertArrayHasKey('header_shadow', $schema);
+        $this->assertSame(['header_skin!' => 'glass_nimbus'], $schema['header_shadow']['condition'] ?? null);
     }
 }

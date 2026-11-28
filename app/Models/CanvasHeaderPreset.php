@@ -40,6 +40,11 @@ class CanvasHeaderPreset extends Model
             ->orderByDesc('id');
     }
 
+    public function getNameAttribute(): string
+    {
+        return $this->title ?? '';
+    }
+
     public function assetRef(): string
     {
         return AssetRef::make(AssetRef::KIND_HEADER, $this->slug);

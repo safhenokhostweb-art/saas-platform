@@ -63,7 +63,11 @@ Before modifying files:
 
 During implementation:
 
-- Follow the constitution and applicable ADRs (including ADR-091: never create separate standalone block types for purely visual variants; always build on the unified canonical block engine and scope differences via skins and asset gates).
+- Follow the constitution and applicable ADRs (including ADR-091: Canvas Asset Production Standard across headers, footers, icon lists, button lists, motion graphics, etc.):
+  1. Base Engine Unification: Always implement visual styles on the canonical unified base of that block family (e.g. `nav_header` for headers, unified base for footers); never create standalone block types for purely visual variants, guaranteeing 100% base capabilities and settings.
+  2. Structural Synchronization: Any new structural capability added to a family must be propagated uniformly to all sibling variants of that family.
+  3. Skin-Scoped Property Isolation: Inspector controls specific to a visual skin must be strictly isolated via explicit conditions (`condition => ['header_skin' => '...']` or equivalent family skin discriminator); they must never leak into inspectors of other skins or default mode.
+  4. Automatic Admin Asset Provisioning: Every asset delivered must automatically include an idempotent migration (`updateOrCreate`) registering it with the user's exact designated name in the SaaS Canvas Asset Management table (e.g. `canvas_header_presets` for headers) so it can be assigned to target sites immediately from the SaaS admin panel.
 - Prefer established repository patterns and the smallest complete change.
 - Use repository evidence; do not invent models, fields, services, configuration, or infrastructure.
 - Keep external state changes within the explicit task scope.

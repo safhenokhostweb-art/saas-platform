@@ -163,8 +163,8 @@ final class SharedHeaderSchema
             'cta_url'            => ['type' => 'link', 'label' => 'لینک دکمه اصلی', 'default' => '/contact', 'group' => 'دسترسی سریع و اکشن‌ها', 'condition' => ['cta_text!' => '']],
             'cta_icon'           => ['type' => 'icon', 'label' => 'آیکون دکمه اصلی (اختیاری)', 'default' => '', 'group' => 'دسترسی سریع و اکشن‌ها', 'condition' => ['cta_text!' => '']],
             'cta_style'          => ['type' => 'select', 'ui' => 'segmented', 'label' => 'ظاهر دکمه اصلی', 'options' => ['primary' => 'توپر', 'outline' => 'خطی', 'gradient' => 'گرادیانی'], 'default' => 'primary', 'group' => 'دسترسی سریع و اکشن‌ها', 'condition' => ['cta_text!' => '']],
-            'cta_color_start'    => ['type' => 'color', 'label' => 'رنگ شروع گرادیان / رنگ اصلی دکمه', 'default' => '#e20c35', 'group' => 'دسترسی سریع و اکشن‌ها', 'condition' => ['cta_text!' => '']],
-            'cta_color_end'      => ['type' => 'color', 'label' => 'رنگ پایان گرادیان دکمه', 'default' => '#c4008d', 'group' => 'دسترسی سریع و اکشن‌ها', 'condition' => ['cta_text!' => '']],
+            'cta_color_start'    => ['type' => 'color', 'label' => 'رنگ شروع گرادیان / رنگ اصلی دکمه', 'default' => '#e20c35', 'panel' => 'style', 'group' => 'دسترسی سریع و اکشن‌ها', 'condition' => ['header_skin' => 'glass_nimbus']],
+            'cta_color_end'      => ['type' => 'color', 'label' => 'رنگ پایان گرادیان دکمه', 'default' => '#c4008d', 'panel' => 'style', 'group' => 'دسترسی سریع و اکشن‌ها', 'condition' => ['header_skin' => 'glass_nimbus']],
 
             'cta2_text'          => ['type' => 'string', 'label' => 'متن دکمه ثانویه (مانند ورود)', 'default' => '', 'group' => 'دسترسی سریع و اکشن‌ها'],
             'secondary_label'    => ['type' => 'string', 'label' => 'متن لینک ثانویه', 'default' => '', 'group' => 'دسترسی سریع و اکشن‌ها', 'hidden' => true],
@@ -198,7 +198,8 @@ final class SharedHeaderSchema
                 'group' => 'دسترسی سریع و اکشن‌ها',
             ],
             'ctaText'            => ['type' => 'string', 'label' => 'متن دکمه اصلی (قدیمی)', 'default' => '', 'group' => 'دسترسی سریع و اکشن‌ها', 'hidden' => true],
-            'ctaUrl'             => ['type' => 'string', 'label' => 'لینک دکمه اصلی (قدیمی)', 'default' => '', 'group' => 'دسترسی سریع و اکشن‌ها', 'hidden' => true],
+            'ctaLabel'           => ['type' => 'string', 'label' => 'متن دکمه (قدیمی)', 'default' => 'شروع کنید', 'group' => 'دسترسی سریع و اکشن‌ها', 'hidden' => true],
+            'ctaUrl'             => ['type' => 'link', 'label' => 'لینک دکمه اصلی (قدیمی)', 'default' => '/contact', 'group' => 'دسترسی سریع و اکشن‌ها', 'hidden' => true],
             'secondary_text'     => ['type' => 'string', 'label' => 'متن دکمه ثانویه (قدیمی)', 'default' => '', 'group' => 'دسترسی سریع و اکشن‌ها', 'hidden' => true],
             'secondary_style'    => ['type' => 'string', 'label' => 'ظاهر دکمه ثانویه (قدیمی)', 'default' => '', 'group' => 'دسترسی سریع و اکشن‌ها', 'hidden' => true],
             'ctaGlow'            => ['type' => 'boolean', 'label' => 'افکت نورانی دکمه اصلی (قدیمی)', 'default' => false, 'group' => 'دسترسی سریع و اکشن‌ها', 'hidden' => true],
@@ -244,7 +245,6 @@ final class SharedHeaderSchema
             ],
             'bg_color'           => ['type' => 'color', 'label' => 'رنگ پس‌زمینه', 'default' => '#ffffff', 'panel' => 'style', 'group' => 'رنگ‌ها و کانتینر'],
             'text_color'         => ['type' => 'color', 'label' => 'رنگ متن و لینک‌ها', 'default' => '#111827', 'panel' => 'style', 'group' => 'رنگ‌ها و کانتینر'],
-            'ink_color'          => ['type' => 'color', 'label' => 'رنگ قلم و المان‌های شناور (Ink)', 'default' => '#211c48', 'panel' => 'style', 'group' => 'رنگ‌ها و کانتینر'],
             'min_height'          => ['type' => 'range', 'unit' => 'px', 'label' => 'حداقل ارتفاع هدر', 'default' => 64, 'mobile_default' => 56, 'min' => 40, 'max' => 200, 'step' => 1, 'responsive' => true, 'panel' => 'style', 'group' => 'رنگ‌ها و کانتینر'],
             'padding'             => ['type' => 'spacing', 'label' => 'فاصله داخلی هدر', 'units' => ['px', 'rem'], 'responsive' => true, 'panel' => 'style', 'group' => 'رنگ‌ها و کانتینر'],
             'items_gap'           => ['type' => 'range', 'unit' => 'px', 'label' => 'فاصله بین اجزای اصلی', 'default' => '', 'min' => 0, 'max' => 80, 'step' => 1, 'responsive' => true, 'panel' => 'style', 'group' => 'رنگ‌ها و کانتینر'],
@@ -252,9 +252,15 @@ final class SharedHeaderSchema
             'content_max_width'   => ['type' => 'range', 'unit' => 'px', 'label' => 'حداکثر عرض محتوا', 'default' => 1280, 'min' => 600, 'max' => 2400, 'step' => 10, 'panel' => 'style', 'group' => 'رنگ‌ها و کانتینر', 'condition' => ['content_width' => 'boxed']],
             'border_bottom_width' => ['type' => 'range', 'unit' => 'px', 'label' => 'ضخامت خط حاشیه پایین', 'default' => 0, 'min' => 0, 'max' => 10, 'step' => 1, 'panel' => 'style', 'group' => 'رنگ‌ها و کانتینر'],
             'border_bottom_color' => ['type' => 'color', 'label' => 'رنگ خط حاشیه پایین', 'default' => '', 'panel' => 'style', 'group' => 'رنگ‌ها و کانتینر', 'condition' => ['border_bottom_width!' => [0, '']]],
-            'header_shadow'       => ['type' => 'shadow', 'label' => 'سایه هدر', 'panel' => 'style', 'group' => 'رنگ‌ها و کانتینر'],
-            'backdrop_blur'       => ['type' => 'range', 'unit' => 'px', 'label' => 'محوشدگی شیشه‌ای (Backdrop blur)', 'default' => 16, 'min' => 0, 'max' => 30, 'step' => 1, 'panel' => 'style', 'group' => 'رنگ‌ها و کانتینر'],
+            'header_shadow'       => ['type' => 'shadow', 'label' => 'سایه هدر', 'panel' => 'style', 'group' => 'رنگ‌ها و کانتینر', 'condition' => ['header_skin!' => 'glass_nimbus']],
             'header_radius'       => ['type' => 'range', 'unit' => 'px', 'label' => 'گردی گوشه هدر (Radius)', 'default' => 16, 'min' => 0, 'max' => 50, 'step' => 1, 'panel' => 'style', 'group' => 'رنگ‌ها و کانتینر'],
+
+            // ─── Glass Skin Scoped Properties (ADR-091) ────────────────────────
+            'ink_color'           => ['type' => 'color', 'label' => 'رنگ جوهر متن و المان‌های شناور (Ink)', 'default' => '#211c48', 'panel' => 'style', 'group' => 'تنظیمات اختصاصی هدر شیشه‌ای', 'condition' => ['header_skin' => 'glass_nimbus']],
+            'backdrop_blur'       => ['type' => 'range', 'unit' => 'px', 'label' => 'شدت محوشدگی شیشه‌ای (Backdrop blur)', 'default' => 16, 'min' => 0, 'max' => 40, 'step' => 1, 'panel' => 'style', 'group' => 'تنظیمات اختصاصی هدر شیشه‌ای', 'condition' => ['header_skin' => 'glass_nimbus']],
+            'glass_bg_opacity'    => ['type' => 'range', 'unit' => '%', 'label' => 'شفافیت پس‌زمینه شیشه‌ای', 'default' => 52, 'min' => 10, 'max' => 100, 'step' => 1, 'panel' => 'style', 'group' => 'تنظیمات اختصاصی هدر شیشه‌ای', 'condition' => ['header_skin' => 'glass_nimbus']],
+            'glass_floating_top'  => ['type' => 'range', 'unit' => 'px', 'label' => 'فاصله شناور هدر از بالا', 'default' => 12, 'min' => 0, 'max' => 100, 'step' => 1, 'panel' => 'style', 'group' => 'تنظیمات اختصاصی هدر شیشه‌ای', 'condition' => ['header_skin' => 'glass_nimbus']],
+            'glass_shadow'        => ['type' => 'shadow', 'label' => 'سایه هدر شیشه‌ای', 'panel' => 'style', 'group' => 'تنظیمات اختصاصی هدر شیشه‌ای', 'condition' => ['header_skin' => 'glass_nimbus']],
 
             // Style: Menu Navigation Typography & Interaction
             'menu_typography'     => ['type' => 'typography', 'label' => 'تایپوگرافی منو', 'responsive' => true, 'panel' => 'style', 'group' => 'استایل منوی ناوبری'],
@@ -289,6 +295,7 @@ final class SharedHeaderSchema
             'scrolled_text_color'   => ['type' => 'color', 'label' => 'رنگ متن پس از اسکرول', 'default' => '', 'panel' => 'advanced', 'group' => 'هدر چسبان و اسکرول', 'condition' => ['sticky' => true]],
             'z_index'               => ['type' => 'number', 'label' => 'ترتیب لایه (z-index)', 'default' => 900, 'min' => 1, 'max' => 9999, 'panel' => 'advanced', 'group' => 'هدر چسبان و اسکرول', 'condition' => ['sticky' => true]],
             'transparent_over_hero' => ['type' => 'boolean', 'label' => 'شفاف روی بنر بالای صفحه', 'default' => false, 'panel' => 'advanced', 'group' => 'هدر چسبان و اسکرول'],
+            'transparent_text_color' => ['type' => 'color', 'label' => 'رنگ متن روی پس‌زمینه شفاف', 'default' => '', 'panel' => 'advanced', 'group' => 'هدر چسبان و اسکرول', 'condition' => ['transparent_over_hero' => true]],
 
             // Advanced: Mobile Menu (Drawer / Popover)
             'burger_breakpoint'     => ['type' => 'select', 'label' => 'نمایش منوی همبرگری', 'options' => ['mobile' => 'موبایل (کمتر از ۷۶۸ پیکسل)', 'tablet' => 'تبلت و موبایل (کمتر از ۱۰۲۴ پیکسل)', 'always' => 'همیشه', 'never' => 'هرگز'], 'default' => 'mobile', 'panel' => 'advanced', 'group' => 'منوی موبایل'],
@@ -346,6 +353,9 @@ final class SharedHeaderSchema
             'burger_breakpoint' => 'mobile',
             'cta_text' => 'شروع کنید',
             'cta_url' => '/contact',
+            'ctaUrl' => '/contact',
+            'ctaLabel' => 'شروع کنید',
+            'ctaColor' => '#4f46e5',
             'cta2_text' => 'ورود',
             'cta2_url' => '/login',
             'show_search' => false,
@@ -357,7 +367,7 @@ final class SharedHeaderSchema
         if ($skin === 'header_glass_nimbus' || $skin === 'glass_nimbus') {
             return array_merge($base, [
                 'header_skin' => 'glass_nimbus',
-                'bg_color' => 'rgba(255, 255, 255, 0.5)',
+                'bg_color' => 'rgba(255, 255, 255, 0.52)',
                 'text_color' => '#211c48',
                 'ink_color' => '#211c48',
                 'cta_style' => 'gradient',
@@ -366,8 +376,11 @@ final class SharedHeaderSchema
                 'cta2_style' => 'subtle',
                 'pointer' => 'pill',
                 'backdrop_blur' => 16,
+                'glass_bg_opacity' => 52,
+                'glass_floating_top' => 12,
                 'drawer_style' => 'popover',
                 'sticky_offset' => 12,
+                'header_radius' => 16,
             ]);
         }
 

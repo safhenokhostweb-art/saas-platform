@@ -4,22 +4,22 @@
 
 ---
 
-## RESOLVED & READY: UNIFIED CANVAS HEADER ARCHITECTURE (ADR-091) & GLASSMORPHIC STICKY HEADER — 2026-11-28
+## RESOLVED & READY: UNIFIED CANVAS HEADER ARCHITECTURE (ADR-091) & MODERN GLASS HEADER WITH PURE CSS — 2026-11-28
 
-Completed all 4 phases of the unified header overhaul and modern glassmorphic header implementation across `saas-platform` and `customer-site`:
-1. **Unified Base Engine (`nav_header`):** Retired standalone header blocks (`header_glass_nimbus`, `header_modern_v1`) from the Canvas palette while retaining zero-downtime backwards compatibility via runtime transparent mapping to `nav_header` with scoped `header_skin`.
-2. **Unified Header Schema & Inspector:** Stripped alias fields; exposed clean unified options (3-source navigation, Top Bar toggle, live cart count, account login, FOUC-free dark mode toggle, CTA buttons with gradient/icons).
-3. **Glassmorphic Skin Styling & Behavior:** Implemented `.tb-header-skin--glass-nimbus` with floating layout, 16px blur, 180% saturation, pill CTA with RTL arrow, popover mobile drawer, and 18px icon lock.
-4. **Alpine Repeater Stability:** Fixed cursor jumping in `canvas-editor.blade.php` across all 3 tiers of mega menu loops using stable `_uid` tracking and in-place field updates.
-5. **Commercial Asset Integrity:** Idempotent migration updated `header-glass-nimbus` preset to `1.3.0` (`block_type = 'nav_header'`, `props.header_skin = 'glass_nimbus'`, `access_type = 'paid'`, price 490,000 tomans) registered in `release-policy.json`.
+Completed all 5 phases of the unified header overhaul and modern glassmorphic header implementation across `saas-platform` and `customer-site`:
+1. **Permanent Standard for All Future Canvas Assets (ADR-091):** Formalized the 4 rules in `AGENTS.md` and `DECISIONS.md`: canonical base unification, structural synchronization, skin-scoped property isolation (`condition => ['header_skin' => '...']`), and automatic idempotent SaaS admin asset provisioning.
+2. **Pure CSS & Instant Visibility (.tb-header-skin--glass-nimbus):** Replaced Tailwind-reliant styling with 100% pure, standard CSS in `theme-runtime-header.css` (`min-height: 4rem`, `position: sticky; top: 0.75rem`, `backdrop-filter: blur(16px) saturate(180%)`, `.tb-header-cta-primary`, `@supports not (backdrop-filter)` fallback) guaranteeing instant rendering in Canvas previews and live frontends.
+3. **Unified Base Engine (`nav_header`):** Preserved 100% base capabilities (topbar, 3-source navigation, live cart count, account link, FOUC-free dark mode toggle, social networks foreign & Iranian, logo transitions) across all skins.
+4. **Skin-Scoped Inspector Isolation:** Explicitly isolated glass-specific controls (`ink_color`, `backdrop_blur`, `glass_bg_opacity`, `glass_floating_top`, `glass_shadow`, `cta_color_start`, `cta_color_end`) in `SharedHeaderSchema.php` so they only appear when `header_skin = 'glass_nimbus'`.
+5. **Automatic Admin Asset Provisioning:** Idempotent migration created/updated `header-glass-nimbus` preset to `1.3.0` (`title = 'هدر شیشه‌ای مدرن'`, `block_type = 'nav_header'`, `access_type = 'paid'`, price 490,000 tomans) registered in `release-policy.json`.
 
 | Item | Status |
 |------|--------|
+| Permanent Asset Operating Standard (ADR-091) | ✅ Registered in `AGENTS.md` & `DECISIONS.md` |
+| Pure CSS & DOM Audit (.tb-header-skin--glass-nimbus) | ✅ 100% Pure CSS in `theme-runtime-header.css` |
 | Base Engine Unification (`nav_header`) | ✅ Complete & Verified |
-| Scoped Skins (`default`, `glass_nimbus`, `modern`) | ✅ Complete & Verified |
-| Transparent Runtime Backwards Compatibility | ✅ Implemented in `BlockRenderer` & `ThemeRuntimeDocument` |
-| Nested Repeater Cursor Jump Resolution | ✅ Resolved in `canvas-editor.blade.php` |
-| Commercial Asset & Entitlement Protection | ✅ Maintained `paid` (490,000 tomans), v1.3.0 |
+| Skin-Scoped Inspector Isolation | ✅ Strict condition isolation in `SharedHeaderSchema` |
+| Idempotent Admin Asset Provisioning | ✅ Migration executed, v1.3.0 in `canvas_header_presets` |
 | Tests & Release Policy | ✅ 100% Passing & Migration SHA-256 Registered |
 
 ---

@@ -1026,79 +1026,140 @@ header.tb-hdr-sticky,
 }
 
 /* ══════════════════════════════════════════════════════════════════
-   ADR-088: Scoped Skin: Glassmorphic Sticky Header (.tb-header-skin--glass-nimbus)
+   ADR-088 & ADR-091: Scoped Skin: Glassmorphic Sticky Header (.tb-header-skin--glass-nimbus)
+   100% Pure, Explicit, Standard CSS (Zero Tailwind Dependency).
    Fulfills floating glassmorphic container, 16px blur, 180% saturation,
    translucent borders, gradient CTA, and glassmorphic mobile drawer.
    ══════════════════════════════════════════════════════════════════ */
-.tb-nav-header.tb-header-skin--glass-nimbus {
+.tb-header-skin--glass-nimbus {
+   --color-tgn01-ink: #211c48;
+   --color-tgn01-cta1: #e20c35;
+   --color-tgn01-cta2: #c4008d;
+   display: flex !important;
+   align-items: center !important;
+   justify-content: space-between !important;
+   gap: 1rem !important;
+   min-height: 4rem !important;
+   position: sticky !important;
+   top: var(--tgn01-glass-top, 0.75rem) !important;
+   z-index: 40 !important;
+   border-radius: 1rem !important;
+   border: 1px solid rgba(255, 255, 255, 0.6) !important;
+   background-color: var(--tgn01-glass-bg, rgba(255, 255, 255, 0.52)) !important;
+   backdrop-filter: blur(var(--tgn01-glass-blur, 16px)) saturate(180%) !important;
+   -webkit-backdrop-filter: blur(var(--tgn01-glass-blur, 16px)) saturate(180%) !important;
+   box-shadow: var(--tgn01-glass-shadow, 0 8px 30px -6px rgba(45, 30, 95, 0.28)) !important;
+   padding: 0.625rem 1.25rem !important;
    width: calc(100% - 2rem) !important;
-   max-width: var(--tb-hdr-max-w, 80rem) !important;
+   max-width: 80rem !important;
    margin-left: auto !important;
    margin-right: auto !important;
    margin-top: 0.75rem !important;
    margin-bottom: 0.75rem !important;
-   border-radius: var(--tb-hdr-radius, 16px) !important;
-   background: var(--tb-hdr-bg, rgba(255, 255, 255, 0.68)) !important;
-   backdrop-filter: blur(var(--tb-hdr-blur, 16px)) saturate(180%) !important;
-   -webkit-backdrop-filter: blur(var(--tb-hdr-blur, 16px)) saturate(180%) !important;
-   border: 1px solid var(--tb-hdr-border-c, rgba(255, 255, 255, 0.35)) !important;
-   box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.2) inset !important;
-   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+   box-sizing: border-box !important;
+   color: var(--color-tgn01-ink, #211c48) !important;
 }
 
-html.dark .tb-nav-header.tb-header-skin--glass-nimbus,
-.tb-dark-mode .tb-nav-header.tb-header-skin--glass-nimbus {
-   background: var(--tb-hdr-bg, rgba(17, 24, 39, 0.75)) !important;
-   border-color: var(--tb-hdr-border-c, rgba(255, 255, 255, 0.12)) !important;
-   box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.05) inset !important;
+/* Nav header nesting compatibility: ensure internal elements flow correctly */
+.tb-nav-header.tb-header-skin--glass-nimbus .tb-nav-header-root {
+   width: 100% !important;
+   background: transparent !important;
 }
 
 .tb-nav-header.tb-header-skin--glass-nimbus .tb-nav-header-inner {
-   min-height: var(--tb-hdr-min-h, 64px) !important;
-   padding-left: 1.25rem !important;
-   padding-right: 1.25rem !important;
+   display: flex !important;
+   align-items: center !important;
+   justify-content: space-between !important;
+   gap: 1rem !important;
+   min-height: 4rem !important;
+   padding: 0 !important;
+   width: 100% !important;
+   background: transparent !important;
+   box-sizing: border-box !important;
+}
+
+html.dark .tb-header-skin--glass-nimbus,
+.tb-dark-mode .tb-header-skin--glass-nimbus {
+   background-color: rgba(17, 24, 39, 0.75) !important;
+   border-color: rgba(255, 255, 255, 0.12) !important;
+   box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.05) inset !important;
+   color: #f3f4f6 !important;
 }
 
 /* Glassmorphic Pill Link Effect */
-.tb-nav-header.tb-header-skin--glass-nimbus .tb-nav-header-link {
-   border-radius: var(--tb-hdr-menu-radius, 12px) !important;
-   transition: all 0.2s ease !important;
+.tb-header-skin--glass-nimbus .tb-nav-header-link {
+   border-radius: 0.75rem !important;
+   padding: 0.4rem 0.8rem !important;
+   color: var(--color-tgn01-ink, #211c48) !important;
+   transition: background-color 150ms ease, color 150ms ease !important;
 }
-.tb-nav-header.tb-header-skin--glass-nimbus .tb-nav-header-link:hover {
+.tb-header-skin--glass-nimbus .tb-nav-header-link:hover,
+.tb-header-skin--glass-nimbus .tb-nav-header-link.is-active,
+.tb-header-skin--glass-nimbus .tb-nav-header-link[aria-current="page"] {
    background: rgba(255, 255, 255, 0.4) !important;
    backdrop-filter: blur(8px) !important;
+   -webkit-backdrop-filter: blur(8px) !important;
 }
-html.dark .tb-nav-header.tb-header-skin--glass-nimbus .tb-nav-header-link:hover,
-.tb-dark-mode .tb-nav-header.tb-header-skin--glass-nimbus .tb-nav-header-link:hover {
+html.dark .tb-header-skin--glass-nimbus .tb-nav-header-link,
+.tb-dark-mode .tb-header-skin--glass-nimbus .tb-nav-header-link {
+   color: #f3f4f6 !important;
+}
+html.dark .tb-header-skin--glass-nimbus .tb-nav-header-link:hover,
+html.dark .tb-header-skin--glass-nimbus .tb-nav-header-link.is-active,
+html.dark .tb-header-skin--glass-nimbus .tb-nav-header-link[aria-current="page"],
+.tb-dark-mode .tb-header-skin--glass-nimbus .tb-nav-header-link:hover,
+.tb-dark-mode .tb-header-skin--glass-nimbus .tb-nav-header-link.is-active,
+.tb-dark-mode .tb-header-skin--glass-nimbus .tb-nav-header-link[aria-current="page"] {
    background: rgba(255, 255, 255, 0.08) !important;
 }
 
 /* Gradient Pill Primary CTA */
-.tb-nav-header.tb-header-skin--glass-nimbus .tb-btn.tb-nav-header-cta {
-   border-radius: 9999px !important;
-   padding: 0.55rem 1.4rem !important;
-   font-weight: 600 !important;
-   letter-spacing: -0.01em !important;
-   transition: transform 0.2s ease, box-shadow 0.2s ease !important;
-}
-.tb-nav-header.tb-header-skin--glass-nimbus .tb-btn.tb-nav-header-cta:hover {
-   transform: translateY(-1px) !important;
-   box-shadow: 0 6px 20px rgba(226, 12, 53, 0.35) !important;
+.tb-header-skin--glass-nimbus .tb-header-cta-primary,
+.tb-header-skin--glass-nimbus .tb-btn.tb-nav-header-cta:not(.tb-nav-header-cta--outline):not(.tb-nav-header-cta--second) {
+   display: inline-flex !important;
+   align-items: center !important;
+   gap: 0.375rem !important;
+   height: 2.75rem !important;
+   padding: 0 1.25rem !important;
+   border-radius: 0.75rem !important;
+   background: linear-gradient(135deg, var(--color-tgn01-cta1, #e20c35), var(--color-tgn01-cta2, #c4008d)) !important;
+   color: #ffffff !important;
+   font-weight: 700 !important;
+   box-shadow: 0 8px 20px -4px var(--color-tgn01-cta2, #c4008d) !important;
+   transition: transform 150ms ease, box-shadow 150ms ease !important;
+   text-decoration: none !important;
 }
 
-/* Glassmorphic Mobile Drawer */
-.tb-nav-header.tb-header-skin--glass-nimbus .tb-nav-header-menu-panel {
+.tb-header-skin--glass-nimbus .tb-header-cta-primary:hover,
+.tb-header-skin--glass-nimbus .tb-btn.tb-nav-header-cta:not(.tb-nav-header-cta--outline):not(.tb-nav-header-cta--second):hover {
+   transform: translateY(-2px) !important;
+   box-shadow: 0 12px 26px -4px var(--color-tgn01-cta2, #c4008d) !important;
+}
+
+/* Glassmorphic Mobile Drawer / Menu Panel */
+.tb-header-skin--glass-nimbus .tb-nav-header-menu-panel {
    background: rgba(255, 255, 255, 0.88) !important;
    backdrop-filter: blur(20px) saturate(180%) !important;
    -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
-   border-radius: 20px !important;
+   border-radius: 1.25rem !important;
    border: 1px solid rgba(255, 255, 255, 0.4) !important;
    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15) !important;
 }
-html.dark .tb-nav-header.tb-header-skin--glass-nimbus .tb-nav-header-menu-panel,
-.tb-dark-mode .tb-nav-header.tb-header-skin--glass-nimbus .tb-nav-header-menu-panel {
+html.dark .tb-header-skin--glass-nimbus .tb-nav-header-menu-panel,
+.tb-dark-mode .tb-header-skin--glass-nimbus .tb-nav-header-menu-panel {
    background: rgba(17, 24, 39, 0.9) !important;
    border-color: rgba(255, 255, 255, 0.1) !important;
+   color: #f3f4f6 !important;
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+   .tb-header-skin--glass-nimbus {
+      background-color: rgba(255, 255, 255, 0.92) !important;
+   }
+   html.dark .tb-header-skin--glass-nimbus,
+   .tb-dark-mode .tb-header-skin--glass-nimbus {
+      background-color: rgba(17, 24, 39, 0.95) !important;
+   }
 }
 
 /* 18px Icon Bounding-Box Lock */

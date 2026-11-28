@@ -6069,9 +6069,16 @@ Prior to this decision, novel visual design variants of Canvas blocks (such as t
    - Field updates (`updateStructuredField`, `updateNestedField`, `updateDeepNestedField`) mutate the target object in-place without cloning arrays, eliminating Alpine DOM destruction and cursor jumps completely.
 5. **Commercial Asset Integrity:**
    - The `glass_nimbus` skin and `header-glass-nimbus` preset remain commercial paid assets (`access_type = 'paid'`, price 490,000 tomans, version `1.3.0`), gated by `AssetAccessGate` and `AssetEntitlementClient`.
+6. **Permanent Operating Standard for All Future Canvas Assets (Headers, Footers, Icon Lists, Button Lists, Motion Graphics):**
+   - Whenever the owner provides an asset name and style/visual specifications:
+     1. *Unified Base Implementation:* Build new visual styles strictly on top of the family's canonical base engine (`nav_header` for headers, single base for footers, etc.), retaining 100% of base features, schemas, and capabilities.
+     2. *Structural Synchronization:* Any new structural capability added to a family must be propagated uniformly across all siblings.
+     3. *Skin-Scoped Property Isolation:* Inspector controls specific to a visual skin must be strictly isolated using explicit conditions (`condition => ['header_skin' => '...']` or equivalent discriminator). They must never appear in other skins or default mode.
+     4. *Automatic Admin Asset Provisioning:* Every asset delivered must automatically include an idempotent migration (`updateOrCreate`) registering it with the user's exact designated name in the SaaS Canvas Asset Management table (e.g. `canvas_header_presets` for headers) so it can be assigned to target sites immediately from the SaaS admin panel.
 
 **Consequences:**
 - All header designs in Canvas now possess 100% feature parity (3-source menu, mega menus, live cart count, account login, FOUC-free dark mode, SVG icons, logo transitions).
 - Zero database breakage for existing customer pages.
 - Future block variants across all families must adhere to this "Base Engine + Scoped Skin" pattern.
+- Pure CSS with zero Tailwind dependency guarantees instant rendering in Canvas previews and live frontends without missing utility styles.
 

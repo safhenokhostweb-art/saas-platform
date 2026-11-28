@@ -5237,7 +5237,7 @@ class BlockRenderer
         $socialLinks = is_array($props['social_links'] ?? null) ? $props['social_links'] : [];
         $socialStyle = ($props['social_style'] ?? '') === 'brand';
         $socialDisplay = $props['header_social_display'] ?? ($this->flag($props['show_social_in_main_header'] ?? false) ? 'main_header' : 'topbar');
-        $showInMainHeader = in_array($socialDisplay, ['main_header', 'all'], true) || $this->flag($props['show_social_in_main_header'] ?? false);
+        $showInMainHeader = !isset($props['header_social_display']) || in_array($socialDisplay, ['main_header', 'all'], true) || $this->flag($props['show_social_in_main_header'] ?? false);
         $socialClasses = 'tb-nav-header-social' . ($this->flag($props['social_show_mobile'] ?? false) ? ' tb-nav-header-social--mobile' : '');
         $socialHtml = ($showInMainHeader && !empty($socialLinks)) ? $this->socialIconsHtml($socialLinks, $safeId . '-quick', 'quick-access', $socialStyle, $socialClasses, true) : '';
 
@@ -5273,22 +5273,25 @@ class BlockRenderer
 
         $ctaHtml = '';
         $ctaPlainHtml = '';
-        $ctaText = $this->escape($props['cta_text'] ?? $props['cta_label'] ?? '');
+        $ctaText = $this->escape($props['cta_text'] ?? $props['cta_label'] ?? $props['ctaText'] ?? '');
         if ($ctaText === '' && filter_var($props['show_register_btn'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
             $ctaText = 'ثبت‌نام';
         }
-        $ctaUrl = $this->linkHref($props['cta_url'] ?? '', '#');
-        if ($ctaText !== '') {
+        $ctaUrl = $this->linkHref($props['cta_url'] ?? $props['ctaUrl'] ?? '', '#');
+        $skin = trim($this->stringify($props['header_skin'] ?? 'default'));
+        $isGlass = $skin === 'glass_nimbus' || $skin === 'header_glass_nimbus';
+        $isModern = $skin === 'modern' || $skin === 'header_modern_v1';
+        if ($ctaText !== '' && (!$isModern || $this->showsLink($ctaUrl))) {
             $rawCtaGlowColor = trim($this->stringify($props['cta_glow_color'] ?? $rawGlowColor));
             $ctaGlow = $glowEnabled || $rawCtaGlowColor !== '';
             $ctaGlowColor = $this->escapeAttr($this->cssColor($rawCtaGlowColor, 'var(--tb-primary, #c2410c)'));
             $ctaGlowClass = $ctaGlow ? ' tb-cta--glow tb-nav-header-glow' : '';
             $ctaGlowStyle = $ctaGlow ? ' style="--tb-nav-header-glow:' . $ctaGlowColor . ';--cta-glow-color:' . $ctaGlowColor . '"' : '';
-            $skin = trim($this->stringify($props['header_skin'] ?? 'default'));
-            $ctaArrow = ($skin === 'glass_nimbus' || $skin === 'header_glass_nimbus' || !empty($props['cta_arrow'])) ? ' <span class="tb-btn-arrow" aria-hidden="true">←</span>' : '';
+            $ctaArrow = ($isGlass || !empty($props['cta_arrow'])) ? ' <span class="tb-btn-arrow" aria-hidden="true">←</span>' : '';
             $ctaOutline = ($props['cta_style'] ?? 'primary') === 'outline';
             $ctaInner = $this->headerButtonIcon($props['cta_icon'] ?? '') . '<span>' . $ctaText . '</span>' . $ctaArrow;
-            $ctaClass = 'tb-btn ' . ($ctaOutline ? 'tb-nav-header-cta--outline' : 'tb-btn-primary') . ' tb-nav-header-cta';
+            $ctaSkinClass = $isGlass ? ' tb-header-cta-primary' : ($isModern ? ' tb-header-modern__cta' : '');
+            $ctaClass = 'tb-btn ' . ($ctaOutline ? 'tb-nav-header-cta--outline' : 'tb-btn-primary') . ' tb-nav-header-cta' . $ctaSkinClass;
             $ctaHtml = '<a href="' . $ctaUrl . '" class="' . $ctaClass . $ctaGlowClass . '"' . $ctaGlowStyle . $this->deadLinkMark($ctaUrl) . '>' . $ctaInner . '</a>';
             $ctaPlainHtml = '<a href="' . $ctaUrl . '" class="' . $ctaClass . '"' . $this->deadLinkMark($ctaUrl) . '>' . $ctaInner . '</a>';
         }
@@ -5298,9 +5301,9 @@ class BlockRenderer
         if ($cta2Text === '' && filter_var($props['show_login_btn'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
             $cta2Text = 'ورود';
         }
-        if ($cta2Text !== '') {
-            $cta2Url = $this->linkHref($props['cta2_url'] ?? $props['secondary_url'] ?? '', '#');
-            $cta2Class = 'tb-btn ' . (($props['cta2_style'] ?? 'outline') === 'primary' ? 'tb-btn-primary' : 'tb-nav-header-cta--outline') . ' tb-nav-header-cta tb-nav-header-cta--second';
+        $cta2Url = $this->linkHref($props['cta2_url'] ?? $props['secondary_url'] ?? '', '#');
+        if ($cta2Text !== '' && (!$isModern || $this->showsLink($cta2Url))) {
+            $cta2Class = 'tb-btn ' . (($props['cta2_style'] ?? 'outline') === 'primary' ? 'tb-btn-primary' : 'tb-nav-header-cta--outline') . ' tb-nav-header-cta tb-nav-header-cta--second' . ($isModern ? ' tb-header-modern__cta tb-header-modern__cta--second' : '');
             $cta2Html = '<a href="' . $cta2Url . '" class="' . $cta2Class . '"' . $this->deadLinkMark($cta2Url) . '>' . $this->headerButtonIcon($props['cta2_icon'] ?? '') . $cta2Text . '</a>';
         }
 
@@ -5520,11 +5523,23 @@ class BlockRenderer
             $cta1 = $this->escapeAttr($props['cta_color_start'] ?? '#e20c35');
             $cta2 = $this->escapeAttr($props['cta_color_end'] ?? '#c4008d');
             $ink = $this->escapeAttr($props['ink_color'] ?? '#211c48');
-            $colorVars = ";--color-tgn01-cta1:{$cta1};--color-tgn01-cta2:{$cta2};--color-tgn01-ink:{$ink};";
+            $blurVal = isset($props['backdrop_blur']) && $props['backdrop_blur'] !== '' ? (int)$props['backdrop_blur'] : 16;
+            $rawTop = $props['glass_floating_top'] ?? ($props['sticky_offset'] ?? 12);
+            $offsetVal = is_numeric($rawTop) ? (int)$rawTop : 12;
+            $opacityVal = isset($props['glass_bg_opacity']) && is_numeric($props['glass_bg_opacity'])
+                ? ((float)$props['glass_bg_opacity'] > 1 ? (float)$props['glass_bg_opacity'] / 100 : (float)$props['glass_bg_opacity'])
+                : 0.52;
+            $glassShadow = $this->formatShadowValue($props['glass_shadow'] ?? ($props['header_shadow'] ?? null), '0 8px 30px -6px rgba(45, 30, 95, 0.28)');
+
+            $background = !empty($props['bg_color']) && $props['bg_color'] !== '#ffffff' && $props['bg_color'] !== 'var(--tb-surface, #fff)'
+                ? $this->escapeAttr($this->cssColor($props['bg_color'], "rgba(255, 255, 255, {$opacityVal})"))
+                : "rgba(255, 255, 255, {$opacityVal})";
+            $textColor = $ink;
+            $colorVars = ";--color-tgn01-cta1:{$cta1};--color-tgn01-cta2:{$cta2};--color-tgn01-ink:{$ink};--tgn01-glass-blur:{$blurVal}px;--tgn01-glass-top:{$offsetVal}px;--tgn01-glass-bg:{$background};--tgn01-glass-shadow:{$glassShadow};";
         }
 
         return $headerStyle['style']
-            . '<div id="' . $this->escapeAttr($rootId) . '" class="' . $headerClass . '"' . $headerSetAttr . ' dir="rtl" style="background:' . $background . ';color:' . $textColor . ';--tb-nav-header-glow:' . $glowColor . $animStyleVar . $colorVars . ';" data-tb-block-id="' . $this->escapeAttr($id) . '" data-canvas-block-id="' . $this->escapeAttr($id) . '" data-tb-block-type="nav_header"' . $headerAttrs . '>'
+            . '<div id="' . $this->escapeAttr($rootId) . '" class="' . $headerClass . '"' . $headerSetAttr . ' style="background:' . $background . ';color:' . $textColor . ';--tb-nav-header-glow:' . $glowColor . $animStyleVar . $colorVars . ';" dir="rtl" data-tb-block-id="' . $this->escapeAttr($id) . '" data-canvas-block-id="' . $this->escapeAttr($id) . '" data-tb-block-type="nav_header"' . $headerAttrs . '>'
             . '<div class="' . $rootClass . '">'
             . $topbarHtml
             . '<div class="tb-nav-header-inner">'
@@ -5543,6 +5558,22 @@ class BlockRenderer
         $name = trim($this->stringify($name));
 
         return $name === '' ? '' : '<span class="tb-nav-header-cta-icon" aria-hidden="true">' . $this->iconHtml($name) . '</span>';
+    }
+
+    private function formatShadowValue(mixed $value, string $default): string
+    {
+        if (is_string($value) && trim($value) !== '') {
+            return $this->escapeAttr(trim($value));
+        }
+        if (is_array($value)) {
+            try {
+                $s = \SaaSPlatform\ThemeRuntime\Inspector\InspectorFieldRegistry::normalizeShadow($value);
+                if ($s !== null) {
+                    return ($s['inset'] ? 'inset ' : '') . "{$s['x']}px {$s['y']}px {$s['blur']}px {$s['spread']}px {$s['color']}";
+                }
+            } catch (\Throwable) {}
+        }
+        return $default;
     }
 
     private function siteHeaderAssets(): string
